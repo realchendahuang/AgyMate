@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="agBg" x1="6" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f3d3e"/>
+      <stop offset="100%" stop-color="#0b1f29"/>
+    </linearGradient>
+    <linearGradient id="agMint" x1="16" y1="14" x2="48" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5eead4"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="15" fill="url(#agBg)"/>
+  <ellipse cx="32" cy="34" rx="21" ry="10" transform="rotate(-22 32 34)" stroke="#5eead4" stroke-opacity="0.38" stroke-width="2.2"/>
+  <path d="M32 13L47 48H39.8L36.2 39.2H27.8L24.2 48H17L32 13ZM32 23.2L29.6 33.4H34.4L32 23.2Z" fill="url(#agMint)"/>
+  <circle cx="48.5" cy="18.5" r="3.4" fill="#34d399"/>
+</svg>

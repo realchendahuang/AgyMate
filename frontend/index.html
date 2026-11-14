@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgyMate — Antigravity 五开伴侣</title>
+  <meta name="color-scheme" content="light dark">
+  <script>
+  try {
+    var saved = localStorage.getItem('agymate-color-scheme');
+    if (saved === 'light' || saved === 'dark') {
+      document.querySelector('meta[name="color-scheme"]').content = saved;
+    }
+  } catch (e) {}
+  </script>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="shell" id="app-shell">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="brand">
+        <img src="/logo.svg" alt="" class="brand-logo" width="28" height="28">
+        <div class="brand-copy">
+          <div class="brand-title">AgyMate <span class="ver" id="hdr-ver">v0.1</span></div>
+          <div class="brand-sub">Antigravity 五开伴侣</div>
+        </div>
+      </div>
+
+      <nav class="nav" id="main-nav">
+        <button type="button" class="nav-item active" data-view="overview">
+          <span class="nav-ic">◈</span><span>全局总览</span>
+        </button>
+        <button type="button" class="nav-item" data-view="telemetry">
+          <span class="nav-ic">◔</span><span>Token 账单</span>
+        </button>
+        <button type="button" class="nav-item" data-view="sessions">
+          <span class="nav-ic">⌘</span><span>会话与上下文</span>
+          <span class="nav-badge" id="badge-sessions" hidden>0</span>
+        </button>
+        <button type="button" class="nav-item" data-view="doctor">
+          <span class="nav-ic">✚</span><span>体检与护航</span>
+          <span class="nav-badge warn" id="badge-doctor" hidden>0</span>
+        </button>
+        <button type="button" class="nav-item" data-view="storage">
+          <span class="nav-ic">◫</span><span>缓存瘦身</span>
+        </button>
+        <button type="button" class="nav-item" data-view="settings">
+          <span class="nav-ic">⚙</span><span>设置与通知</span>
+        </button>
+      </nav>
+
+      <div class="side-foot">
+        <div class="sse-pill" id="sse-pill">
+          <span class="dot" id="sse-dot"></span>
+          <span id="sse-label">正在连接 Hub…</span>
+        </div>
+        <div class="side-meta" id="side-updated">最近同步 --</div>
+      </div>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="top-left">
+          <h1 class="view-title" id="view-title">全局总览</h1>
+          <span class="top-chip" id="top-running-chip">0/6 在线</span>
+        </div>
+        <div class="top-actions">
+          <div class="seg" role="group" aria-label="货币单位">
+            <button type="button" class="seg-btn active" data-currency="USD">USD $</button>
+            <button type="button" class="seg-btn" data-currency="CNY">CNY ¥</button>
+          </div>
+          <button type="button" class="btn quiet" id="btn-theme" title="切换浅色 / 深色主题">
+            <span class="theme-only-light">🌙 深色</span>
+            <span class="theme-only-dark">☀️ 浅色</span>
+          </button>
+          <button type="button" class="btn quiet" id="btn-cdp-now" title="立即向所有运行窗口注入汉化与 HUD">注入 HUD</button>
+          <button type="button" class="btn primary" id="btn-refresh">立即刷新</button>
+        </div>
+      </header>
+
+      <main class="content" id="main-content">
+        <!-- View 1: Overview -->
+        <section class="view-panel active" id="view-overview">
+          <div class="kpi-grid" id="overview-kpis"></div>
+          <div class="section-head">
+            <div>
+              <h2>五开 + IDE 实例矩阵</h2>
+              <p class="section-sub">Main (Ultra) 与 Antigravity IDE 严格只读保护；仅 ParaGravity 分身允许启动、停止与自愈。</p>
+            </div>
+            <div class="section-actions">
+              <button type="button" class="btn quiet" command="show-modal" commandfor="create-profile-dialog" id="btn-open-create-from-ov">+ 新建分身</button>
+            </div>
+          </div>
+          <div class="inst-grid" id="instance-grid"></div>
+        </section>
+
+        <!-- View 2: Telemetry -->
+        <section class="view-panel" id="view-telemetry" hidden>
+          <div class="toolbar">
+            <div class="preset-tabs" id="telemetry-presets">
+              <button type="button" class="tab active" data-preset="today">今日</button>
+              <button type="button" class="tab" data-preset="yesterday">昨日</button>
+              <button type="button" class="tab" data-preset="last_5h">近5h</button>
+              <button type="button" class="tab" data-preset="last_7d">近7天</button>
+              <button type="button" class="tab" data-preset="this_month">本月</button>
+              <button type="button" class="tab" data-preset="all_time">全部</button>
+            </div>
+            <div class="toolbar-right">
+              <label class="field-inline">
+                <span>实例</span>
+                <select id="tel-inst-filter">
+                  <option value="all">全部实例</option>
+                  <option value="main">Main (Ultra)</option>
+                  <option value="ide">Antigravity IDE</option>
+                  <option value="p1">p1</option>
+                  <option value="p2">p2</option>
+                  <option value="p3">p3</option>
+                  <option value="p4">p4</option>
+                </select>
+              </label>
+              <label class="field-inline">
+                <span>费率口径</span>
+                <select id="tel-mode-select">
+                  <option value="std">标准 API + 缓存</option>
+                  <option value="promo">优惠阶梯 + 缓存</option>
+                  <option value="nc_std">标准无缓存对比</option>
+                  <option value="nc_promo">优惠无缓存对比</option>
+                </select>
+              </label>
+              <a class="btn quiet" id="btn-export-csv" href="/api/telemetry/export.csv?preset=last_7d" download>导出 CSV</a>
+            </div>
+          </div>
+          <div class="kpi-grid" id="tel-kpis"></div>
+          <div class="card chart-card">
+            <div class="card-head">
+              <div>
+                <h3>Token 消耗趋势</h3>
+                <p class="card-sub" id="tel-chart-sub">只读扫描 SQLite WAL · 绿=缓存命中 · 青=Input · 橙=Output</p>
+              </div>
+              <div class="chart-tooltip" id="chart-tooltip">悬浮柱状图查看精确数值</div>
+            </div>
+            <div id="tel-chart-host" class="chart-host"></div>
+          </div>
+          <div class="two-col">
+            <div class="card">
+              <div class="card-head"><h3>按模型成本分布</h3></div>
+              <div tabindex="0" role="region" aria-labelledby="tbl-models-cap" class="table-wrapper">
+                <table>
+                  <caption id="tbl-models-cap" class="sr-only">按模型统计 Token 与 API 等值费用</caption>
+                  <thead><tr><th>模型</th><th>调用</th><th>Input</th><th>Cache</th><th>Output</th><th>费用</th></tr></thead>
+                  <tbody id="tel-models-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>按实例横向对比</h3></div>
+              <div tabindex="0" role="region" aria-labelledby="tbl-inst-cap" class="table-wrapper">
+                <table>
+                  <caption id="tbl-inst-cap" class="sr-only">按实例统计 Token、缓存命中率与 API 费用</caption>
+                  <thead><tr><th>实例</th><th>调用</th><th>总 Token</th><th>缓存命中</th><th>费用</th></tr></thead>
+                  <tbody id="tel-inst-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>最近 LLM 调用流水 (Top 40)</h3></div>
+            <div tabindex="0" role="region" aria-labelledby="tbl-calls-cap" class="table-wrapper">
+              <table>
+                <caption id="tbl-calls-cap" class="sr-only">最近 LLM 调用详细记录</caption>
+                <thead><tr><th>时间</th><th>实例</th><th>会话</th><th>模型</th><th>Input</th><th>Cache</th><th>Output</th><th>费用</th></tr></thead>
+                <tbody id="tel-calls-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 3: Sessions & Context -->
+        <section class="view-panel" id="view-sessions" hidden>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>实时会话状态追踪 (Hooks + Connect-RPC)</h3>
+                <p class="card-sub">待审批或阻塞会话高亮提示，点击右侧按钮直接切到对应 Antigravity 窗口。</p>
+              </div>
+            </div>
+            <div id="live-sessions-list" class="session-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>各实例活跃上下文窗口 (Context Window)</h3>
+                <p class="card-sub">基于 GetCascadeTrajectoryGeneratorMetadata 解析上下文构成树；超出预警水位建议执行 /compact。</p>
+              </div>
+            </div>
+            <div id="context-cards" class="ctx-grid"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>跨实例历史会话 FTS5 检索</h3>
+                <p class="card-sub">并发只读检索 Main 与全部分身 conversation_summaries.db。</p>
+              </div>
+            </div>
+            <form class="search-bar" id="session-search-form">
+              <input type="search" id="session-search-input" placeholder="输入关键词搜索标题、路径或对话正文，例如：paragravity / wails / oauth">
+              <select id="session-search-inst">
+                <option value="all">全部实例</option>
+                <option value="main">main</option>
+                <option value="ide">ide</option>
+                <option value="p1">p1</option>
+                <option value="p2">p2</option>
+                <option value="p3">p3</option>
+                <option value="p4">p4</option>
+              </select>
+              <button type="submit" class="btn primary">搜索</button>
+            </form>
+            <div id="session-hits" class="hits-list"></div>
+          </div>
+        </section>
+
+        <!-- View 4: Doctor & Fleet -->
+        <section class="view-panel" id="view-doctor" hidden>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>六维环境体检中心</h3>
+                <p class="card-sub" id="doctor-versions-sub">Main / Box / IDE 版本核验 · Keychain 元数据只读保护</p>
+              </div>
+              <div class="btn-row">
+                <button type="button" class="btn quiet" id="btn-doctor-fix">一键安全修复</button>
+                <button type="button" class="btn quiet" id="btn-sync-box">同步 Antigravity-Box</button>
+                <button type="button" class="btn primary" command="show-modal" commandfor="create-profile-dialog" id="btn-open-create">+ 新建分身</button>
+              </div>
+            </div>
+            <div id="doctor-feedback" class="banner" hidden></div>
+            <div id="doctor-grid" class="doctor-grid"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>CDP 实时汉化与 Shadow-DOM HUD 探针</h3>
+                <p class="card-sub">内置 3 秒自动巡检并幂等注入中文补丁与右上/右下微胶囊。</p>
+              </div>
+              <button type="button" class="btn quiet" id="btn-doctor-cdp">立即重注并探测</button>
+            </div>
+            <div tabindex="0" role="region" aria-labelledby="tbl-cdp-cap" class="table-wrapper">
+              <table>
+                <caption id="tbl-cdp-cap" class="sr-only">CDP 页面目标与注入状态</caption>
+                <thead><tr><th>实例</th><th>CDP 端口</th><th>窗口标题</th><th>汉化补丁</th><th>HUD 胶囊</th><th>备注</th></tr></thead>
+                <tbody id="cdp-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 5: Cache Storage -->
+        <section class="view-panel" id="view-storage" hidden>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Brain 与 Conversations 安全瘦身</h3>
+                <p class="card-sub">严格仅识别 UUID 命名目录与数据库，自动锁定运行中对话与每个实例最近保留数。</p>
+              </div>
+              <div class="btn-row">
+                <label class="field-inline">
+                  <span>保留最近</span>
+                  <input type="number" id="cache-keep-input" min="1" max="200" value="20" style="width:64px">
+                  <span>条</span>
+                </label>
+                <label class="field-inline">
+                  <span>目标</span>
+                  <select id="cache-inst-filter">
+                    <option value="all">全部实例</option>
+                    <option value="main">main</option>
+                    <option value="p1">p1</option>
+                    <option value="p2">p2</option>
+                    <option value="p3">p3</option>
+                    <option value="p4">p4</option>
+                  </select>
+                </label>
+                <button type="button" class="btn quiet" id="btn-cache-scan">重新扫描</button>
+                <button type="button" class="btn danger" id="btn-cache-clean">清理可回收缓存</button>
+              </div>
+            </div>
+            <div id="cache-feedback" class="banner" hidden></div>
+            <div class="kpi-grid" id="cache-kpis"></div>
+            <div tabindex="0" role="region" aria-labelledby="tbl-cache-cap" class="table-wrapper">
+              <table>
+                <caption id="tbl-cache-cap" class="sr-only">可清理会话缓存列表</caption>
+                <thead><tr><th>实例</th><th>会话标题 / UUID</th><th>Brain</th><th>DB</th><th>合计</th><th>状态</th></tr></thead>
+                <tbody id="cache-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- View 6: Settings -->
+        <section class="view-panel" id="view-settings" hidden>
+          <form id="settings-form" class="settings-grid">
+            <div class="card">
+              <div class="card-head"><h3>CDP 汉化与窗口 HUD</h3></div>
+              <div class="form-stack">
+                <label class="check"><input type="checkbox" id="cfg-cdp-enabled"> 启用 3 秒 CDP 自动守护</label>
+                <label class="check"><input type="checkbox" id="cfg-cdp-zh"> 自动注入中文界面补丁</label>
+                <label class="check"><input type="checkbox" id="cfg-cdp-hud"> 注入窗口内 Shadow-DOM 状态微胶囊</label>
+                <label class="field">
+                  <span>HUD 默认位置</span>
+                  <select id="cfg-cdp-pos">
+                    <option value="bottom-right">右下角 (bottom-right)</option>
+                    <option value="top-right">右上角 (top-right)</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>汉化词库路径</span>
+                  <input type="text" id="cfg-cdp-path" placeholder="~/.antigravity-zh/inject.js">
+                </label>
+                <label class="field">
+                  <span>允许显示 HUD 的实例 (逗号分隔，例如 main,p1,p2,p3,p4)</span>
+                  <input type="text" id="cfg-cdp-insts">
+                </label>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>专属 Telegram Bot 告警</h3>
+                <button type="button" class="btn quiet" id="btn-tg-test">发送测试消息</button>
+              </div>
+              <div class="form-stack">
+                <label class="check"><input type="checkbox" id="cfg-tg-enabled"> 开启 Telegram 异步告警通知</label>
+                <label class="field">
+                  <span>Bot Token</span>
+                  <input type="password" id="cfg-tg-token" autocomplete="off" placeholder="123456:ABC-...">
+                </label>
+                <label class="field">
+                  <span>Chat ID</span>
+                  <input type="text" id="cfg-tg-chatid" placeholder="你的数字 Chat ID">
+                </label>
+                <div class="two-mini">
+                  <label class="field">
+                    <span>最短完成耗时 (秒)</span>
+                    <input type="number" id="cfg-tg-mindur" min="0" max="3600">
+                  </label>
+                  <label class="field">
+                    <span>待审批超时告警 (秒)</span>
+                    <input type="number" id="cfg-tg-stuck" min="10" max="3600">
+                  </label>
+                </div>
+                <label class="check"><input type="checkbox" id="cfg-tg-stop"> 任务结束时通知</label>
+                <label class="check"><input type="checkbox" id="cfg-tg-err"> 异常中断时优先告警</label>
+                <label class="check"><input type="checkbox" id="cfg-tg-lowq"> 配额低于阈值自动预警 (每重置周期一次)</label>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>计价口径、阈值与路径</h3></div>
+              <div class="form-stack">
+                <div class="two-mini">
+                  <label class="field">
+                    <span>默认计价模式</span>
+                    <select id="cfg-price-mode">
+                      <option value="std">标准 API + 缓存</option>
+                      <option value="promo">优惠阶梯 + 缓存</option>
+                      <option value="nc_std">标准无缓存</option>
+                      <option value="nc_promo">优惠无缓存</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>默认币种</span>
+                    <select id="cfg-price-cur">
+                      <option value="USD">USD ($)</option>
+                      <option value="CNY">CNY (¥)</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="two-mini">
+                  <label class="field">
+                    <span>USD → CNY 汇率</span>
+                    <input type="number" id="cfg-price-rate" step="0.01" min="1" max="20">
+                  </label>
+                  <label class="field">
+                    <span>Ultra 月费基准 (USD)</span>
+                    <input type="number" id="cfg-price-sub" step="1" min="1" max="1000">
+                  </label>
+                </div>
+                <div class="two-mini">
+                  <label class="field">
+                    <span>配额低水位告警 (%)</span>
+                    <input type="number" id="cfg-warn-quota" min="1" max="90">
+                  </label>
+                  <label class="field">
+                    <span>上下文压缩提醒 (%)</span>
+                    <input type="number" id="cfg-warn-ctx" min="20" max="98">
+                  </label>
+                </div>
+                <label class="field">
+                  <span>Antigravity-Box 路径</span>
+                  <input type="text" id="cfg-box-app">
+                </label>
+                <label class="field">
+                  <span>update-box.sh 路径</span>
+                  <input type="text" id="cfg-box-script">
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-footer">
+              <div id="settings-feedback" class="banner" hidden></div>
+              <button type="submit" class="btn primary">保存配置并立即生效</button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Native Modal Dialog for Creating a ParaGravity Profile -->
+  <dialog id="create-profile-dialog" aria-labelledby="cpd-title" closedby="any">
+    <form method="dialog" id="create-profile-form" class="dialog-box">
+      <div class="dialog-head">
+        <h2 id="cpd-title">新建 ParaGravity 分身沙盒</h2>
+        <button type="submit" value="cancel" class="icon-btn" aria-label="关闭">✕</button>
+      </div>
+      <p class="dialog-sub">隔离家目录 ~/.antigravity-profiles/&lt;name&gt; 与 Chromium UserData；不拷贝 OAuth 密钥，仅按需继承脱敏偏好设置。</p>
+      <div class="form-stack">
+        <label class="field">
+          <span>分身名称（如 p5、work）</span>
+          <input type="text" id="cp-name" required pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" placeholder="p5" autofocus>
+        </label>
+        <label class="field">
+          <span>备注描述</span>
+          <input type="text" id="cp-desc" placeholder="例如：备用 Pro 号 #5">
+        </label>
+        <div class="two-mini">
+          <label class="field">
+            <span>符号链接策略</span>
+            <select id="cp-links">
+              <option value="minimal">minimal（推荐，隔离 .ssh/.config）</option>
+              <option value="full">full（继承全部常用环境）</option>
+              <option value="none">none（完全空沙盒）</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>配置继承</span>
+            <select id="cp-inherit">
+              <option value="host">继承宿主机脱敏配置</option>
+              <option value="">空白初始化</option>
+            </select>
+          </label>
+        </div>
+        <label class="check"><input type="checkbox" id="cp-mcp" checked> 脱敏同步 mcp_config.json（自动置空 key/token）</label>
+        <label class="check"><input type="checkbox" id="cp-launch"> 创建完成后立即通过 Antigravity-Box 启动</label>
+      </div>
+      <div id="cp-error" class="banner error" hidden></div>
+      <div class="dialog-actions">
+        <button type="submit" value="cancel" class="btn quiet">取消</button>
+        <button type="button" id="cp-submit-btn" class="btn primary">创建分身</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>

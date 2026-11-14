@@ -1,0 +1,5 @@
+bin/
+dist/
+*.app/
+.DS_Store
+*.log
