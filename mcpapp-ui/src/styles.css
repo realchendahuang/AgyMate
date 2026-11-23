@@ -1,4 +1,4 @@
-/* AgyMate MCP App — Notion Tatami Workspace Theme */
+/* AgyMate MCP App — Notion Tatami Workspace + Minimal Circular Ring Cards */
 :root {
   --notion-bg: #ffffff;
   --notion-bg-sidebar: #f9f9f8;
@@ -27,6 +27,7 @@
   --notion-red-bg: #fef3f1;
   --notion-red-ink: #e32d14;
   --notion-teal-ink: #0a7b77;
+  --notion-ring-track: rgba(55, 53, 47, 0.09);
   --notion-shadow-100: 0px 0.7px 1.462px 0px rgba(0, 0, 0, 0.016),
     0px 3px 9px 0px rgba(0, 0, 0, 0.032);
   --notion-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -38,8 +39,8 @@
 .dark {
   --notion-bg: #191919;
   --notion-bg-sidebar: #202020;
-  --notion-bg-recessed: #222221;
-  --notion-bg-card: #262625;
+  --notion-bg-recessed: #1f1f1e;
+  --notion-bg-card: #252524;
   --notion-bg-hover: rgba(255, 255, 255, 0.06);
   --notion-bg-active: rgba(255, 255, 255, 0.1);
   --notion-ink: #e6e6e6;
@@ -47,12 +48,13 @@
   --notion-ink-secondary: #adaba7;
   --notion-ink-muted: #8a8884;
   --notion-ink-faint: #666562;
-  --notion-border: rgba(255, 255, 255, 0.09);
-  --notion-border-strong: rgba(255, 255, 255, 0.16);
+  --notion-border: rgba(255, 255, 255, 0.08);
+  --notion-border-strong: rgba(255, 255, 255, 0.13);
   --notion-blue-200: rgba(0, 117, 222, 0.24);
   --notion-blue-700: #93cdfe;
   --notion-blue-bg: rgba(0, 117, 222, 0.2);
   --notion-blue-ink: #62aef0;
+  --notion-app-blue: #4fa1f2;
   --notion-green-500: #4ade80;
   --notion-green-bg: rgba(20, 131, 43, 0.18);
   --notion-green-ink: #68ce7e;
@@ -60,8 +62,9 @@
   --notion-orange-ink: #ffad71;
   --notion-red-bg: rgba(227, 45, 20, 0.18);
   --notion-red-ink: #ff8b7c;
-  --notion-teal-ink: #83cbc9;
-  --notion-shadow-100: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --notion-teal-ink: #6bc4be;
+  --notion-ring-track: rgba(255, 255, 255, 0.09);
+  --notion-shadow-100: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -72,26 +75,27 @@ html, body {
   color: var(--notion-ink);
   font-family: var(--notion-font-sans);
   font-size: 13.5px;
-  line-height: 1.55;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   font-synthesis-weight: none;
 }
 
 .shell {
-  padding: 20px 24px 28px;
+  padding: 24px 28px 36px;
   max-width: 960px;
   margin: 0 auto;
 }
 .shell.is-inline {
-  padding: 14px 16px 18px;
+  padding: 16px 18px 20px;
 }
 
 .boot-msg {
-  padding: 28px;
+  padding: 32px;
   text-align: center;
   color: var(--notion-ink-muted);
 }
 
+/* Top Bar */
 .topbar {
   display: flex;
   flex-wrap: wrap;
@@ -99,14 +103,13 @@ html, body {
   justify-content: space-between;
   gap: 10px;
   padding-bottom: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   border-bottom: 1px solid var(--notion-border);
 }
-
 .brand-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 .brand-mark {
@@ -121,47 +124,33 @@ html, body {
   letter-spacing: -0.015em;
   color: var(--notion-ink-strong);
 }
-.src-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-size: 11.5px;
-  font-weight: 500;
-  background: var(--notion-bg-recessed);
-  color: var(--notion-ink-muted);
-}
-.src-pill i {
-  width: 6px;
-  height: 6px;
+.src-dot {
+  width: 6.5px;
+  height: 6.5px;
   border-radius: 50%;
   background: var(--notion-green-500);
   display: inline-block;
+  flex: none;
 }
-.src-pill.fallback i {
-  background: var(--notion-orange-ink);
-}
+.src-dot.fallback { background: var(--notion-orange-ink); }
 
 .actions {
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
+/* Tabs */
 .tabs {
   display: flex;
   align-items: center;
   gap: 2px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
-button, input, select {
-  font: inherit;
-  color: inherit;
-}
+button, input, select { font: inherit; color: inherit; }
 
 .btn, .tab-btn, .chip-btn {
   border: 1px solid var(--notion-border-strong);
@@ -202,10 +191,7 @@ button, input, select {
   border-color: transparent;
   border-radius: 8px;
 }
-.btn.primary:hover {
-  background: var(--notion-blue-700);
-  color: #ffffff;
-}
+.btn.primary:hover { background: var(--notion-blue-700); color: #ffffff; }
 .btn.soft-blue {
   background: var(--notion-blue-200);
   color: var(--notion-blue-700);
@@ -216,10 +202,7 @@ button, input, select {
   color: var(--notion-red-ink);
   border-color: transparent;
 }
-.btn.danger:hover {
-  background: var(--notion-red-bg);
-  color: var(--notion-red-ink);
-}
+.btn.danger:hover { background: var(--notion-red-bg); color: var(--notion-red-ink); }
 
 .tab-btn {
   border-color: transparent;
@@ -246,138 +229,220 @@ button, input, select {
   color: var(--notion-blue-ink);
 }
 
+/* KPI Strip */
 .kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border: 1px solid var(--notion-border);
   border-radius: 10px;
   background: var(--notion-bg-card);
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 .kpi {
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-right: 1px solid var(--notion-border);
+  min-width: 0;
 }
 .kpi:last-child { border-right: 0; }
 .kpi-k {
   font-size: 11.5px;
   font-weight: 500;
   color: var(--notion-ink-muted);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .kpi-v {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--notion-ink-strong);
   font-variant-numeric: tabular-nums;
-  line-height: 1.2;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .kpi-sub {
   font-size: 11.5px;
   color: var(--notion-ink-faint);
-  margin-top: 3px;
+  margin-top: 4px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Spacious 2-Column Account Ring Cards */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+  gap: 16px;
 }
 
 .card {
   background: var(--notion-bg-card);
   border: 1px solid var(--notion-border-strong);
   box-shadow: var(--notion-shadow-100);
-  border-radius: 10px;
-  padding: 14px 16px;
+  border-radius: 12px;
+  padding: 18px 20px 20px;
+  min-width: 0;
 }
 .card.is-offline {
   background: var(--notion-bg-recessed);
   border-color: transparent;
   box-shadow: none;
 }
-.card.is-offline .q-list { opacity: 0.72; }
+.card.is-offline .ring-row { opacity: 0.68; }
 
 .card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 18px;
+  min-width: 0;
 }
 .card-title {
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--notion-ink-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+}
+.card-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  white-space: nowrap;
+}
+.plan-tag {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--notion-ink-faint);
 }
 .sub-text {
   font-size: 12px;
   color: var(--notion-ink-muted);
 }
 
+/* Circular Quota Ring Row */
+.ring-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 14px 10px;
+}
+.ring-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  min-width: 64px;
+  flex: 0 1 auto;
+}
+.ring-wrap {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ring-svg {
+  width: 54px;
+  height: 54px;
+  transform: rotate(-90deg);
+  display: block;
+}
+.ring-track {
+  fill: none;
+  stroke: var(--notion-ring-track);
+  stroke-width: 3.5;
+}
+.ring-arc {
+  fill: none;
+  stroke: var(--notion-app-blue);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 260ms cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+.ring-arc.warn { stroke: var(--notion-orange-ink); }
+.ring-arc.danger { stroke: var(--notion-red-ink); }
+.ring-arc.ctx { stroke: var(--notion-teal-ink); }
+.ring-arc.empty { stroke-opacity: 0; }
+
+.ring-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--notion-ink-strong);
+  letter-spacing: -0.02em;
+}
+.ring-pct.danger { color: var(--notion-red-ink); }
+.ring-pct.warn { color: var(--notion-orange-ink); }
+
+.ring-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.25;
+  text-align: center;
+}
+.ring-lbl {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--notion-ink-secondary);
+  white-space: nowrap;
+}
+.ring-sub {
+  font-size: 10.5px;
+  color: var(--notion-ink-faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ring-sub.warn { color: var(--notion-orange-ink); font-weight: 500; }
+
+/* Tatami Badges */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 7px;
+  height: 20px;
+  padding: 0 7px;
   border-radius: 9999px;
   font-size: 11px;
   font-weight: 500;
   background: var(--notion-bg-active);
   color: var(--notion-ink-secondary);
   white-space: nowrap;
+  flex: none;
+}
+.badge .b-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
 }
 .badge.ok { background: var(--notion-green-bg); color: var(--notion-green-ink); }
 .badge.warn { background: var(--notion-orange-bg); color: var(--notion-orange-ink); }
 .badge.danger { background: var(--notion-red-bg); color: var(--notion-red-ink); }
 .badge.info { background: var(--notion-blue-bg); color: var(--notion-blue-ink); }
 
-.q-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.q-row-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-.q-name { color: var(--notion-ink-secondary); font-weight: 450; }
-.q-meta {
-  color: var(--notion-ink-strong);
-  font-size: 11.5px;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-.bar-track {
-  height: 4px;
-  border-radius: 9999px;
-  background: var(--notion-bg-active);
-  overflow: hidden;
-}
-.bar-fill {
-  height: 100%;
-  border-radius: 9999px;
-  background: var(--notion-app-blue);
-}
-.bar-fill.warn { background: var(--notion-orange-ink); }
-.bar-fill.danger { background: var(--notion-red-ink); }
-.bar-fill.info { background: var(--notion-teal-ink); }
-.q-item.muted { opacity: 0.48; }
-
 .banner {
-  margin-top: 16px;
-  padding: 10px 14px;
-  border-radius: 8px;
+  margin-top: 18px;
+  padding: 11px 16px;
+  border-radius: 10px;
   background: var(--notion-bg-recessed);
   font-size: 12.5px;
   color: var(--notion-ink-secondary);
@@ -393,7 +458,7 @@ button, input, select {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: 18px 0 10px;
+  margin: 20px 0 10px;
   flex-wrap: wrap;
 }
 .section-title {
@@ -407,7 +472,7 @@ button, input, select {
   flex-wrap: wrap;
   gap: 4px;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--notion-border);
 }
@@ -457,14 +522,8 @@ th {
 tbody tr { transition: background-color 75ms linear; }
 tbody tr:hover td { background: var(--notion-bg-hover); }
 tr:last-child td { border-bottom: 0; }
-.mono {
-  font-family: var(--notion-font-mono);
-  font-variant-numeric: tabular-nums;
-}
-.num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
+.mono { font-family: var(--notion-font-mono); font-variant-numeric: tabular-nums; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .list-wrap {
   border-top: 1px solid var(--notion-border);
@@ -481,23 +540,9 @@ tr:last-child td { border-bottom: 0; }
 .list-item:hover { background: var(--notion-bg-hover); }
 .list-item + .list-item { border-top: 1px solid var(--notion-border); }
 .list-main { min-width: 0; flex: 1; }
-.list-title {
-  font-weight: 500;
-  color: var(--notion-ink-strong);
-  word-break: break-word;
-}
-.list-sub {
-  font-size: 12px;
-  color: var(--notion-ink-muted);
-  margin-top: 2px;
-  word-break: break-word;
-}
-.row-acts {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-}
+.list-title { font-weight: 500; color: var(--notion-ink-strong); word-break: break-word; }
+.list-sub { font-size: 12px; color: var(--notion-ink-muted); margin-top: 2px; word-break: break-word; }
+.row-acts { display: flex; gap: 4px; flex-wrap: wrap; flex-shrink: 0; }
 
 .toast {
   margin-bottom: 14px;
@@ -507,13 +552,14 @@ tr:last-child td { border-bottom: 0; }
   background: var(--notion-blue-bg);
   color: var(--notion-blue-ink);
 }
-.toast.err {
-  background: var(--notion-red-bg);
-  color: var(--notion-red-ink);
-}
-.empty {
-  padding: 28px 12px;
-  text-align: center;
-  color: var(--notion-ink-muted);
-  font-size: 13px;
+.toast.err { background: var(--notion-red-bg); color: var(--notion-red-ink); }
+.empty { padding: 28px 12px; text-align: center; color: var(--notion-ink-muted); font-size: 13px; }
+
+@media (max-width: 640px) {
+  .shell { padding: 16px 14px 24px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi:nth-child(2) { border-right: 0; }
+  .kpi:nth-child(3), .kpi:nth-child(4) { border-top: 1px solid var(--notion-border); }
+  .ring-wrap, .ring-svg { width: 48px; height: 48px; }
+  .ring-pct { font-size: 11.5px; }
 }

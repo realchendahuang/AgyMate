@@ -1388,6 +1388,98 @@ html.embed-magpie #btn-theme { display: none; }
   gap: 12px 20px;
 }
 .quota-windows.single { grid-template-columns: minmax(0, 1fr); }
+
+/* Circular Quota Ring Row (Notion Tatami Minimal Rings) */
+.ring-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 14px 10px;
+  padding: 4px 0 2px;
+}
+.ring-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  min-width: 64px;
+  flex: 0 1 auto;
+  border-radius: var(--notion-radius-md);
+  padding: 4px 4px;
+  margin: -4px -4px;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
+}
+.ring-item[data-tip]:hover { background: var(--notion-bg-hover); }
+.ring-wrap {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ring-svg {
+  width: 54px;
+  height: 54px;
+  transform: rotate(-90deg);
+  display: block;
+}
+.ring-track {
+  fill: none;
+  stroke: var(--notion-border);
+  stroke-width: 3.5;
+}
+.ring-arc {
+  fill: none;
+  stroke: var(--notion-app-blue);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 260ms var(--notion-ease-in-out-cubic);
+}
+.ring-arc.warn { stroke: var(--notion-orange-ink); }
+.ring-arc.danger { stroke: var(--notion-red-ink); }
+.ring-arc.ctx { stroke: var(--notion-teal-ink); }
+.ring-arc.empty { stroke-opacity: 0; }
+.ring-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--notion-ink-strong);
+  letter-spacing: -0.02em;
+}
+.ring-pct.danger { color: var(--notion-red-ink); }
+.ring-pct.warn { color: var(--notion-orange-ink); }
+.ring-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.25;
+  text-align: center;
+}
+.ring-lbl {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--notion-ink-secondary);
+  white-space: nowrap;
+}
+.ring-sub {
+  font-size: 10.5px;
+  color: var(--notion-ink-faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ring-sub.warn { color: var(--notion-orange-ink); font-weight: 500; }
+.subscription-card.is-offline .ring-row { opacity: 0.68; }
+html.sidecar-mode .ring-wrap,
+html.sidecar-mode .ring-svg { width: 48px; height: 48px; }
+html.sidecar-mode .ring-pct { font-size: 11.5px; }
 .quota { min-width: 0; }
 .quota.muted { opacity: 0.48; }
 .quota[data-tip] {

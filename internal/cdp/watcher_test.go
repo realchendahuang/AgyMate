@@ -614,7 +614,13 @@ func TestWatcherScanSyncAndProbe(t *testing.T) {
 		case strings.Contains(expr, "__agyZhFp ="):
 			zhActive = true
 			val = "ok"
-		case strings.Contains(expr, "__agymateHudUpdate("):
+		case strings.Contains(expr, "return 'install';"):
+			if hudActive {
+				val = "ok"
+			} else {
+				val = "install"
+			}
+		case strings.Contains(expr, "__agymateHudFp ="):
 			hudActive = true
 			val = true
 		case strings.Contains(expr, "__agymateHudRemove()"):
@@ -700,12 +706,57 @@ func TestWatcherScanSyncAndProbe(t *testing.T) {
 		t.Fatalf("ProbeTargetStatus = %+v, want both active", probed)
 	}
 
-	// Turning WindowHUD off should invoke __agymateHudRemove
+	// Second SyncAll should take lightweight HUD fast-path (no full ~60KB hud.js resend).
+	mu.Lock()
+	beforeFast := len(evalLog)
+	mu.Unlock()
+	syncedFast := w.SyncAll(ctx, instList, cfg, func(instID string) *HUDData {
+		return &HUDData{Badge: "主窗口", Account: "dev@example.com", Position: "top-right"}
+	}, false)
+	if len(syncedFast) != 1 || !syncedFast[0].HUDActive {
+		t.Fatalf("fast-path SyncAll result = %+v, want HUDActive=true", syncedFast)
+	}
+	mu.Lock()
+	fastExprs := append([]string(nil), evalLog[beforeFast:]...)
+	mu.Unlock()
+	if len(fastExprs) != 1 || len(fastExprs[0]) > 4096 {
+		t.Fatalf("expected single lightweight fast-path eval (<4KB), got count=%d firstLen=%d", len(fastExprs), func() int {
+			if len(fastExprs) == 0 {
+				return 0
+			}
+			return len(fastExprs[0])
+		}())
+	}
+
+	// Excluding an instance via HUDInstances while WindowHUD remains true should still remove its HUD.
+	cfg.CDP.HUDInstances = []string{"other-instance"}
+	w.SyncAll(ctx, instList, cfg, func(instID string) *HUDData {
+		return &HUDData{Badge: "主窗口", Account: "dev@example.com", Position: "top-right"}
+	}, false)
+	probedExcluded := w.ProbeTargetStatus(ctx, instList)
+	if len(probedExcluded) != 1 || probedExcluded[0].HUDActive {
+		t.Fatalf("after excluding via HUDInstances, ProbeTargetStatus = %+v, want HUDActive=false", probedExcluded)
+	}
+
+	// Re-enabling and then turning WindowHUD off should invoke __agymateHudRemove.
+	cfg.CDP.HUDInstances = nil
+	w.SyncAll(ctx, instList, cfg, func(instID string) *HUDData {
+		return &HUDData{Badge: "主窗口", Account: "dev@example.com", Position: "top-right"}
+	}, false)
 	cfg.CDP.WindowHUD = false
 	w.SyncAll(ctx, instList, cfg, nil, false)
 	probedOff := w.ProbeTargetStatus(ctx, instList)
 	if len(probedOff) != 1 || probedOff[0].HUDActive {
 		t.Fatalf("after WindowHUD=false, ProbeTargetStatus = %+v, want HUDActive=false", probedOff)
+	}
+
+	// Syncing with no active instances should prune stale lastSeen entries.
+	w.SyncAll(ctx, nil, cfg, nil, false)
+	w.mu.Lock()
+	staleCount := len(w.lastSeen)
+	w.mu.Unlock()
+	if staleCount != 0 {
+		t.Fatalf("expected stale lastSeen entries pruned, got %d remaining", staleCount)
 	}
 }
 

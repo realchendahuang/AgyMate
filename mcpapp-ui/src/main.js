@@ -29,7 +29,7 @@ const state = {
   canOpenLinks: false,
 };
 
-const app = new App({ name: "AgyMate", version: "0.5.0" }, {});
+const app = new App({ name: "AgyMate", version: "0.5.1" }, {});
 
 function resolveActiveLang() {
   const pref = String(state.lang || "auto").toLowerCase();
@@ -100,6 +100,16 @@ const EN_EXACT = {
   "环境体检": "Health Check",
   "总占用": "Total",
   "本地缓存": "Local Cache",
+  "控制台": "Console",
+  "在线": "Online",
+  "运行": "Running",
+  "上下文": "Context",
+  "重置": "Reset",
+  "正常": "Healthy",
+  "警告": "Warning",
+  "异常": "Error",
+  "未开 CDP": "No CDP",
+  "离线快照": "Cached snapshot",
   "操作完成": "Done",
   "查询失败": "Query failed",
 };
@@ -110,6 +120,13 @@ function translateMcpText(raw) {
   let out = EN_EXACT[trimmed];
   if (!out) {
     out = trimmed
+      .replace(/^([\d,]+) 次$/, "$1 calls")
+      .replace(/^(\d+) 账号$/, "$1 accounts")
+      .replace(/^命中 ([\d.]+%)$/, "Hit $1")
+      .replace(/^Gemini 周$/, "Gemini W")
+      .replace(/^Claude 周$/, "Claude W")
+      .replace(/^Gemini 日$/, "Gemini D")
+      .replace(/^Claude 日$/, "Claude D")
       .replace(/^(\d+) 次调用 · (.+) tok$/, "$1 calls · $2 tok")
       .replace(/^命中率 ([\d.]+%)$/, "Hit rate $1")
       .replace(/^本月 (.+) \/ (.+)$/, "Month $1 / $2")
@@ -121,7 +138,8 @@ function translateMcpText(raw) {
       .replace(/后台守护服务未连接，已自动切换直连采集。恢复实时守护请运行/g, "Local Hub daemon offline; using direct mode. To restore, run")
       .replace(/可安全回收（保留最近 (\d+) 条）：/g, "Reclaimable (keeping latest $1): ")
       .replace(/后重置/g, " to reset")
-      .replace(/预计([\d.]+h)耗尽/g, "empty in ~$1")
+      .replace(/预计\s*([\d.]+h)\s*耗尽/g, "empty in ~$1")
+      .replace(/离线快照/g, "Cached snapshot")
       .replace(/槽位:/g, "Slots:")
       .replace(/今日 /g, "Today ")
       .replace(/5小时/g, "5h")
@@ -194,8 +212,13 @@ function fmtMoney(usd, pricing) {
   const val = Number(usd || 0);
   if (String(cur).toUpperCase() === "CNY") {
     const rate = Number(p.usdToCny || 7.2) || 7.2;
-    return "¥" + (val * rate).toFixed(2);
+    const cny = val * rate;
+    if (cny >= 1000) return "¥" + Math.round(cny).toLocaleString("en-US");
+    if (cny >= 100) return "¥" + cny.toFixed(1);
+    return "¥" + cny.toFixed(2);
   }
+  if (val >= 1000) return "$" + Math.round(val).toLocaleString("en-US");
+  if (val >= 100) return "$" + val.toFixed(1);
   return "$" + val.toFixed(2);
 }
 
@@ -219,14 +242,58 @@ function fmtResetLeft(resetUnix) {
   return `${mins}分钟`;
 }
 
+function fmtResetShort(resetUnix) {
+  const ts = Number(resetUnix || 0);
+  if (ts <= 0) return "";
+  const diff = ts - Math.floor(Date.now() / 1000);
+  if (diff <= 0) return "重置";
+  const mins = Math.floor(diff / 60);
+  const hrs = Math.floor(mins / 60);
+  const days = Math.floor(hrs / 24);
+  if (days > 0) return `${days}d`;
+  if (hrs > 0) return `${hrs}h`;
+  return `${Math.max(1, mins)}m`;
+}
+
+function shortPlan(plan) {
+  const raw = String(plan || "").trim();
+  if (!raw) return "";
+  const low = raw.toLowerCase();
+  if (low.includes("ultra")) return "Ultra";
+  if (low.includes("pro")) return "Pro";
+  if (low.includes("team")) return "Team";
+  if (low.includes("starter")) return "Starter";
+  if (low.includes("free")) return "Free";
+  return raw.replace(/^google\s+ai\s+/i, "").replace(/\s+quota$/i, "").trim();
+}
+
+function shortBucketLabel(b) {
+  const grpRaw = String(b.groupName || b.displayName || "").toLowerCase();
+  const winRaw = String(b.window || b.displayName || "").toLowerCase();
+  const grp = grpRaw.includes("gemini")
+    ? "Gemini"
+    : grpRaw.includes("claude") || grpRaw.includes("gpt") || grpRaw.includes("3p")
+      ? "Claude"
+      : String(b.groupName || "").replace(/\s+models$/i, "").trim();
+  const win = winRaw.includes("5h") || winRaw.includes("5小时") || winRaw.includes("five hour") || winRaw.includes("5-hour")
+    ? "5h"
+    : winRaw.includes("week") || winRaw.includes("7d") || winRaw.includes("周")
+      ? "周"
+      : winRaw.includes("day") || winRaw.includes("daily") || winRaw.includes("日")
+        ? "日"
+        : "";
+  if (grp && win) return `${grp} ${win}`;
+  return grp || win || "配额";
+}
+
 function liveStateBadge(liveState) {
   switch (String(liveState || "").toLowerCase()) {
     case "waiting_approval":
-      return '<span class="badge warn">待确认</span>';
+      return '<span class="badge warn"><i class="b-dot"></i>待确认</span>';
     case "running":
-      return '<span class="badge ok">运行中</span>';
+      return '<span class="badge ok"><i class="b-dot"></i>运行</span>';
     case "idle":
-      return '<span class="badge info">在线空闲</span>';
+      return '<span class="badge ok"><i class="b-dot"></i>空闲</span>';
     default:
       return '<span class="badge">离线</span>';
   }
@@ -335,64 +402,95 @@ async function runAction(action, extra = {}) {
   }
 }
 
-function renderQuotaBars(buckets, ctx, cachedQuota) {
-  const sorted = (buckets || []).slice().sort((a, b) => {
-    if (!!a.disabled !== !!b.disabled) return a.disabled ? 1 : -1;
-    return 0;
+const RING_C = 2 * Math.PI * 23; // ~144.513
+
+function renderRingItem({ pct, label, sub = "", subWarn = false, tone = "", tip = "" }) {
+  const p = Math.max(0, Math.min(100, Number(pct || 0)));
+  const offset = (RING_C * (1 - p / 100)).toFixed(2);
+  const arcCls = [tone, p <= 0.1 ? "empty" : ""].filter(Boolean).join(" ");
+  const pctCls = tone === "danger" || tone === "warn" ? tone : "";
+  return `
+    <div class="ring-item" title="${esc(tip)}">
+      <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 56 56" aria-hidden="true">
+          <circle class="ring-track" cx="28" cy="28" r="23"></circle>
+          <circle class="ring-arc ${arcCls}" cx="28" cy="28" r="23" stroke-dasharray="${RING_C.toFixed(2)}" stroke-dashoffset="${offset}"></circle>
+        </svg>
+        <span class="ring-pct ${pctCls}">${p.toFixed(0)}%</span>
+      </div>
+      <div class="ring-meta">
+        <span class="ring-lbl">${esc(label)}</span>
+        ${sub ? `<span class="ring-sub${subWarn ? " warn" : ""}">${esc(sub)}</span>` : ""}
+      </div>
+    </div>`;
+}
+
+function renderQuotaRings(buckets, ctx, cachedQuota) {
+  const winRank = (b) => {
+    const w = String(b.window || b.displayName || "").toLowerCase();
+    if (w.includes("5h") || w.includes("5小时") || w.includes("five hour") || w.includes("5-hour")) return 1;
+    if (w.includes("day") || w.includes("daily")) return 2;
+    if (w.includes("week") || w.includes("7d") || w.includes("周")) return 3;
+    return 4;
+  };
+  const active = (buckets || [])
+    .filter((b) => !b.disabled)
+    .slice()
+    .sort((a, b) => {
+      const ga = String(a.groupName || "");
+      const gb = String(b.groupName || "");
+      if (ga !== gb) return 0;
+      return winRank(a) - winRank(b);
+    });
+  const items = active.slice(0, 4).map((b) => {
+    const pct = Math.max(0, Math.min(100, Number(b.remainingPct || 0)));
+    const exhaustSoon = Boolean(b.exhaustsBeforeReset && b.hoursUntilEmpty > 0);
+    const tone = pct <= 15 ? "danger" : (pct <= 35 || exhaustSoon) ? "warn" : "";
+    const resetLong = fmtResetLeft(b.resetUnix);
+    const resetShort = fmtResetShort(b.resetUnix);
+    const sub = exhaustSoon
+      ? `~${b.hoursUntilEmpty < 10 ? b.hoursUntilEmpty.toFixed(1) : Math.round(b.hoursUntilEmpty)}h`
+      : resetShort;
+    const tipParts = [b.displayName || shortBucketLabel(b), `${pct.toFixed(0)}%`];
+    if (resetLong) tipParts.push(resetLong === "即将重置" ? resetLong : `${resetLong}后重置`);
+    else if (cachedQuota) tipParts.push("离线快照");
+    if (exhaustSoon) tipParts.push(`预计 ${b.hoursUntilEmpty.toFixed(1)}h 耗尽`);
+    return renderRingItem({
+      pct,
+      label: shortBucketLabel(b),
+      sub,
+      subWarn: exhaustSoon,
+      tone,
+      tip: tipParts.join(" · "),
+    });
   });
-  let html = sorted
-    .slice(0, 4)
-    .map((b) => {
-      const name = b.displayName || b.bucketId || "配额";
-      if (b.disabled) {
-        return `
-          <div class="q-item muted" title="${esc(b.description || "受上级窗口限制，暂不适用")}">
-            <div class="q-row-top">
-              <span class="q-name">${esc(name)}</span>
-              <span class="q-meta">不适用</span>
-            </div>
-            <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>
-          </div>`;
-      }
-      const pct = Math.max(0, Math.min(100, Number(b.remainingPct || 0)));
-      const cls = pct <= 15 ? "danger" : pct <= 35 ? "warn" : "";
-      const reset = fmtResetLeft(b.resetUnix);
-      const metaParts = [`${pct.toFixed(0)}%`];
-      if (reset) metaParts.push(reset === "即将重置" ? reset : `${reset}后重置`);
-      else if (cachedQuota) metaParts.push("缓存");
-      if (b.exhaustsBeforeReset && b.hoursUntilEmpty > 0) {
-        metaParts.push(`预计${b.hoursUntilEmpty.toFixed(1)}h耗尽`);
-      }
-      return `
-        <div class="q-item">
-          <div class="q-row-top">
-            <span class="q-name">${esc(name)}</span>
-            <span class="q-meta">${esc(metaParts.join(" · "))}</span>
-          </div>
-          <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-        </div>`;
-    })
-    .join("");
 
   if (ctx) {
     const cpct = Math.max(0, Math.min(100, Number(ctx.usagePct || 0)));
-    const cCls = cpct >= 80 ? "danger" : cpct >= 60 ? "warn" : "info";
-    html += `
-      <div class="q-item">
-        <div class="q-row-top">
-          <span class="q-name">上下文水位${ctx.model ? ` (${esc(ctx.model)})` : ""}</span>
-          <span class="q-meta">${cpct.toFixed(0)}% · ${fmtTokens(ctx.estimatedTokensUsed)} / ${fmtTokens(ctx.maxContextTokens)}</span>
-        </div>
-        <div class="bar-track"><div class="bar-fill ${cCls}" style="width:${cpct}%"></div></div>
-      </div>`;
+    const tone = cpct >= 80 ? "danger" : cpct >= 60 ? "warn" : "ctx";
+    const tip = [
+      ctx.model || "上下文",
+      `${cpct.toFixed(1)}%`,
+      `${fmtTokens(ctx.estimatedTokensUsed)} / ${fmtTokens(ctx.maxContextTokens)}`,
+    ].join(" · ");
+    items.push(
+      renderRingItem({
+        pct: cpct,
+        label: "上下文",
+        sub: fmtTokens(ctx.estimatedTokensUsed),
+        tone,
+        tip,
+      })
+    );
   }
-  return html || '<div class="sub-text">暂无活跃配额数据</div>';
+
+  return items.length ? `<div class="ring-row">${items.join("")}</div>` : '<div class="sub-text">暂无配额数据</div>';
 }
 
 function renderOverviewTab(isInline) {
   const ov = state.overview;
   if (!ov) {
-    return '<div class="empty">正在读取总览数据…</div>';
+    return '<div class="empty">加载中…</div>';
   }
   const pricing = ov.pricing;
   const sum = ov.todaySummary || {};
@@ -401,20 +499,20 @@ function renderOverviewTab(isInline) {
   const insts = ov.instances || [];
   const runningCount = insts.filter((i) => i.running).length;
 
-  const roiTxt = roi.subUsd > 0 ? `${Number(roi.roiMultiple || 0).toFixed(1)}x` : fmtMoney(roi.allMonthUsd, pricing);
-  const roiSub = roi.subUsd > 0 ? `本月 ${fmtMoney(roi.allMonthUsd, pricing)} / ${fmtMoney(roi.subUsd, pricing)}` : "本月累计等效";
+  const roiTxt = roi.subUsd > 0 ? `${Number(roi.roiMultiple || 0).toFixed(1)}×` : fmtMoney(roi.allMonthUsd, pricing);
+  const roiSub = roi.subUsd > 0 ? `${fmtMoney(roi.allMonthUsd, pricing)} / ${fmtMoney(roi.subUsd, pricing)}` : "本月累计";
 
   const kpisHTML = `
     <div class="kpis">
       <div class="kpi">
         <div class="kpi-k">今日消费</div>
         <div class="kpi-v">${esc(fmtMoney(sum.totalUsd, pricing))}</div>
-        <div class="kpi-sub">${sum.calls || 0} 次调用 · ${fmtTokens(sum.totalTokens)}</div>
+        <div class="kpi-sub">${(sum.calls || 0).toLocaleString()} 次</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">缓存节省</div>
         <div class="kpi-v">${esc(fmtMoney(sum.savedByCacheUsd, pricing))}</div>
-        <div class="kpi-sub">命中率 ${Number(sum.cacheHitRate || 0).toFixed(1)}%</div>
+        <div class="kpi-sub">命中 ${Number(sum.cacheHitRate || 0).toFixed(1)}%</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">${roi.subUsd > 0 ? "本月回本" : "本月累计"}</div>
@@ -422,29 +520,39 @@ function renderOverviewTab(isInline) {
         <div class="kpi-sub">${esc(roiSub)}</div>
       </div>
       <div class="kpi">
-        <div class="kpi-k">客户端在线</div>
+        <div class="kpi-k">在线</div>
         <div class="kpi-v">${runningCount} / ${insts.length}</div>
-        <div class="kpi-sub">${accounts.length} 个账号</div>
+        <div class="kpi-sub">${accounts.length} 账号</div>
       </div>
     </div>`;
 
   const shownAccounts = isInline ? accounts.slice(0, 4) : accounts;
+  const prefixCounts = {};
+  shownAccounts.forEach((a) => {
+    const p = String(a.displayName || "").split("@")[0].toLowerCase();
+    prefixCounts[p] = (prefixCounts[p] || 0) + 1;
+  });
+  const shortAcctName = (full) => {
+    const s = String(full || "");
+    if (!s.includes("@")) return s;
+    const p = s.split("@")[0];
+    return prefixCounts[p.toLowerCase()] === 1 ? p : s;
+  };
+
   const acctCards = shownAccounts.length
     ? `<div class="grid">${shownAccounts
         .map((acct) => {
           const isOnline = (acct.onlineCount || 0) > 0;
-          const shortPlan = String(acct.planName || "")
-            .replace(/^google\s+ai\s+/i, "")
-            .replace(/\s+quota$/i, "")
-            .trim();
-          const plan = shortPlan ? `<span class="sub-text">${esc(shortPlan)}</span>` : "";
+          const sp = shortPlan(acct.planName);
+          const plan = sp ? `<span class="plan-tag" title="${esc(acct.planName)}">${esc(sp)}</span>` : "";
+          const headTip = [acct.displayName, acct.planName, `今日 ${fmtMoney(acct.todayUsd, pricing)}`].filter(Boolean).join(" · ");
           return `
             <article class="card ${isOnline ? "" : "is-offline"}">
               <div class="card-head">
-                <div class="card-title" title="${esc(acct.displayName)}">${esc(acct.displayName)}</div>
-                <div class="actions">${plan}${liveStateBadge(acct.liveState)}</div>
+                <div class="card-title" title="${esc(headTip)}">${esc(shortAcctName(acct.displayName))}</div>
+                <div class="card-head-right">${plan}${liveStateBadge(acct.liveState)}</div>
               </div>
-              <div class="q-list">${renderQuotaBars(acct.buckets, acct.context, acct.cachedQuota)}</div>
+              ${renderQuotaRings(acct.buckets, acct.context, acct.cachedQuota)}
             </article>`;
         })
         .join("")}</div>`
@@ -611,10 +719,16 @@ function renderProfilesTab() {
           acts.push(`<button type="button" class="btn ghost" data-act="profile_heal" data-id="${esc(inst.id)}">自愈</button>`);
         }
       }
+      const noCdpHint = protectedSlot
+        ? "当前窗口未开启 CDP 调试端口（退出后通过 agymate launch 或 Antigravity (AgyMate).app 启动以启用浮窗与汉化）"
+        : "当前实例未开启 CDP 调试端口（停止后重新启动即可启用浮窗与汉化）";
+      const cdpBadge = inst.running && !inst.cdpPort
+        ? ` <span class="badge warn" title="${esc(noCdpHint)}">未开 CDP</span>`
+        : "";
       return `
         <div class="list-item">
           <div class="list-main">
-            <div class="list-title">${esc(inst.label || inst.id)} <span class="badge">${esc(kindLabel(inst.kind))}</span> ${inst.running ? '<span class="badge ok">运行中</span>' : '<span class="badge">离线</span>'}</div>
+            <div class="list-title">${esc(inst.label || inst.id)} <span class="badge">${esc(kindLabel(inst.kind))}</span> ${inst.running ? '<span class="badge ok">运行中</span>' : '<span class="badge">离线</span>'}${cdpBadge}</div>
             <div class="list-sub"><span class="mono">${esc(inst.id)}</span> · ${esc(inst.account || "-")} · ${authLabel(inst.authState)}</div>
           </div>
           <div class="row-acts">${acts.join("")}</div>
@@ -670,11 +784,11 @@ function render() {
   rootEl.className = "shell" + (isInline ? " is-inline" : "");
 
   const srcBadge = state.hubOnline
-    ? '<span class="src-pill"><i></i>Hub 实时</span>'
-    : '<span class="src-pill fallback"><i></i>直连模式</span>';
+    ? '<span class="src-dot" title="Hub 实时"></span>'
+    : '<span class="src-dot fallback" title="直连模式"></span>';
 
   const openWebBtn = state.canOpenLinks
-    ? `<button type="button" class="btn" id="mcp-open-web">Web 控制台</button>`
+    ? `<button type="button" class="btn" id="mcp-open-web">控制台</button>`
     : "";
 
   const curNext = String(state.currency).toUpperCase() === "CNY" ? "USD" : "CNY";

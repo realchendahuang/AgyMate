@@ -2,6 +2,23 @@
 
 All notable changes to AgyMate are documented in this file.
 
+## [0.5.1] - 2026-11-24
+
+### Added
+- **Minimal Circular Quota Ring Cards**: Upgraded Web Dashboard (`frontend/`) and built-in MCP App (`mcpapp-ui/`) account cards from linear quota bars to compact SVG circular progress rings (`Gemini 5h`, `Gemini W`, `Claude W`, and live `Context`) with smart deduplicated account prefixes and compact currency formatting.
+- **Per-Instance Missing-CDP Visibility**: `agymate doctor`, the Web Dashboard Doctor CDP table & overview instance tooltips, HUD sync feedback, and the MCP App Profiles tab now explicitly identify running Antigravity instances that lack an active `DevToolsActivePort` (even when other windows already have CDP) and provide exact restart instructions.
+- **macOS Profile Launcher Icons**: `~/Applications/Antigravity (<profile>).app` launcher bundles now inherit the official `Antigravity.app` icon when available.
+
+### Changed
+- **CDP HUD Fast-Path Sync (~96% Less Payload)**: `internal/cdp/watcher.go` now sends a lightweight fingerprint-checked update expression (`~2KB`) on routine 3-second sync ticks instead of resending and reparsing the full `~60KB` `hud.js` script on every tick, falling back to full injection only on first attach, page reload, or script version change.
+- **Reduced Overview Network & i18n Overhead**: Removed the unused `/api/quota/history` request and dead sparkline helper from `frontend/app.js` overview refreshes; deduplicated `EXACT` keys in `frontend/i18n.js` and added `data-tip-title` translation support plus complete EN patterns for circular ring tooltips.
+- **CI JS Syntax Parity**: Added `frontend/i18n.js` and `internal/cdp/zh_inject.js` to `.github/workflows/ci.yml` syntax checks to match `Makefile`.
+
+### Fixed
+- **Magpie Sandboxed Iframe Blank Dashboard (`SecurityError`)**: Fixed `safeStorageGet/Set/Remove` in `frontend/app.js` evaluating bare `localStorage` before entering `try/catch`, which aborted `wireEvents()` and left the overview blank inside Magpie's `sandbox="allow-scripts"` (opaque `null` origin) iframe; added automated opaque-origin regression tests.
+- **CDP `hudInstances` Teardown & Map Pruning**: Fixed `Watcher.SyncAll` not removing existing HUDs from instances excluded via `cdp.hudInstances`, and pruned closed target keys from `lastSeen`.
+- **Backend Hardening**: Sanitized `preset` in `GET /api/telemetry/export.csv` `Content-Disposition`, guarded `cfg.Colab.Enabled` mutation under `cfgMu` in the Colab OAuth callback, exited SSE loops promptly on write errors, and removed a no-op post-exit goroutine in `agymate launch`.
+
 ## [0.5.0] - 2026-11-23
 
 ### Changed

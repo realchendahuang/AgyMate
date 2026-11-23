@@ -96,12 +96,15 @@ func (s *Server) handleColabOAuthCallback(w http.ResponseWriter, r *http.Request
 	s.state.SetColabHidden(acc.Email, false)
 	_ = s.state.Save()
 
-	cfg := s.Config()
-	if !cfg.Colab.Enabled {
-		cfg.Colab.Enabled = true
-		_ = config.Save(cfg)
-		s.SetConfig(cfg)
+	s.cfgMu.Lock()
+	if !s.cfg.Colab.Enabled {
+		next := s.cfg
+		next.Colab.Enabled = true
+		if serr := config.Save(next); serr == nil {
+			s.cfg = next
+		}
 	}
+	s.cfgMu.Unlock()
 	go s.PollOnceWithForce(context.Background(), true)
 
 	writeOAuthResultHTML(w, http.StatusOK, true, "Colab 账号已绑定", fmt.Sprintf("%s 已接入 AgyMate 算力池，可关闭此标签页返回面板。", acc.Email))

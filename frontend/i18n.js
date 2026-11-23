@@ -152,6 +152,10 @@
     '未绑定 Colab 账号': 'No Colab accounts linked',
     '未命名': 'Untitled',
     '运行': 'Running',
+    'Gemini 周': 'Gemini W',
+    'Claude 周': 'Claude W',
+    'Gemini 日': 'Gemini D',
+    'Claude 日': 'Claude D',
     '7天': '7d',
     '5h': '5h',
     '导出 CSV': 'Export CSV',
@@ -180,19 +184,15 @@
     '隐藏该钥匙串账号的 Colab 卡片。': 'Hide this keychain account card from Overview.',
     '移除本地授权凭据，后续可重新绑定。': 'Removes local OAuth token; you can re-link anytime.',
 
-    // Section headers & Overview
-    '账号与配额': 'Accounts & Quotas',
+    // Section headers & Overview (legacy aliases)
     '在线实例': 'Online Instances',
     '今日消耗': 'Today Spend',
     '今日账单': 'Today Spend',
     '今日调用': 'Today Calls',
-    '本月回本': 'Monthly ROI',
     '订阅回本': 'Subscription ROI',
-    '缓存命中': 'Cache Hit',
     '缓存命中率': 'Cache Hit Rate',
     '缓存节省': 'Cache Saved',
     '近15分钟速率': '15m Burn Rate',
-    '活跃会话': 'Live Sessions',
     '活跃上下文': 'Active Context',
     '上下文水位': 'Context Windows',
     '历史会话检索': 'Conversation Search',
@@ -237,7 +237,6 @@
 
     // Table headers
     '时间': 'Time',
-    '模型': 'Model',
     '速度 · 首字': 'Speed · TTFT',
     '等值费用': 'Est. Cost',
     '等效费用': 'Est. Cost',
@@ -284,6 +283,9 @@
     '待注入': 'Pending',
     '未注入': 'Not Injected',
     '未挂载': 'Not Mounted',
+    '未开 CDP': 'No CDP',
+    '需重启': 'Restart',
+    '未开 CDP（重启启用浮窗与汉化）': 'No CDP (restart for HUD & CJK)',
     '未开启': 'Disabled',
     '未运行': 'Stopped',
     '待配置': 'Not Configured',
@@ -330,16 +332,12 @@
     '停止': 'Stop',
     '修复': 'Heal',
     '删除': 'Delete',
-    '详情': 'Inspect',
     '查看详情': 'Inspect',
     '查看异常': 'Inspect Error',
     '清场': 'Nuke VMs',
-    '全池清场': 'Nuke All',
     '全部清场': 'Nuke All',
     '解绑': 'Unbind',
-    '解绑账号': 'Unbind Account',
     '隐藏卡片': 'Hide Card',
-    '刷新': 'Refresh',
     '重新读取': 'Reload',
     '保存设置': 'Save Settings',
     '保存中…': 'Saving…',
@@ -435,8 +433,6 @@
     '用于折算每次模型调用与缓存命中的等效账单金额': 'Rate card used to estimate API value and cache savings',
     '默认展示币种': 'Display Currency',
     '控制台与桌面浮窗默认使用的货币符号': 'Currency used across Dashboard and HUD',
-    '美元 ($)': 'USD ($)',
-    '人民币 (¥)': 'CNY (¥)',
     '美元兑人民币汇率': 'USD → CNY Exchange Rate',
     '切换为人民币计价时的折算汇率': 'Conversion rate when displaying CNY',
     '月度订阅费基准（美元）': 'Monthly Subscription Baseline (USD)',
@@ -602,6 +598,7 @@
     [/^端口 (\d+)$/, 'Port $1'],
     [/^实时消耗 ([\d.]+) 点\/小时$/, 'Burning $1 CCU/h'],
     [/^([\d.]+)\/小时$/, '$1/h'],
+    [/^预计 ([\d.]+)h 耗尽$/, 'Est. empty in $1h'],
     [/^预计 ([\d.]+) 小时耗尽$/, 'Est. empty in $1h'],
     [/^约 ([\d.]+) 小时耗尽$/, 'Empty in ~$1h'],
     [/^(\d+)天(\d+)小时$/, '$1d $2h'],
@@ -619,6 +616,8 @@
     [/^扫描耗时 ([\d.]+ms)$/, 'Scanned in $1'],
     [/^客户端版本 (.+)$/, 'Client $1'],
     [/^巡检于 (.+) · 运行中 (\d+) 台$/, 'Checked $1 · $2 active'],
+    [/^浮窗已同步（(\d+) 个窗口，另有 (\d+) 个运行中实例未开 CDP）$/, 'HUD synced ($1 window(s); $2 running without CDP)'],
+    [/^浮窗已同步（(\d+) 个窗口）$/, 'HUD synced ($1 window(s))'],
     [/^窗口浮窗已同步（共 (\d+) 个窗口）$/, 'HUD synced ($1 window(s))'],
     [/^窗口浮窗重注完成（共 (\d+) 个窗口）$/, 'HUD re-injected ($1 window(s))'],
     [/^已将窗口置于前台：(.+)$/, 'Focused window: $1'],
@@ -645,7 +644,7 @@
   // Reverse cache for exact source recovery
   const origTextMap = new WeakMap();
   const origAttrMap = new WeakMap();
-  const ATTRS = ['placeholder', 'data-tip', 'aria-label', 'title'];
+  const ATTRS = ['placeholder', 'data-tip', 'data-tip-title', 'aria-label', 'title'];
 
   let currentPref = 'auto'; // auto | zh | en
   let activeLang = 'zh';    // zh | en

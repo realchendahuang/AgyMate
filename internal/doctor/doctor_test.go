@@ -12,6 +12,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/realchendahuang/AgyMate/internal/cdp"
+	"github.com/realchendahuang/AgyMate/internal/config"
+	"github.com/realchendahuang/AgyMate/internal/instances"
 )
 
 func TestEnsureAndCheckSidecarIn(t *testing.T) {
@@ -183,5 +187,44 @@ func TestRunSidecarProxyForwardsAndInjectsHubToken(t *testing.T) {
 	cancel()
 	if perr := <-errCh; perr != nil {
 		t.Fatalf("RunSidecarProxy returned error on cancel: %v", perr)
+	}
+}
+
+func TestDescribeMissingCDP(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.CDP.Enabled = true
+	cfg.CDP.WindowHUD = true
+	cfg.CDP.ZhInject = true
+
+	insts := []instances.Instance{
+		{ID: "main", Kind: instances.KindMain, Running: true, CDPPort: 0},
+		{ID: "p4", Kind: instances.KindProfile, Running: true, CDPPort: 64382},
+		{ID: "cdh", Kind: instances.KindProfile, Running: true, CDPPort: 0},
+		{ID: "p2", Kind: instances.KindProfile, Running: false, CDPPort: 0},
+	}
+	targets := []cdp.TargetStatus{{InstanceID: "p4", Port: 64382, ZhInjected: true, HUDActive: true}}
+
+	missing, note := describeMissingCDP(cfg, insts, targets, true, true)
+	if len(missing) != 2 || missing[0] != "main" || missing[1] != "cdh" {
+		t.Fatalf("missing = %v, want [main cdh]", missing)
+	}
+	if !strings.Contains(note, "agymate launch") || !strings.Contains(note, "cdh") {
+		t.Fatalf("expected actionable guidance for main & cdh, got %q", note)
+	}
+
+	// When CDP is disabled, no missing-CDP warning should be emitted.
+	cfgOff := cfg
+	cfgOff.CDP.Enabled = false
+	if m2, n2 := describeMissingCDP(cfgOff, insts, targets, true, true); len(m2) != 0 || n2 != "" {
+		t.Fatalf("expected empty result when CDP disabled, got %v / %q", m2, n2)
+	}
+
+	// When all running instances have CDP ports, missing list should be empty.
+	allOK := []instances.Instance{
+		{ID: "p4", Kind: instances.KindProfile, Running: true, CDPPort: 64382},
+		{ID: "p2", Kind: instances.KindProfile, Running: false, CDPPort: 0},
+	}
+	if m3, n3 := describeMissingCDP(cfg, allOK, targets, true, true); len(m3) != 0 || n3 != "" {
+		t.Fatalf("expected no missing CDP when all running instances have ports, got %v / %q", m3, n3)
 	}
 }

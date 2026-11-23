@@ -870,8 +870,17 @@ func createMacOSLauncherStub(name string) error {
 
 	contentsDir := filepath.Join(appPath, "Contents")
 	macosDir := filepath.Join(contentsDir, "MacOS")
+	resDir := filepath.Join(contentsDir, "Resources")
 	if err := os.MkdirAll(macosDir, 0o755); err != nil {
 		return err
+	}
+
+	iconBlock := ""
+	srcIcon := "/Applications/Antigravity.app/Contents/Resources/icon.icns"
+	if rawIcon, rerr := os.ReadFile(srcIcon); rerr == nil && len(rawIcon) > 0 {
+		if os.MkdirAll(resDir, 0o755) == nil && os.WriteFile(filepath.Join(resDir, "icon.icns"), rawIcon, 0o644) == nil {
+			iconBlock = "\t<key>CFBundleIconFile</key>\n\t<string>icon</string>\n"
+		}
 	}
 
 	cliBin := resolveCLIBin(realHome)
@@ -885,7 +894,7 @@ func createMacOSLauncherStub(name string) error {
 <dict>
 	<key>CFBundleExecutable</key>
 	<string>launcher</string>
-	<key>CFBundleIdentifier</key>
+%s	<key>CFBundleIdentifier</key>
 	<string>io.agymate.profile.%s</string>
 	<key>CFBundleName</key>
 	<string>Antigravity (%s)</string>
@@ -895,7 +904,7 @@ func createMacOSLauncherStub(name string) error {
 	<true/>
 </dict>
 </plist>
-`, slug, name)
+`, iconBlock, slug, name)
 	if err := os.WriteFile(filepath.Join(contentsDir, "Info.plist"), []byte(plist), 0o644); err != nil {
 		return err
 	}

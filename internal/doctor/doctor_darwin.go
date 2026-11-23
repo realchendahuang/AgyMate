@@ -282,7 +282,7 @@ func RunChecks(cfg config.Config, instList []instances.Instance, cdpTargets []cd
 	sidecarOK, sidecarDetail := CheckSidecar("")
 	zhSource, _ := cdp.ResolveZhSource(cfg.CDP.ZhScriptPath)
 	zhNeeded := cfg.CDP.Enabled && cfg.CDP.ZhInject
-	zhOK := !zhNeeded || cdp.HasBuiltinZhScript() || zhSource != "未配置"
+	zhOK := !zhNeeded || cdp.HasBuiltinZhScript() || zhSource != ""
 
 	c6 := CheckResult{
 		ID:        "companion_hooks_sidecar",
@@ -303,19 +303,24 @@ func RunChecks(cfg config.Config, instList []instances.Instance, cdpTargets []cd
 	if pluginOK {
 		pluginStatus = "已就绪"
 	}
-	cdpNote := ""
-	if len(cdpTargets) == 0 && mainVer != "" {
-		cdpNote = " | Antigravity 2.33+ 已关闭默认 CDP 端口，需通过 `agymate launch`（或 ~/Applications/Antigravity (AgyMate).app）启动官方客户端以启用右上角悬浮窗与中文汉化，亦可直接使用原生插件 MCP App"
+	missingCDP, cdpNote := describeMissingCDP(cfg, instList, cdpTargets, mainVer != "" || ideVer != "", true)
+	missingSuffix := ""
+	if len(missingCDP) > 0 {
+		missingSuffix = fmt.Sprintf(" · 未开 CDP: %s", strings.Join(missingCDP, ", "))
 	}
 	if installedHooks == totalHooks && pluginOK && sidecarOK && zhOK {
-		c6.Status = "ok"
+		if len(missingCDP) > 0 {
+			c6.Status = "warn"
+		} else {
+			c6.Status = "ok"
+		}
 		if zhNeeded {
-			c6.Summary = fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar 已注册 · CDP 窗口 %d 个（汉化 %d / 浮窗 %d）",
-				installedHooks, totalHooks, pluginStatus, len(cdpTargets), zhInjectedCount, hudCount)
+			c6.Summary = fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar 已注册 · CDP 窗口 %d 个（汉化 %d / 浮窗 %d）%s",
+				installedHooks, totalHooks, pluginStatus, len(cdpTargets), zhInjectedCount, hudCount, missingSuffix)
 			c6.Detail = fmt.Sprintf("插件: %s | Sidecar: %s | 汉化引擎: %s%s", pluginDetail, sidecarDetail, zhSource, cdpNote)
 		} else {
-			c6.Summary = fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar 已注册 · CDP 窗口 %d 个（浮窗 %d）",
-				installedHooks, totalHooks, pluginStatus, len(cdpTargets), hudCount)
+			c6.Summary = fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar 已注册 · CDP 窗口 %d 个（浮窗 %d）%s",
+				installedHooks, totalHooks, pluginStatus, len(cdpTargets), hudCount, missingSuffix)
 			c6.Detail = fmt.Sprintf("插件: %s | Sidecar: %s%s", pluginDetail, sidecarDetail, cdpNote)
 		}
 	} else {
@@ -330,12 +335,12 @@ func RunChecks(cfg config.Config, instList []instances.Instance, cdpTargets []cd
 			if zhOK {
 				zhStatus = "已就绪"
 			}
-			c6.Summary = fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar %s · 汉化引擎%s",
-				installedHooks, totalHooks, pluginStatus, scStatus, zhStatus)
+			c6.Summary = fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar %s · 汉化引擎%s%s",
+				installedHooks, totalHooks, pluginStatus, scStatus, zhStatus, missingSuffix)
 			c6.Detail = fmt.Sprintf("待补齐 Hooks: %d 处 | 插件: %s | Sidecar: %s | 汉化引擎: %s%s", len(missingHooks), pluginDetail, sidecarDetail, zhSource, cdpNote)
 		} else {
-			c6.Summary = fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar %s",
-				installedHooks, totalHooks, pluginStatus, scStatus)
+			c6.Summary = fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar %s%s",
+				installedHooks, totalHooks, pluginStatus, scStatus, missingSuffix)
 			c6.Detail = fmt.Sprintf("待补齐 Hooks: %d 处 | 插件: %s | Sidecar: %s%s", len(missingHooks), pluginDetail, sidecarDetail, cdpNote)
 		}
 	}

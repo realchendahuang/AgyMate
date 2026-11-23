@@ -6,7 +6,7 @@ import (
 
 func TestIsAllowedHost(t *testing.T) {
 	listenAddr := "127.0.0.1:3778"
-	
+
 	tests := []struct {
 		host string
 		want bool
@@ -17,7 +17,7 @@ func TestIsAllowedHost(t *testing.T) {
 		{"127.0.0.1:3778.attacker.com", false},
 		{"localhost:3778.attacker.com", false},
 	}
-	
+
 	for _, tt := range tests {
 		got := isAllowedHost(tt.host, listenAddr)
 		if got != tt.want {

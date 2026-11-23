@@ -485,7 +485,9 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 		s.sseMu.Unlock()
 	}()
 
-	_, _ = fmt.Fprintf(w, "event: connected\ndata: {\"ok\":true}\n\n")
+	if _, err := fmt.Fprintf(w, "event: connected\ndata: {\"ok\":true}\n\n"); err != nil {
+		return
+	}
 	flusher.Flush()
 
 	keepalive := time.NewTicker(15 * time.Second)
@@ -495,10 +497,14 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		case <-keepalive.C:
-			_, _ = fmt.Fprintf(w, ": ping\n\n")
+			if _, err := fmt.Fprintf(w, ": ping\n\n"); err != nil {
+				return
+			}
 			flusher.Flush()
 		case ev := <-ch:
-			_, _ = fmt.Fprintf(w, "event: update\ndata: %q\n\n", ev)
+			if _, err := fmt.Fprintf(w, "event: update\ndata: %q\n\n", ev); err != nil {
+				return
+			}
 			flusher.Flush()
 		}
 	}

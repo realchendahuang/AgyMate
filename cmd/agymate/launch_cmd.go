@@ -56,15 +56,9 @@ func cmdLaunch() *cobra.Command {
 				return err
 			}
 
-			// If Hub is running and CDP was requested, trigger a best-effort sync shortly after startup.
+			// Check whether the local Hub is already running so the user knows automatic HUD/zh sync will trigger.
 			hubNotified := false
 			if enableCDP {
-				go func() {
-					time.Sleep(1200 * time.Millisecond)
-					if resp, rerr := hubRequest(http.MethodPost, "http://"+cfg.ListenAddr+"/api/cdp/sync", []byte("{}"), 3*time.Second); rerr == nil {
-						resp.Body.Close()
-					}
-				}()
 				if resp, rerr := hubRequest(http.MethodGet, "http://"+cfg.ListenAddr+"/api/health", nil, 800*time.Millisecond); rerr == nil {
 					hubNotified = resp.StatusCode == http.StatusOK
 					resp.Body.Close()

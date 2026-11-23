@@ -59,7 +59,7 @@ func (s *Server) handleTelemetryCSV(w http.ResponseWriter, r *http.Request) {
 	rep := s.store.QueryTelemetry(instList, preset, mode, instFilter, s.effectiveMonthlySubUSD(cfg))
 	csvBytes := s.store.ExportCSV(rep)
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="agymate-telemetry-%s.csv"`, preset))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="agymate-telemetry-%s.csv"`, sanitizeFilenameToken(preset)))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(csvBytes)
 }

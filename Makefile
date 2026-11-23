@@ -1,5 +1,5 @@
 BINARY     := agymate
-VERSION    ?= 0.5.0
+VERSION    ?= 0.5.1
 GIT_COMMIT := $(shell git describe --tags --always --dirty 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo dev)
 BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS    := -s -w -X github.com/realchendahuang/AgyMate/internal/version.Version=$(VERSION) -X github.com/realchendahuang/AgyMate/internal/version.Commit=$(GIT_COMMIT) -X github.com/realchendahuang/AgyMate/internal/version.BuildTime=$(BUILD_TIME)

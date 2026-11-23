@@ -45,6 +45,6 @@ jobs:
       - name: Check JS syntax
         if: matrix.os == 'ubuntu-latest'
         run: |
-          for f in frontend/app.js internal/cdp/hud.js magpie-plugin/page/boot.js magpie-plugin/index.mjs mcpapp-ui/src/main.js mcpapp-ui/build.mjs; do
+          for f in frontend/i18n.js frontend/app.js internal/cdp/hud.js internal/cdp/zh_inject.js magpie-plugin/page/boot.js magpie-plugin/index.mjs mcpapp-ui/src/main.js mcpapp-ui/build.mjs; do
             node --check "$f"
           done

@@ -8,7 +8,6 @@
     overview: null,
     telemetry: null,
     heatmap: null,
-    quotaSeries: null,
     sessions: null,
     doctor: null,
     cache: null,
@@ -147,14 +146,17 @@
       .replace(/'/g, '&#39;');
   }
 
-  function safeStorageGet(store, key) {
-    try { return store.getItem(key); } catch { return null; }
+  function getLocalStorage() {
+    try { return window.localStorage; } catch { return null; }
   }
-  function safeStorageSet(store, key, val) {
-    try { store.setItem(key, val); } catch {}
+  function safeStorageGet(key) {
+    try { return getLocalStorage()?.getItem(key) ?? null; } catch { return null; }
   }
-  function safeStorageRemove(store, key) {
-    try { store.removeItem(key); } catch {}
+  function safeStorageSet(key, val) {
+    try { getLocalStorage()?.setItem(key, val); } catch {}
+  }
+  function safeStorageRemove(key) {
+    try { getLocalStorage()?.removeItem(key); } catch {}
   }
 
   function getSwitch(id) {
@@ -188,20 +190,6 @@
     return n < 1000 ? `${Math.round(n)}ms` : `${(n / 1000).toFixed(2).replace(/\.?0+$/, '')}s`;
   }
 
-  function renderQuotaSparkSVG(pts, colorVar) {
-    if (!Array.isArray(pts) || pts.length < 2) return '';
-    const W = 36;
-    const H = 14;
-    const coords = pts.map((pt, idx) => {
-      const rem = Math.max(0, Math.min(1, Number(pt.remaining ?? pt.r ?? 0))) * 100;
-      const x = 1.5 + (idx / (pts.length - 1)) * (W - 3);
-      const y = H - 2 - (rem / 100) * (H - 4);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    const last = coords[coords.length - 1].split(',');
-    return `<svg class="quota-spark" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline fill="none" stroke="${colorVar}" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" points="${coords.join(' ')}"></polyline><circle cx="${last[0]}" cy="${last[1]}" r="1.6" fill="${colorVar}"></circle></svg>`;
-  }
-
   function fmtMoney(usd) {
     const val = Number(usd || 0);
     if (state.currency === 'CNY') {
@@ -212,6 +200,49 @@
       return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
     return val >= 100 ? '$' + val.toFixed(1) : '$' + val.toFixed(2);
+  }
+
+  function fmtResetShort(unixSec) {
+    if (!unixSec || unixSec <= 0) return '';
+    const diff = unixSec - Math.floor(Date.now() / 1000);
+    if (diff <= 0) return '重置';
+    const mins = Math.floor(diff / 60);
+    const hrs = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+    if (days > 0) return `${days}d`;
+    if (hrs > 0) return `${hrs}h`;
+    return `${Math.max(1, mins)}m`;
+  }
+
+  function localizeQuotaGroupShort(groupRaw) {
+    const g = String(groupRaw || '').trim();
+    if (!g) return '';
+    const low = g.toLowerCase();
+    if (low.includes('gemini')) return 'Gemini';
+    if (low.includes('claude') || low.includes('gpt') || low.includes('3p')) return 'Claude';
+    return g.replace(/\s+models$/i, '').trim();
+  }
+
+  const RING_C = 2 * Math.PI * 23; // ~144.513
+  function renderRingItem({ pct, label, sub = '', subWarn = false, tone = '', tipTitle = '', tip = '' }) {
+    const p = Math.max(0, Math.min(100, Number(pct || 0)));
+    const offset = (RING_C * (1 - p / 100)).toFixed(2);
+    const arcCls = [tone, p <= 0.1 ? 'empty' : ''].filter(Boolean).join(' ');
+    const pctCls = (tone === 'danger' || tone === 'warn') ? tone : '';
+    return `
+      <div class="ring-item"${tipTitle ? ` data-tip-title="${esc(tipTitle)}"` : ''}${tip ? ` data-tip="${esc(tip)}"` : ''}>
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 56 56" aria-hidden="true">
+            <circle class="ring-track" cx="28" cy="28" r="23"></circle>
+            <circle class="ring-arc ${arcCls}" cx="28" cy="28" r="23" stroke-dasharray="${RING_C.toFixed(2)}" stroke-dashoffset="${offset}"></circle>
+          </svg>
+          <span class="ring-pct ${pctCls}">${p.toFixed(0)}%</span>
+        </div>
+        <div class="ring-meta">
+          <span class="ring-lbl">${esc(label)}</span>
+          ${sub ? `<span class="ring-sub${subWarn ? ' warn' : ''}">${esc(sub)}</span>` : ''}
+        </div>
+      </div>`;
   }
 
   function fmtResetLeft(unixSec) {
@@ -631,12 +662,12 @@
         const target = renderedDark ? 'light' : 'dark';
         applyThemeName(target === 'dark', true);
         if ((target === 'dark') === mq.matches) {
-          safeStorageRemove(localStorage, 'agymate-color-scheme');
+          safeStorageRemove('agymate-color-scheme');
           delete root.dataset.theme;
           root.classList.remove('dark');
           if (meta) meta.content = 'light dark';
         } else {
-          safeStorageSet(localStorage, 'agymate-color-scheme', target);
+          safeStorageSet('agymate-color-scheme', target);
         }
       });
     }
@@ -1297,6 +1328,18 @@
         .map((d) => d.dataset.acctFold),
     );
 
+    const prefixCounts = {};
+    accounts.forEach((a) => {
+      const p = String(a.displayName || '').split('@')[0].toLowerCase();
+      prefixCounts[p] = (prefixCounts[p] || 0) + 1;
+    });
+    const shortAcctLabel = (full) => {
+      const s = String(full || '');
+      if (!s.includes('@')) return s;
+      const p = s.split('@')[0];
+      return prefixCounts[p.toLowerCase()] === 1 ? p : s;
+    };
+
     gridEl.innerHTML = accounts.length ? accounts.map((acct) => {
       const slots = acct.instances || [];
       const isOnline = (acct.onlineCount || 0) > 0;
@@ -1320,62 +1363,49 @@
         subText = `${slots.length} 个实例 · ${acct.onlineCount || 0} 在线`;
       }
       const todayDetail = `今日 ${fmtMoney(acct.todayUsd)} · ${fmtTokens(acct.todayTokens)} · 命中 ${(acct.todayCacheHitRate || 0).toFixed(0)}%`;
-      const headTip = [acct.planName || '', subText, todayDetail, acct.cachedQuota ? '离线快照' : ''].filter(Boolean).join(' · ');
+      const headTip = [acct.displayName, acct.planName || '', subText, todayDetail, acct.cachedQuota ? '离线快照' : ''].filter(Boolean).join(' · ');
 
-      const buckets = sortQuotaBuckets(acct.buckets || []);
+      const activeBuckets = sortQuotaBuckets(acct.buckets || []).filter((b) => !b.disabled);
       const ctx = acct.context;
-      const winCount = Math.min(4, buckets.length) + (ctx ? 1 : 0);
-      const bars = buckets.slice(0, 4).map((b) => {
-        if (b.disabled) {
-          const qName = localizeQuotaName(b);
-          const qTip = b.description || '当前周期暂不适用';
-          return `
-            <div class="quota muted" data-tip-title="${esc(qName)}" data-tip="${esc(qTip)}">
-              <div class="quota-labels">
-                <span class="quota-name">${esc(qName)}</span>
-                <span class="quota-n">—</span>
-              </div>
-              <div class="quota-track"><i style="width:0%"></i></div>
-            </div>`;
-        }
+      const rings = activeBuckets.slice(0, 4).map((b) => {
         const pct = Math.max(0, Math.min(100, b.remainingPct || 0));
-        const cls = pct <= 15 ? 'danger' : pct <= 35 ? 'warn' : '';
-        const sparkCol = cls === 'danger' ? 'var(--red)' : cls === 'warn' ? 'var(--amber)' : 'var(--accent)';
-        const slotId = slots[0]?.id || '';
-        const seriesKey = slotId && b.bucketId ? `${slotId}:${b.bucketId}` : '';
-        const sparkPts = (seriesKey && state.quotaSeries?.[seriesKey]) || null;
-        const sparkSVG = renderQuotaSparkSVG(sparkPts, sparkCol);
+        const exhaustSoon = Boolean(b.exhaustsBeforeReset && b.hoursUntilEmpty > 0);
+        const tone = pct <= 15 ? 'danger' : (pct <= 35 || exhaustSoon) ? 'warn' : '';
         const reset = fmtResetLeft(b.resetUnix);
-        const resetText = reset ? (reset === '即将重置' ? reset : `${reset}后重置`) : (acct.cachedQuota ? '周期已重置' : '');
-        const exhaustText = (b.exhaustsBeforeReset && b.hoursUntilEmpty > 0)
-          ? `约 ${b.hoursUntilEmpty.toFixed(1)}h 耗尽`
-          : '';
+        const resetShort = fmtResetShort(b.resetUnix);
+        const resetText = reset ? (reset === '即将重置' ? reset : `${reset}后重置`) : (acct.cachedQuota ? '离线快照' : '');
+        const exhaustText = exhaustSoon ? `预计 ${b.hoursUntilEmpty.toFixed(1)}h 耗尽` : '';
+        const grp = localizeQuotaGroupShort(b.groupName);
+        const win = localizeQuotaWindow(b);
+        const ringLbl = grp ? `${grp} ${win}` : win;
+        const ringSub = exhaustSoon
+          ? `~${b.hoursUntilEmpty < 10 ? b.hoursUntilEmpty.toFixed(1) : Math.round(b.hoursUntilEmpty)}h`
+          : resetShort;
         const qName = localizeQuotaName(b);
         const qTip = [resetText, exhaustText].filter(Boolean).join(' · ') || '配额正常';
-        return `
-          <div class="quota" data-tip-title="${esc(qName)}" data-tip="${esc(qTip)}">
-            <div class="quota-labels">
-              <span class="quota-name">${esc(qName)}</span>
-              ${sparkSVG}
-              <span class="quota-n">${pct.toFixed(0)}%${exhaustText ? '<span class="q-warn-dot" aria-label="即将耗尽"></span>' : ''}</span>
-            </div>
-            <div class="quota-track"><i class="${cls}" style="width:${pct}%"></i></div>
-          </div>`;
-      }).join('');
+        return renderRingItem({
+          pct,
+          label: ringLbl,
+          sub: ringSub,
+          subWarn: exhaustSoon,
+          tone,
+          tipTitle: qName,
+          tip: qTip,
+        });
+      });
 
-      let ctxBlock = '';
       if (ctx) {
         const cpct = Math.max(0, Math.min(100, ctx.usagePct || 0));
-        const cCls = cpct >= 80 ? 'danger' : cpct >= 60 ? 'warn' : 'ctx';
+        const cTone = cpct >= 80 ? 'danger' : cpct >= 60 ? 'warn' : 'ctx';
         const ctxTitle = ctx.title || ctx.cascadeId || '当前会话';
-        ctxBlock = `
-          <div class="quota" data-tip-title="${esc(ctxTitle)}" data-tip="上下文 ${fmtTokens(ctx.estimatedTokensUsed)} / ${fmtTokens(ctx.maxContextTokens)}">
-            <div class="quota-labels">
-              <span class="quota-name">上下文</span>
-              <span class="quota-n">${cpct.toFixed(0)}%</span>
-            </div>
-            <div class="quota-track"><i class="${cCls}" style="width:${cpct}%"></i></div>
-          </div>`;
+        rings.push(renderRingItem({
+          pct: cpct,
+          label: '上下文',
+          sub: fmtTokens(ctx.estimatedTokensUsed),
+          tone: cTone,
+          tipTitle: ctxTitle,
+          tip: `${ctx.model ? `${ctx.model} · ` : ''}${fmtTokens(ctx.estimatedTokensUsed)} / ${fmtTokens(ctx.maxContextTokens)}`,
+        }));
       }
 
       const hasUsage = Number(acct.todayUsd || 0) > 0 || Number(acct.todayTokens || 0) > 0;
@@ -1391,7 +1421,11 @@
             </summary>
             <div class="acct-slots">${slots.map((s) => {
               const sDot = !s.running ? '' : s.liveState === 'waiting_approval' ? 'warn' : 'ok';
-              const sMeta = [s.hub?.lsVersion ? `内核 ${s.hub.lsVersion}` : '', s.cdpPort ? `端口 ${s.cdpPort}` : '', s.readOnlyLifecycle ? '宿主' : '隔离'].filter(Boolean).join(' · ');
+              const sMeta = [
+                s.hub?.lsVersion ? `内核 ${s.hub.lsVersion}` : '',
+                s.cdpPort ? `端口 ${s.cdpPort}` : (s.running ? '未开 CDP（重启启用浮窗与汉化）' : ''),
+                s.readOnlyLifecycle ? '宿主' : '隔离',
+              ].filter(Boolean).join(' · ');
               return `
                 <div class="acct-slot">
                   <span class="acct-slot-main"${sMeta ? ` data-tip="${esc(sMeta)}"` : ''}>
@@ -1416,16 +1450,13 @@
       return `
         <article class="${cardCls}">
           <div class="subscription-head" data-tip-title="${esc(acct.displayName)}" data-tip="${esc(headTip)}">
-            <b>${esc(acct.displayName)}</b>
+            <b>${esc(shortAcctLabel(acct.displayName))}</b>
             <div class="subscription-head-right">
               ${plan}
               ${stateLabel}
             </div>
           </div>
-          <div class="quota-windows ${winCount <= 1 ? 'single' : ''}">
-            ${bars}${ctxBlock}
-            ${(!bars && !ctxBlock) ? `<span class="badge">${isOnline ? '同步中…' : '未运行'}</span>` : ''}
-          </div>
+          ${rings.length ? `<div class="ring-row">${rings.join('')}</div>` : `<span class="badge">${isOnline ? '同步中…' : '未运行'}</span>`}
           ${slotsHTML}
           ${footHTML}
         </article>`;
@@ -1917,7 +1948,8 @@
 
     const targets = state.overview?.cdpTargets || [];
     const zhEnabled = !!state.overview?.cdpZhEnabled;
-    $('cdp-table-body').innerHTML = targets.length ? targets.map((t, idx) => `
+    const missingCDP = (state.overview?.instances || []).filter((inst) => inst.running && !inst.cdpPort);
+    const targetRows = targets.map((t, idx) => `
       <tr class="clickable" data-cdp-idx="${idx}">
         <td class="mono">${esc(t.instanceId)}</td>
         <td class="mono">${t.port}</td>
@@ -1930,7 +1962,26 @@
           </button>
         </td>
       </tr>
-    `).join('') : '<tr><td colspan="6" style="padding:26px 12px;color:var(--muted);text-align:center">暂无 CDP 注入窗口</td></tr>';
+    `);
+    const missingRows = missingCDP.map((inst) => {
+      const hint = inst.readOnlyLifecycle
+        ? '退出客户端 (⌘Q) 后通过 agymate launch 或 Antigravity (AgyMate).app 启动即可开启 CDP'
+        : '停止并重新启动该隔离实例即可自动附加 --remote-debugging-port=0';
+      return `
+      <tr>
+        <td class="mono">${esc(inst.id)}</td>
+        <td class="mono" style="color:var(--muted)">—</td>
+        <td class="clip" data-tip="${esc(hint)}">${esc(inst.label || inst.id)}</td>
+        <td><span class="badge pill warn" data-tip="${esc(hint)}">未开 CDP</span></td>
+        <td><span class="badge pill warn" data-tip="${esc(hint)}">未开 CDP</span></td>
+        <td class="num"><span class="badge" data-tip="${esc(hint)}">需重启</span></td>
+      </tr>
+    `;
+    });
+    const allCdpRows = targetRows.concat(missingRows);
+    $('cdp-table-body').innerHTML = allCdpRows.length
+      ? allCdpRows.join('')
+      : '<tr><td colspan="6" style="padding:26px 12px;color:var(--muted);text-align:center">暂无 CDP 注入窗口</td></tr>';
     syncActiveTipAfterRender();
   }
 
@@ -2041,12 +2092,8 @@
     const refreshBtn = $('btn-refresh');
     if (force && refreshBtn) refreshBtn.classList.add('spin');
     try {
-      const [ov, qh] = await Promise.all([
-        api('/api/overview' + (force ? '?refresh=1' : '')),
-        api('/api/quota/history?max=36').catch(() => null),
-      ]);
+      const ov = await api('/api/overview' + (force ? '?refresh=1' : ''));
       state.overview = ov;
-      if (qh && qh.series) state.quotaSeries = qh.series;
       renderOverview();
       if (state.view === 'doctor') renderDoctor();
     } catch (e) {
@@ -2467,13 +2514,13 @@
 
     // 侧栏折叠（持久化）
     const shell = $('app-shell');
-    if (shell && safeStorageGet(localStorage, 'agymate-sidebar-collapsed') === '1') {
+    if (shell && safeStorageGet('agymate-sidebar-collapsed') === '1') {
       shell.classList.add('sidebar-collapsed');
     }
     $('btn-sidebar-toggle')?.addEventListener('click', () => {
       if (!shell) return;
       const collapsed = shell.classList.toggle('sidebar-collapsed');
-      safeStorageSet(localStorage, 'agymate-sidebar-collapsed', collapsed ? '1' : '0');
+      safeStorageSet('agymate-sidebar-collapsed', collapsed ? '1' : '0');
     });
 
     // 设置页分组切换
@@ -2528,7 +2575,12 @@
       btn.disabled = true;
       try {
         const res = await syncCDPNow();
-        showStatus(`浮窗已同步（${(res.targets || []).length} 个窗口）`, 'ok');
+        const syncedCount = (res.targets || []).length;
+        const missingCount = (state.overview?.instances || []).filter((inst) => inst.running && !inst.cdpPort).length;
+        const msg = missingCount > 0
+          ? `浮窗已同步（${syncedCount} 个窗口，另有 ${missingCount} 个运行中实例未开 CDP）`
+          : `浮窗已同步（${syncedCount} 个窗口）`;
+        showStatus(msg, missingCount > 0 && syncedCount === 0 ? 'warn' : 'ok');
         loadOverview(false);
       } catch (e) {
         showStatus('同步浮窗失败：' + humanizeError(e), 'err');

@@ -2,7 +2,7 @@
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "agymate",
   "displayName": "AgyMate",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "AgyMate 本地遥测、客户端中文汉化与多开管理套件：内置 Antigravity 2.x 界面动态中文汉化与右上角悬浮窗，同时提供实时配额余量、SQLite Token 等效账单、隔离多开实例、Google Colab 云算力池及环境健康体检（原生支持 MCP App 侧栏/全页/内联卡片）。",
   "logo": "assets/logo.svg",
   "author": {

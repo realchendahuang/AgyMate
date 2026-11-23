@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -1052,24 +1053,32 @@ func TestHubCSRFAndAuthTokenProtection(t *testing.T) {
 }
 
 func TestHubPartialConfigUpdate(t *testing.T) {
-    isolateHubTestEnv(t)
-    cfg := config.DefaultConfig()
-    srv := NewServer(cfg, nil)
-    ts := httptest.NewServer(srv.Handler())
-    defer ts.Close()
-    
-    // Original PollIntervalSec is 15.
-    // Update ONLY PollIntervalSec to 10. ListenAddr should remain 127.0.0.1:3778.
-    body := `{"pollIntervalSec": 10}`
-    r, err := authedRequest(http.MethodPut, ts.URL+"/api/config", []byte(body), srv.AuthToken())
-    if err != nil { t.Fatalf("PUT /api/config failed: %v", err) }
-    r.Body.Close()
-    if r.StatusCode != http.StatusOK { t.Fatalf("expected 200, got %d", r.StatusCode) }
-    
-    // Check config
-    updatedCfg := srv.Config()
-    if updatedCfg.PollIntervalSec != 10 { t.Fatalf("expected PollIntervalSec=10, got %d", updatedCfg.PollIntervalSec) }
-    if updatedCfg.ListenAddr != "127.0.0.1:3778" { t.Fatalf("expected ListenAddr=127.0.0.1:3778, got %q", updatedCfg.ListenAddr) }
+	isolateHubTestEnv(t)
+	cfg := config.DefaultConfig()
+	srv := NewServer(cfg, nil)
+	ts := httptest.NewServer(srv.Handler())
+	defer ts.Close()
+
+	// Original PollIntervalSec is 15.
+	// Update ONLY PollIntervalSec to 10. ListenAddr should remain 127.0.0.1:3778.
+	body := `{"pollIntervalSec": 10}`
+	r, err := authedRequest(http.MethodPut, ts.URL+"/api/config", []byte(body), srv.AuthToken())
+	if err != nil {
+		t.Fatalf("PUT /api/config failed: %v", err)
+	}
+	r.Body.Close()
+	if r.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", r.StatusCode)
+	}
+
+	// Check config
+	updatedCfg := srv.Config()
+	if updatedCfg.PollIntervalSec != 10 {
+		t.Fatalf("expected PollIntervalSec=10, got %d", updatedCfg.PollIntervalSec)
+	}
+	if updatedCfg.ListenAddr != "127.0.0.1:3778" {
+		t.Fatalf("expected ListenAddr=127.0.0.1:3778, got %q", updatedCfg.ListenAddr)
+	}
 }
 
 func TestHubConfigPutMasksSecretsAndPreservesMaskedValues(t *testing.T) {
@@ -1111,5 +1120,102 @@ func TestHubConfigPutMasksSecretsAndPreservesMaskedValues(t *testing.T) {
 	}
 	if stored.Webhook.Secret != cfg.Webhook.Secret {
 		t.Fatalf("expected original Webhook.Secret preserved, got %q", stored.Webhook.Secret)
+	}
+}
+
+func TestTelemetryCSVContentDispositionSanitized(t *testing.T) {
+	isolateHubTestEnv(t)
+	cfg := config.DefaultConfig()
+	cfg.CDP.Enabled = false
+	cfg.Colab.Enabled = false
+	cfg.Paths.ProfilesDir = t.TempDir()
+	srv := NewServer(cfg, nil)
+	srv.instList = []instances.Instance{{ID: "main", Kind: instances.KindMain}}
+	ts := httptest.NewServer(srv.Handler())
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + `/api/telemetry/export.csv?preset=today%22%3Bevil%3D1`)
+	if err != nil {
+		t.Fatalf("GET export.csv failed: %v", err)
+	}
+	defer resp.Body.Close()
+	cd := resp.Header.Get("Content-Disposition")
+	if strings.Contains(cd, ";evil=") || !strings.HasPrefix(cd, `attachment; filename="agymate-telemetry-today`) {
+		t.Fatalf("unexpected Content-Disposition header: %q", cd)
+	}
+}
+
+func TestFrontendOpaqueOriginSandboxSafety(t *testing.T) {
+	appPath := filepath.Join("..", "..", "frontend", "app.js")
+	appBytes, err := os.ReadFile(appPath)
+	if err != nil {
+		t.Fatalf("read frontend/app.js: %v", err)
+	}
+	appSrc := string(appBytes)
+	// Ensure frontend/app.js never evaluates bare localStorage/sessionStorage outside getLocalStorage().
+	if strings.Contains(appSrc, "safeStorageGet(localStorage") ||
+		strings.Contains(appSrc, "safeStorageSet(localStorage") ||
+		strings.Contains(appSrc, "safeStorageRemove(localStorage") ||
+		strings.Contains(appSrc, "sessionStorage") {
+		t.Fatal("frontend/app.js contains unsafe direct storage reference that throws SecurityError in sandbox='allow-scripts' iframes")
+	}
+
+	nodeBin, err := exec.LookPath("node")
+	if err != nil {
+		t.Skip("node not installed; skipping opaque-origin sandbox JS test")
+	}
+	script := `
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert');
+
+// 1. Verify frontend/i18n.js has zero duplicate keys in EXACT and boots cleanly when localStorage throws SecurityError.
+const i18nSrc = fs.readFileSync('../../frontend/i18n.js', 'utf8');
+const exactBlock = i18nSrc.slice(i18nSrc.indexOf('const EXACT = {'), i18nSrc.indexOf('const PATTERNS = ['));
+const keyRe = /^\s*'([^']+)'\s*:/gm;
+const seen = new Set();
+let m;
+while ((m = keyRe.exec(exactBlock)) !== null) {
+  assert.ok(!seen.has(m[1]), 'duplicate EXACT i18n key: ' + m[1]);
+  seen.add(m[1]);
+}
+
+const secErr = () => {
+  const e = new Error("Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag.");
+  e.name = 'SecurityError';
+  throw e;
+};
+const sandbox = {
+  location: { search: '' },
+  navigator: { language: 'en-US' },
+  URLSearchParams,
+  CustomEvent: class CustomEvent { constructor(t, o) { this.type = t; this.detail = o?.detail; } },
+  NodeFilter: { SHOW_ELEMENT: 1, SHOW_TEXT: 4 },
+  document: {
+    readyState: 'complete',
+    documentElement: { lang: 'zh-CN' },
+    title: '',
+    body: null,
+    getElementById: () => null,
+    addEventListener: () => {},
+  },
+  MutationObserver: class { observe() {} },
+  queueMicrotask,
+  window: null,
+};
+sandbox.window = sandbox;
+sandbox.window.dispatchEvent = () => {};
+Object.defineProperty(sandbox, 'localStorage', { get: secErr, enumerable: true });
+Object.defineProperty(sandbox, 'sessionStorage', { get: secErr, enumerable: true });
+
+vm.runInNewContext(i18nSrc, sandbox, { filename: 'frontend/i18n.js' });
+assert.ok(sandbox.window.AgyI18n, 'AgyI18n should initialize under opaque origin');
+assert.strictEqual(sandbox.window.AgyI18n.toggle(), 'zh');
+assert.strictEqual(sandbox.window.AgyI18n.toggle(), 'en');
+assert.strictEqual(sandbox.window.AgyI18n.t('未开 CDP'), 'No CDP');
+`
+	cmd := exec.Command(nodeBin, "-e", script)
+	if out, cerr := cmd.CombinedOutput(); cerr != nil {
+		t.Fatalf("opaque-origin sandbox test failed: %v\n%s", cerr, string(out))
 	}
 }

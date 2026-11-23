@@ -184,17 +184,17 @@ type HUDHeatDay struct {
 
 // Watcher maintains CDP target state and caches inject.js by mtime/hash.
 type Watcher struct {
-	httpClient *http.Client
-	mu         sync.Mutex
-	zhPath     string
-	zhMtime    int64
-	zhSize     int64
-	zhSrc        string
-	zhFP         string
-	builtinZhFP  string
-	hudFP        string
-	lastSeen     map[string]time.Time
-	lastStatus   []TargetStatus
+	httpClient  *http.Client
+	mu          sync.Mutex
+	zhPath      string
+	zhMtime     int64
+	zhSize      int64
+	zhSrc       string
+	zhFP        string
+	builtinZhFP string
+	hudFP       string
+	lastSeen    map[string]time.Time
+	lastStatus  []TargetStatus
 }
 
 // NewWatcher creates a CDP manager.
@@ -370,29 +370,47 @@ func (w *Watcher) SyncAll(ctx context.Context, instList []instances.Instance, cf
 			if data := hudFn(tgt.InstanceID); data != nil {
 				dataJSON, _ := json.Marshal(data)
 				hfpJSON, _ := json.Marshal(w.hudFP)
-				expr := fmt.Sprintf(`(()=>{
-					if (window.__agymateHudFp !== %s) {
+				// Fast path: update existing HUD in place without resending & reparsing ~60KB hud.js every 3s.
+				fastExpr := fmt.Sprintf(`(()=>{
+					if (window.__agymateHudFp === %s && typeof window.__agymateHudUpdate === 'function') {
+						window.__agymateHudUpdate(%s);
+						return 'ok';
+					}
+					return 'install';
+				})()`, hfpJSON, dataJSON)
+				val, err := Eval(ctx, tgt.WSURL, fastExpr)
+				if err == nil && (val == "ok" || val == true) {
+					tgt.HUDActive = true
+				} else if err == nil && val == "install" {
+					installExpr := fmt.Sprintf(`(()=>{
 						if (typeof window.__agymateHudRemove === 'function') {
 							try { window.__agymateHudRemove(); } catch (e) {}
 						}
 						window.__agymateHudFp = %s;
 						%s
+						if (typeof window.__agymateHudUpdate === 'function') {
+							window.__agymateHudUpdate(%s);
+							return true;
+						}
+						return false;
+					})()`, hfpJSON, hudScript, dataJSON)
+					if ival, ierr := Eval(ctx, tgt.WSURL, installExpr); ierr != nil {
+						if tgt.LastError == "" {
+							tgt.LastError = ierr.Error()
+						}
+					} else if b, ok := ival.(bool); ok && b {
+						tgt.HUDActive = true
 					}
-					if (typeof window.__agymateHudUpdate === 'function') {
-						window.__agymateHudUpdate(%s);
-						return true;
-					}
-					return false;
-				})()`, hfpJSON, hfpJSON, hudScript, dataJSON)
-				if val, err := Eval(ctx, tgt.WSURL, expr); err != nil {
+				} else if err != nil {
 					if tgt.LastError == "" {
 						tgt.LastError = err.Error()
 					}
-				} else if b, ok := val.(bool); ok && b {
-					tgt.HUDActive = true
 				}
 			}
-		} else if !cfg.CDP.WindowHUD {
+			w.mu.Lock()
+			delete(w.lastSeen, "hudoff:"+key)
+			w.mu.Unlock()
+		} else if !wantHUD {
 			w.mu.Lock()
 			hadHUD := !w.lastSeen["hudoff:"+key].IsZero()
 			w.mu.Unlock()
@@ -403,14 +421,19 @@ func (w *Watcher) SyncAll(ctx context.Context, instList []instances.Instance, cf
 				w.mu.Unlock()
 			}
 		}
-		if cfg.CDP.WindowHUD {
-			w.mu.Lock()
-			delete(w.lastSeen, "hudoff:"+key)
-			w.mu.Unlock()
-		}
 	}
 
+	activeKeys := make(map[string]struct{}, len(targets))
+	for _, tgt := range targets {
+		activeKeys[tgt.InstanceID+"|"+tgt.TargetID] = struct{}{}
+	}
 	w.mu.Lock()
+	for k := range w.lastSeen {
+		rawKey := strings.TrimPrefix(strings.TrimPrefix(k, "zh:"), "hudoff:")
+		if _, ok := activeKeys[rawKey]; !ok {
+			delete(w.lastSeen, k)
+		}
+	}
 	w.lastStatus = targets
 	w.mu.Unlock()
 	return targets
@@ -541,8 +564,4 @@ func formatResetDiff(diff int64) string {
 		return fmt.Sprintf("%d小时", hrs)
 	}
 	return fmt.Sprintf("%d分钟", mins)
-}
-
-func init() {
-	_ = strings.TrimSpace // keep strings imported if expanded
 }
