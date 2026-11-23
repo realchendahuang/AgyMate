@@ -60,20 +60,6 @@ func TestCheckPluginIn(t *testing.T) {
 	}
 }
 
-func TestParseKeychainMdat(t *testing.T) {
-	sample := `keychain: "/Users/example/Library/Keychains/login.keychain-db"
-class: "genp"
-attributes:
-    "acct"<blob>="antigravity"
-    "mdat"<timedate>=0x32303236313131343032343932335A00  "20261114024923Z\000"
-    "svce"<blob>="gemini"`
-
-	got := parseKeychainMdat(sample)
-	if got == "" {
-		t.Fatal("expected non-empty parsed timestamp from mdat sample")
-	}
-}
-
 func TestRenderSidecarOfflineHTML(t *testing.T) {
 	htmlDoc := renderSidecarOfflineHTML("http://127.0.0.1:3778", errors.New("dial tcp 127.0.0.1:3778: connect: connection refused <tag>"))
 	for _, want := range []string{

@@ -15,10 +15,6 @@ import (
 	"github.com/realchendahuang/AgyMate/internal/instances"
 )
 
-func parseKeychainMdat(_ string) string {
-	return ""
-}
-
 // RunChecks executes cross-platform health checks on non-macOS hosts.
 func RunChecks(cfg config.Config, instList []instances.Instance, cdpTargets []cdp.TargetStatus) Report {
 	var checks []CheckResult
