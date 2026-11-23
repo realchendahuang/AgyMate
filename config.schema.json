@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/realchendahuang/AgyMate/main/config.schema.json",
+  "title": "AgyMate Configuration",
+  "description": "Configuration schema for ~/.config/agymate/config.json",
+  "type": "object",
+  "properties": {
+    "listenAddr": {
+      "type": "string",
+      "default": "127.0.0.1:3778",
+      "description": "Loopback HTTP listen address for the local AgyMate Hub."
+    },
+    "language": {
+      "type": "string",
+      "enum": ["auto", "zh", "en"],
+      "default": "auto",
+      "description": "UI language preference for Dashboard, MCP App, and Window HUD."
+    },
+    "pollIntervalSec": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 120,
+      "default": 15,
+      "description": "Background telemetry polling interval in seconds."
+    },
+    "contextWarnPct": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 80,
+      "description": "Context window usage percentage warning threshold."
+    },
+    "quotaWarnPct": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20,
+      "description": "Low remaining quota percentage warning threshold."
+    },
+    "cdp": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "zhInject": { "type": "boolean", "default": false },
+        "zhScriptPath": { "type": "string", "default": "~/.antigravity-zh/inject.js" },
+        "windowHud": { "type": "boolean", "default": true },
+        "hudPosition": {
+          "type": "string",
+          "enum": ["top-right", "top-left", "bottom-right", "bottom-left"],
+          "default": "top-right"
+        },
+        "hudInstances": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Empty list enables window HUD on all discovered instances."
+        }
+      }
+    },
+    "telegram": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "botToken": { "type": "string", "default": "" },
+        "chatId": { "type": "string", "default": "" },
+        "notifyOnStop": { "type": "boolean", "default": true },
+        "notifyOnError": { "type": "boolean", "default": true },
+        "notifyMinDurationSec": { "type": "integer", "minimum": 0, "default": 60 },
+        "notifyOnStuckSec": { "type": "integer", "minimum": 10, "default": 45 },
+        "notifyLowQuota": { "type": "boolean", "default": true }
+      }
+    },
+    "webhook": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "url": { "type": "string", "default": "" },
+        "format": {
+          "type": "string",
+          "enum": ["auto", "generic", "slack", "discord", "feishu", "dingtalk", "wecom", "bark"],
+          "default": "auto"
+        },
+        "secret": { "type": "string", "default": "" }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["std", "promo", "nc_std", "nc_promo"],
+          "default": "std"
+        },
+        "usdToCny": { "type": "number", "exclusiveMinimum": 0, "default": 7.2 },
+        "currency": { "type": "string", "enum": ["USD", "CNY"], "default": "USD" },
+        "ultraMonthlyUsd": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0,
+          "description": "0 auto-infers subscription tier (Pro $20 / Ultra $200); positive number overrides monthly baseline."
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "mainAppPath": { "type": "string" },
+        "ideAppPath": { "type": "string" },
+        "profilesDir": { "type": "string", "default": "~/.antigravity-profiles" }
+      }
+    },
+    "colab": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "cliPath": { "type": "string", "default": "~/.local/bin/colab-safe" },
+        "pollIntervalSec": { "type": "integer", "minimum": 15, "default": 60 },
+        "monthlyAllowance": { "type": "number", "minimum": 1, "default": 2000 },
+        "warnActiveMinutes": { "type": "integer", "minimum": 1, "default": 30 },
+        "lowBalanceCcu": { "type": "number", "minimum": 0, "default": 200 }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "agymate-mcp-app",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^2.0.4"
+  }
+}

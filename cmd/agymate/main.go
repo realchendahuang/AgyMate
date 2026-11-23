@@ -2,14 +2,16 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"text/tabwriter"
@@ -19,12 +21,16 @@ import (
 
 	"github.com/realchendahuang/AgyMate/frontend"
 	"github.com/realchendahuang/AgyMate/internal/cdp"
+	"github.com/realchendahuang/AgyMate/internal/colab"
 	"github.com/realchendahuang/AgyMate/internal/config"
 	"github.com/realchendahuang/AgyMate/internal/doctor"
 	"github.com/realchendahuang/AgyMate/internal/hooks"
 	"github.com/realchendahuang/AgyMate/internal/hub"
 	"github.com/realchendahuang/AgyMate/internal/instances"
+	"github.com/realchendahuang/AgyMate/internal/mcpapp"
 	"github.com/realchendahuang/AgyMate/internal/rpc"
+	"github.com/realchendahuang/AgyMate/internal/service"
+	"github.com/realchendahuang/AgyMate/internal/setup"
 	"github.com/realchendahuang/AgyMate/internal/telemetry"
 	"github.com/realchendahuang/AgyMate/internal/version"
 )
@@ -32,24 +38,29 @@ import (
 func main() {
 	root := &cobra.Command{
 		Use:     "agymate",
-		Short:   "AgyMate — Antigravity 五开伴侣 (配额 · Token · 上下文 · 沙盒护航 · CDP 汉化)",
-		Version: version.Version,
+		Short:   "AgyMate — Antigravity 实例配额、Token 账单、上下文水位与多开管理",
+		Version: version.Full(),
 	}
 
 	root.AddCommand(
+		cmdSetup(),
+		cmdUninstall(),
+		cmdConfig(),
 		cmdServe(),
+		cmdService(),
 		cmdStatus(),
 		cmdQuota(),
+		cmdColab(),
 		cmdTokens(),
 		cmdSearch(),
 		cmdProfile(),
 		cmdDoctor(),
-		cmdBoxSync(),
 		cmdZh(),
 		cmdCache(),
 		cmdInstallHooks(),
 		cmdHook(),
 		cmdSidecarProxy(),
+		cmdMCP(),
 		cmdVersion(),
 	)
 
@@ -68,6 +79,25 @@ func printJSON(v any) {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(v)
+}
+
+func hubRequest(method, rawURL string, body []byte, timeout time.Duration) (*http.Response, error) {
+	var bodyReader io.Reader
+	if body != nil {
+		bodyReader = bytes.NewReader(body)
+	}
+	req, err := http.NewRequest(method, rawURL, bodyReader)
+	if err != nil {
+		return nil, err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	if tok := config.LoadHubToken(); tok != "" {
+		req.Header.Set("X-AgyMate-Token", tok)
+	}
+	hc := &http.Client{Timeout: timeout}
+	return hc.Do(req)
 }
 
 func cmdServe() *cobra.Command {
@@ -89,6 +119,7 @@ func cmdServe() *cobra.Command {
 				Addr:              cfg.ListenAddr,
 				Handler:           srv.Handler(),
 				ReadHeaderTimeout: 10 * time.Second,
+				BaseContext:       func(_ net.Listener) context.Context { return ctx },
 			}
 
 			errCh := make(chan error, 1)
@@ -118,11 +149,11 @@ func cmdStatus() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
 		Use:   "status",
-		Short: "显示所有实例 (Main / IDE / p1..pN) 状态、配额、上下文与今日账单",
+		Short: "显示所有账号与客户端状态、配额、上下文与今日账单",
 		Run: func(_ *cobra.Command, _ []string) {
 			cfg := loadCfg()
 			srv := hub.NewServer(cfg, nil)
-			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 			defer cancel()
 			srv.PollOnce(ctx)
 			ov := srv.BuildOverview()
@@ -131,37 +162,375 @@ func cmdStatus() *cobra.Command {
 				return
 			}
 			tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "ID\tLABEL\tSTATE\tACCOUNT\tQUOTA(5H)\tCTX\tTODAY_USD\tLS_VER")
-			for _, iv := range ov.Instances {
-				q5h := "-"
+			fmt.Fprintln(tw, "账号\t实例槽位\t状态\t套餐\t配额\t上下文\t今日账单")
+			for _, acct := range ov.Accounts {
+				slotNames := make([]string, 0, len(acct.Instances))
+				for _, iv := range acct.Instances {
+					slotNames = append(slotNames, iv.ID)
+				}
+				slotsStr := strings.Join(slotNames, "+")
+				if slotsStr == "" {
+					slotsStr = "-"
+				}
+				stateStr := cliLiveState(acct.LiveState)
+				if acct.CachedQuota {
+					stateStr += " (缓存)"
+				}
+				plan := acct.PlanName
+				if plan == "" {
+					plan = "-"
+				}
+				quotaStr := "-"
+				if len(acct.Buckets) > 0 {
+					picked := acct.Buckets[0]
+					for _, b := range acct.Buckets {
+						if !b.Disabled {
+							picked = b
+							break
+						}
+					}
+					if picked.Disabled {
+						quotaStr = "不适用"
+					} else {
+						q := fmt.Sprintf("%.0f%%", picked.RemainingPct)
+						if acct.CachedQuota {
+							q += "*"
+						}
+						quotaStr = q
+					}
+				}
 				ctxPct := "-"
-				acc := iv.Account
-				lsVer := "-"
-				if iv.Hub != nil && iv.Hub.LSVersion != "" {
-					lsVer = iv.Hub.LSVersion
+				if acct.Context != nil {
+					ctxPct = fmt.Sprintf("%.0f%%", acct.Context.UsagePct)
 				}
-				if iv.Snapshot != nil {
-					if acc == "" {
-						acc = iv.Snapshot.Email
-					}
-					if len(iv.Snapshot.Buckets) > 0 {
-						q5h = fmt.Sprintf("%.0f%%", iv.Snapshot.Buckets[0].RemainingPct)
-					}
-					if iv.Snapshot.Context != nil {
-						ctxPct = fmt.Sprintf("%.0f%%", iv.Snapshot.Context.UsagePct)
-					}
-				}
-				if acc == "" {
-					acc = "-"
-				}
-				fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t$%.2f\t%s\n",
-					iv.ID, iv.Label, iv.LiveState, acc, q5h, ctxPct, iv.TodayUSD, lsVer)
+				fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+					acct.DisplayName, slotsStr, stateStr, plan, quotaStr, ctxPct, cliMoney(acct.TodayUSD, ov.Pricing))
 			}
 			_ = tw.Flush()
+			if ov.Colab.Enabled {
+				fmt.Println()
+				if len(ov.Colab.Accounts) > 0 {
+					fmt.Printf("Colab 云算力池: %.2f CCU ($%.2f) | 消耗: %.2f CCU/小时 | 活跃实例: %d 台 (%d 个账号)\n",
+						ov.Colab.CurrentBalance, ov.Colab.EstimatedValueUSD,
+						ov.Colab.ConsumptionRateHourly, ov.Colab.AssignmentsCount, len(ov.Colab.Accounts))
+					for _, ca := range ov.Colab.Accounts {
+						name := ca.Account
+						if name == "" {
+							name = "<未知账号>"
+						}
+						if ca.OK {
+							fmt.Printf("  - %-28s [%s] %.2f CCU | %.2f/小时 | %d 台\n",
+								name, ca.Source, ca.CurrentBalance, ca.ConsumptionRateHourly, ca.AssignmentsCount)
+						} else {
+							fmt.Printf("  - %-28s [%s] %s (%s)\n",
+								name, ca.Source, cliColabStatus(ca.Status), ca.LastError)
+						}
+					}
+				} else if ov.Colab.OK {
+					hw := strings.Join(ov.Colab.EligibleGPUs, ",")
+					if hw == "" {
+						hw = "-"
+					}
+					fmt.Printf("Colab 云算力: %.2f CCU ($%.2f) | 消耗: %.2f CCU/小时 | 活跃实例: %d 台 | 加速规格: %s\n",
+						ov.Colab.CurrentBalance, ov.Colab.EstimatedValueUSD,
+						ov.Colab.ConsumptionRateHourly, ov.Colab.AssignmentsCount, hw)
+				} else {
+					fmt.Printf("Colab 云算力: %s (%s)\n", cliColabStatus(ov.Colab.Status), ov.Colab.LastError)
+				}
+			}
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "以 JSON 格式输出")
 	return cmd
+}
+
+func cmdColab() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "colab",
+		Short: "管理多账号 Google Colab CCU 算力池、绑定 OAuth 与一键清场",
+		Run: func(_ *cobra.Command, _ []string) {
+			cfg := loadCfg()
+			snap := fetchColabViaHubOrCLI(cfg)
+			if asJSON {
+				printJSON(snap)
+				return
+			}
+			printColabSnapshot(snap)
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "以 JSON 格式输出")
+
+	var loginHint string
+	var noBrowser bool
+	var loginJSON bool
+	loginCmd := &cobra.Command{
+		Use:   "login",
+		Short: "通过 Google OAuth2 绑定一个新的 Colab 算力账号",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			cfg := loadCfg()
+			reqBody, _ := json.Marshal(map[string]any{
+				"loginHint":   strings.TrimSpace(loginHint),
+				"openBrowser": !noBrowser,
+			})
+			resp, err := hubRequest(http.MethodPost, "http://"+cfg.ListenAddr+"/api/colab/accounts/login", reqBody, 8*time.Second)
+			if err != nil {
+				return fmt.Errorf("无法连接本地 Hub (%s)：请先启动 `agymate serve` 或检查 `agymate service status`（OAuth 回调需由 Hub 接收）", cfg.ListenAddr)
+			}
+			defer resp.Body.Close()
+			var out struct {
+				OK      bool   `json:"ok"`
+				AuthURL string `json:"authUrl"`
+				State   string `json:"state"`
+				Opened  bool   `json:"opened"`
+				Error   string `json:"error"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+				return err
+			}
+			if resp.StatusCode >= 400 || !out.OK {
+				return errors.New(out.Error)
+			}
+			if loginJSON {
+				printJSON(out)
+				return nil
+			}
+			if out.Opened {
+				fmt.Println("已在默认浏览器打开 Google 授权页，完成授权后会自动回传至本地 Hub。")
+			} else {
+				fmt.Println("请在浏览器打开以下链接完成 Google 授权：")
+			}
+			fmt.Println(out.AuthURL)
+			return nil
+		},
+	}
+	loginCmd.Flags().StringVar(&loginHint, "hint", "", "预填 Google 账号邮箱 (login_hint)")
+	loginCmd.Flags().BoolVar(&noBrowser, "no-browser", false, "仅输出授权 URL，不自动拉起浏览器")
+	loginCmd.Flags().BoolVar(&loginJSON, "json", false, "以 JSON 格式输出")
+
+	var removeJSON bool
+	removeCmd := &cobra.Command{
+		Use:   "remove <email>",
+		Short: "解绑指定 Google 账号（或隐藏 colab-safe 默认账号）",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			email := strings.TrimSpace(args[0])
+			cfg := loadCfg()
+			removed, snap, err := removeColabViaHubOrCLI(cfg, email)
+			if removeJSON {
+				printJSON(map[string]any{
+					"ok":      err == nil,
+					"removed": removed,
+					"colab":   snap,
+					"error":   errString(err),
+				})
+				return err
+			}
+			if err != nil {
+				return err
+			}
+			if removed {
+				fmt.Printf("已解绑 Colab OAuth 账号: %s\n", email)
+			} else {
+				fmt.Printf("已隐藏 Colab 账号: %s\n", email)
+			}
+			return nil
+		},
+	}
+	removeCmd.Flags().BoolVar(&removeJSON, "json", false, "以 JSON 格式输出")
+
+	var nukeJSON bool
+	var nukeAccount string
+	nukeCmd := &cobra.Command{
+		Use:   "nuke",
+		Short: "一键强制销毁云端活跃 Colab VM（可指定 --account 仅清场单个账号）",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			cfg := loadCfg()
+			res, snap, err := nukeColabViaHubOrCLI(cfg, nukeAccount)
+			if nukeJSON {
+				printJSON(map[string]any{
+					"ok":    err == nil && res.OK,
+					"nuke":  res,
+					"colab": snap,
+					"error": errString(err),
+				})
+				return err
+			}
+			fmt.Printf("清场完成: 销毁 %d 台 | 失败 %d 台 | 剩余活跃 %d 台\n",
+				res.TerminatedCount, res.FailedCount, res.RemainingCount)
+			for _, t := range res.Terminated {
+				tag := t.Name
+				if t.Orphan {
+					tag = "? (孤儿)"
+				}
+				acctPart := ""
+				if t.Account != "" {
+					acctPart = " · " + t.Account
+				}
+				fmt.Printf("  - [%s] %s (%s%s)\n", tag, t.Endpoint, t.Accelerator, acctPart)
+			}
+			fmt.Printf("当前余额: %.2f CCU | 速率: %.2f CCU/h\n", snap.CurrentBalance, snap.ConsumptionRateHourly)
+			return err
+		},
+	}
+	nukeCmd.Flags().BoolVar(&nukeJSON, "json", false, "以 JSON 格式输出")
+	nukeCmd.Flags().StringVar(&nukeAccount, "account", "", "仅清场指定 Google 账号邮箱")
+
+	cmd.AddCommand(loginCmd, removeCmd, nukeCmd)
+	return cmd
+}
+
+func newConfiguredColabCollector() *colab.Collector {
+	st := config.LoadState("")
+	c := colab.NewCollector()
+	c.SetHiddenChecker(st.IsColabHidden)
+	return c
+}
+
+func fetchColabViaHubOrCLI(cfg config.Config) colab.Snapshot {
+	if resp, err := hubRequest(http.MethodGet, "http://"+cfg.ListenAddr+"/api/colab?refresh=1", nil, 8*time.Second); err == nil {
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
+			var snap colab.Snapshot
+			if json.NewDecoder(resp.Body).Decode(&snap) == nil {
+				return snap
+			}
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	return newConfiguredColabCollector().Probe(ctx, cfg.Colab, true)
+}
+
+func removeColabViaHubOrCLI(cfg config.Config, email string) (bool, colab.Snapshot, error) {
+	reqBody, _ := json.Marshal(map[string]string{"email": email})
+	if resp, err := hubRequest(http.MethodPost, "http://"+cfg.ListenAddr+"/api/colab/accounts/remove", reqBody, 10*time.Second); err == nil {
+		defer resp.Body.Close()
+		var out struct {
+			OK      bool           `json:"ok"`
+			Removed bool           `json:"removed"`
+			Error   string         `json:"error"`
+			Colab   colab.Snapshot `json:"colab"`
+		}
+		if json.NewDecoder(resp.Body).Decode(&out) == nil && (out.OK || out.Error != "") {
+			if out.Error != "" {
+				return out.Removed, out.Colab, errors.New(out.Error)
+			}
+			return out.Removed, out.Colab, nil
+		}
+	}
+	st := config.LoadState("")
+	c := colab.NewCollector()
+	c.SetHiddenChecker(st.IsColabHidden)
+	removed, err := c.RemoveAccount(email)
+	if err != nil {
+		return false, colab.Snapshot{}, err
+	}
+	st.SetColabHidden(email, true)
+	_ = st.Save()
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	return removed, c.Probe(ctx, cfg.Colab, true), nil
+}
+
+func nukeColabViaHubOrCLI(cfg config.Config, account string) (colab.NukeResult, colab.Snapshot, error) {
+	reqBody, _ := json.Marshal(map[string]string{"account": strings.TrimSpace(account)})
+	if resp, err := hubRequest(http.MethodPost, "http://"+cfg.ListenAddr+"/api/colab/nuke", reqBody, 40*time.Second); err == nil {
+		defer resp.Body.Close()
+		var payload struct {
+			OK    bool             `json:"ok"`
+			Error string           `json:"error"`
+			Nuke  colab.NukeResult `json:"nuke"`
+			Colab colab.Snapshot   `json:"colab"`
+		}
+		if json.NewDecoder(resp.Body).Decode(&payload) == nil && (payload.OK || payload.Error != "") {
+			if payload.Error != "" {
+				return payload.Nuke, payload.Colab, errors.New(payload.Error)
+			}
+			return payload.Nuke, payload.Colab, nil
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	defer cancel()
+	return newConfiguredColabCollector().NukeAccount(ctx, cfg.Colab, account)
+}
+
+func printColabSnapshot(snap colab.Snapshot) {
+	if !snap.Enabled {
+		fmt.Println("Colab 云算力雷达已在配置中禁用。")
+		return
+	}
+	if len(snap.Accounts) > 0 {
+		fmt.Printf("算力池总计 (%d 个账号): 余额 %.2f CCU ($%.2f) | 速率 %.2f CCU/小时 ($%.2f/小时) | 活跃实例 %d 台 (孤儿 %d 台)\n",
+			len(snap.Accounts), snap.CurrentBalance, snap.EstimatedValueUSD,
+			snap.ConsumptionRateHourly, snap.BurnUSDPerHour, snap.AssignmentsCount, snap.OrphanCount)
+		fmt.Println()
+		atw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+		fmt.Fprintln(atw, "账号\t来源\t状态\t余额(CCU)\t速率(/小时)\t活跃实例\t可用GPU")
+		for _, ca := range snap.Accounts {
+			acc := ca.Account
+			if acc == "" {
+				acc = "<未知账号>"
+			}
+			gpus := strings.Join(ca.EligibleGPUs, ",")
+			if gpus == "" {
+				gpus = "-"
+			}
+			fmt.Fprintf(atw, "%s\t%s\t%s\t%.2f\t%.2f\t%d\t%s\n",
+				acc, ca.Source, cliColabStatus(ca.Status), ca.CurrentBalance, ca.ConsumptionRateHourly, ca.AssignmentsCount, gpus)
+		}
+		_ = atw.Flush()
+	} else {
+		if !snap.OK {
+			fmt.Printf("状态: %s\n", cliColabStatus(snap.Status))
+			if snap.LastError != "" {
+				fmt.Printf("详情: %s\n", snap.LastError)
+			}
+			return
+		}
+		acc := snap.Account
+		if acc == "" {
+			acc = "<未知账号>"
+		}
+		fmt.Printf("账号: %s | 状态: %s | 活跃实例: %d 台 (孤儿: %d 台)\n",
+			acc, cliColabStatus(snap.Status), snap.AssignmentsCount, snap.OrphanCount)
+		fmt.Printf("余额: %.2f CCU (等值 $%.2f USD / 月基准 %.0f CCU) | 速率: %.2f CCU/小时 ($%.2f/小时)\n",
+			snap.CurrentBalance, snap.EstimatedValueUSD, snap.MonthlyAllowance,
+			snap.ConsumptionRateHourly, snap.BurnUSDPerHour)
+		if snap.HoursUntilEmpty > 0 {
+			fmt.Printf("预计耗尽: %.1f 小时 | 已持续运行: %d 分钟\n", snap.HoursUntilEmpty, snap.ActiveMinutes)
+		}
+		if len(snap.EligibleGPUs) > 0 || len(snap.EligibleTPUs) > 0 {
+			fmt.Printf("加速池: GPU=[%s] | TPU=[%s]\n",
+				strings.Join(snap.EligibleGPUs, ", "), strings.Join(snap.EligibleTPUs, ", "))
+		}
+	}
+	if len(snap.Sessions) == 0 {
+		return
+	}
+	fmt.Println()
+	tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+	fmt.Fprintln(tw, "账号\t实例名\t孤儿实例\t加速规格\t类型\t算力档位\t终端节点")
+	for _, s := range snap.Sessions {
+		acc := s.Account
+		if acc == "" {
+			acc = "-"
+		}
+		orphanTxt := "否"
+		if s.Orphan {
+			orphanTxt = "是"
+		}
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			acc, s.Name, orphanTxt, s.Accelerator, s.Variant, s.Shape, s.Endpoint)
+	}
+	_ = tw.Flush()
+}
+
+func errString(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }
 
 func cmdQuota() *cobra.Command {
@@ -178,11 +547,11 @@ func cmdQuota() *cobra.Command {
 			defer cancel()
 
 			type quotaEntry struct {
-				Instance string               `json:"instance"`
-				Account  string               `json:"account"`
-				Plan     string               `json:"plan"`
-				Buckets  []rpc.QuotaBucket    `json:"buckets"`
-				Models   []rpc.ModelQuota     `json:"models"`
+				Instance string            `json:"instance"`
+				Account  string            `json:"account"`
+				Plan     string            `json:"plan"`
+				Buckets  []rpc.QuotaBucket `json:"buckets"`
+				Models   []rpc.ModelQuota  `json:"models"`
 			}
 			var out []quotaEntry
 			for _, inst := range instList {
@@ -212,17 +581,26 @@ func cmdQuota() *cobra.Command {
 				return
 			}
 			tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "INSTANCE\tPLAN\tBUCKET\tREMAINING\tRESET_LEFT\tRUNWAY")
+			fmt.Fprintln(tw, "实例\t套餐\t配额项\t剩余\t重置倒计时\t预计耗尽")
 			for _, e := range out {
 				for _, b := range e.Buckets {
+					if b.Disabled {
+						fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n",
+							e.Instance, e.Plan, b.DisplayName, "不适用", "-", "受上级窗口限制")
+						continue
+					}
 					runway := "-"
 					if b.ExhaustsBeforeReset && b.HoursUntilEmpty > 0 {
-						runway = fmt.Sprintf("⚠ %.1fh 耗尽 (%.1f%%/h)", b.HoursUntilEmpty, b.BurnPctPerHour)
+						runway = fmt.Sprintf("⚠ 约 %.1f 小时耗尽 (%.1f%%/小时)", b.HoursUntilEmpty, b.BurnPctPerHour)
 					} else if b.BurnPctPerHour > 0 {
-						runway = fmt.Sprintf("%.1f%%/h", b.BurnPctPerHour)
+						runway = fmt.Sprintf("%.1f%%/小时", b.BurnPctPerHour)
+					}
+					resetTxt := cdp.FormatResetCountdown(b.ResetUnix)
+					if resetTxt == "" {
+						resetTxt = "-"
 					}
 					fmt.Fprintf(tw, "%s\t%s\t%s\t%.1f%%\t%s\t%s\n",
-						e.Instance, e.Plan, b.DisplayName, b.RemainingPct, cdp.FormatResetCountdown(b.ResetUnix), runway)
+						e.Instance, e.Plan, b.DisplayName, b.RemainingPct, resetTxt, runway)
 				}
 			}
 			_ = tw.Flush()
@@ -246,7 +624,19 @@ func cmdTokens() *cobra.Command {
 			rpcCli := rpc.NewClient()
 			store := telemetry.NewStore(rpcCli.ModelLabel)
 			instList := instances.DiscoverAll(cfg)
-			rep := store.QueryTelemetry(instList, preset, mode, instFilter, cfg.Pricing.UltraMonthlyUSD)
+			subUSD := cfg.Pricing.UltraMonthlyUSD
+			if subUSD <= 0 {
+				st := config.LoadState("")
+				for _, snap := range st.AllAccountSnapshots(time.Now()) {
+					low := strings.ToLower(snap.PlanName + " " + snap.TierID)
+					if strings.Contains(low, "ultra") {
+						subUSD += 200
+					} else if strings.Contains(low, "pro") {
+						subUSD += 20
+					}
+				}
+			}
+			rep := store.QueryTelemetry(instList, preset, mode, instFilter, subUSD)
 			if asCSV {
 				os.Stdout.Write(store.ExportCSV(rep))
 				return
@@ -255,27 +645,32 @@ func cmdTokens() *cobra.Command {
 				printJSON(rep)
 				return
 			}
-			fmt.Printf("区间: %s | 计价: %s | 调用: %d | 扫描耗时: %.1fms\n",
-				rep.PresetLabel, rep.Mode, rep.Summary.Calls, rep.ScanMs)
-			fmt.Printf("Total Tokens: %d (In: %d | Cache: %d [命中 %.1f%%] | Out: %d)\n",
+			fmt.Printf("区间: %s | 计价口径: %s | 调用次数: %d | 扫描耗时: %.1fms\n",
+				rep.PresetLabel, cliPricingMode(rep.Mode), rep.Summary.Calls, rep.ScanMs)
+			fmt.Printf("Token 总计: %d（输入: %d | 缓存读取: %d [命中率 %.1f%%] | 输出: %d）\n",
 				rep.Summary.TotalTokens, rep.Summary.InputTokens, rep.Summary.CacheTokens,
 				rep.Summary.CacheHitRate, rep.Summary.OutputTokens)
-			fmt.Printf("等值账单: $%.2f USD (¥%.2f CNY) | 缓存节省: $%.2f | Main 本月回本: $%.2f / $%.0f (%.1fx)\n\n",
+			roiText := fmt.Sprintf("本月累计: $%.2f", rep.MonthROI.AllMonthUSD)
+			if rep.MonthROI.SubUSD > 0 {
+				roiText = fmt.Sprintf("本月回本: $%.2f / $%.0f (%.1fx)",
+					rep.MonthROI.AllMonthUSD, rep.MonthROI.SubUSD, rep.MonthROI.ROIMultiple)
+			}
+			fmt.Printf("等值账单: $%.2f USD (¥%.2f CNY) | 缓存节省: $%.2f | %s\n\n",
 				rep.Summary.TotalUSD, rep.Summary.TotalUSD*cfg.Pricing.USDToCNY,
-				rep.Summary.SavedByCacheUSD, rep.MonthROI.MainMonthUSD, rep.MonthROI.SubUSD, rep.MonthROI.ROIMultiple)
+				rep.Summary.SavedByCacheUSD, roiText)
 
 			tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "MODEL\tCALLS\tINPUT\tCACHE\tOUTPUT\tUSD")
+			fmt.Fprintln(tw, "模型\t调用次数\t输入\t缓存读取\t输出\t等值账单")
 			for _, m := range rep.ByModel {
-				fmt.Fprintf(tw, "%s\t%d\t%d\t%d\t%d\t$%.2f\n",
-					m.ModelName, m.Calls, m.Input, m.Cache, m.Output, m.TotalUSD)
+				fmt.Fprintf(tw, "%s\t%d\t%d\t%d\t%d\t%s\n",
+					m.ModelName, m.Calls, m.Input, m.Cache, m.Output, cliMoney(m.TotalUSD, cfg.Pricing))
 			}
 			_ = tw.Flush()
 		},
 	}
 	cmd.Flags().StringVar(&preset, "preset", "today", "today|yesterday|last_5h|last_24h|since_monday|last_7d|last_30d|this_month|all")
 	cmd.Flags().StringVar(&mode, "mode", "", "std|promo|nc_std|nc_promo")
-	cmd.Flags().StringVar(&instFilter, "instance", "all", "all|main|ide|p1...")
+	cmd.Flags().StringVar(&instFilter, "instance", "all", "all|main|ide|<profile>")
 	cmd.Flags().BoolVar(&asCSV, "csv", false, "输出 CSV")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "输出 JSON")
 	return cmd
@@ -306,7 +701,7 @@ func cmdSearch() *cobra.Command {
 				return
 			}
 			for _, h := range hits {
-				fmt.Printf("[%s] %s (%s · %d steps · %s)\n", h.InstanceID, h.Title, h.Workspace, h.StepCount, h.ModifiedAt)
+				fmt.Printf("[%s] %s (%s · %d 步 · %s)\n", h.InstanceID, h.Title, h.Workspace, h.StepCount, h.ModifiedAt)
 				if h.Snippet != "" {
 					fmt.Printf("  %s\n", strings.ReplaceAll(h.Snippet, "\n", " "))
 				}
@@ -322,19 +717,27 @@ func cmdSearch() *cobra.Command {
 func cmdProfile() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "profile",
-		Short: "ParaGravity 分身沙盒生命周期管理 (拒绝操作 main 与 ide)",
+		Short: "隔离实例沙盒生命周期管理 (拒绝操作 main 与 ide)",
 	}
 
 	root.AddCommand(&cobra.Command{
 		Use:   "list",
-		Short: "列出全部分身沙盒状态",
+		Short: "列出全部实例与沙盒状态",
 		Run: func(_ *cobra.Command, _ []string) {
 			cfg := loadCfg()
 			tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "ID\tKIND\tRUNNING\tPID\tACCOUNT\tAUTH\tBROKEN_LINKS")
+			fmt.Fprintln(tw, "实例ID\t类型\t运行状态\tPID\t绑定账号\t凭证状态\t损坏链接")
 			for _, inst := range instances.DiscoverAll(cfg) {
-				fmt.Fprintf(tw, "%s\t%s\t%v\t%d\t%s\t%s\t%d\n",
-					inst.ID, inst.Kind, inst.Running, inst.MainPID, inst.Account, inst.AuthState, inst.BrokenSymlinks)
+				runTxt := "已停止"
+				if inst.Running {
+					runTxt = "运行中"
+				}
+				acct := inst.Account
+				if acct == "" {
+					acct = "-"
+				}
+				fmt.Fprintf(tw, "%s\t%s\t%s\t%d\t%s\t%s\t%d\n",
+					inst.ID, cliInstKind(inst.Kind), runTxt, inst.MainPID, acct, cliAuthState(inst.AuthState), inst.BrokenSymlinks)
 			}
 			_ = tw.Flush()
 		},
@@ -344,7 +747,7 @@ func cmdProfile() *cobra.Command {
 	var forceHeal bool
 	launchCmd := &cobra.Command{
 		Use:   "launch <profile>",
-		Short: "使用 Antigravity-Box 启动指定 ParaGravity 分身",
+		Short: "启动指定隔离实例",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			pid, err := instances.LaunchProfile(loadCfg(), args[0], ws, forceHeal)
@@ -361,7 +764,7 @@ func cmdProfile() *cobra.Command {
 	var forceStop bool
 	stopCmd := &cobra.Command{
 		Use:   "stop <profile>",
-		Short: "安全停止指定 ParaGravity 分身 (严格禁止 main / ide)",
+		Short: "安全停止指定隔离实例 (严格禁止 main / ide)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			if err := instances.StopProfile(loadCfg(), args[0], forceStop); err != nil {
@@ -401,14 +804,14 @@ func cmdProfile() *cobra.Command {
 			return nil
 		},
 	}
-	healCmd.Flags().BoolVar(&healAll, "all", false, "修复全部 ParaGravity 分身")
-	healCmd.Flags().BoolVar(&healForce, "force", false, "强制清理已停止分身的临时渲染缓存")
+	healCmd.Flags().BoolVar(&healAll, "all", false, "修复全部隔离实例")
+	healCmd.Flags().BoolVar(&healForce, "force", false, "强制清理已停止实例的临时渲染缓存")
 
 	var opts instances.CreateProfileOpts
 	var noMCP bool
 	createCmd := &cobra.Command{
 		Use:   "create <profile>",
-		Short: "创建新的 ParaGravity 隔离分身沙盒并注册 macOS 应用壳",
+		Short: "创建新的隔离实例沙盒",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			opts.Name = args[0]
@@ -425,27 +828,42 @@ func cmdProfile() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				fmt.Printf("已启动新分身 %s (PID %d)\n", opts.Name, pid)
+				fmt.Printf("已启动新实例 %s (PID %d)\n", opts.Name, pid)
 			}
 			return nil
 		},
 	}
-	createCmd.Flags().StringVar(&opts.Description, "desc", "", "分身备注描述")
+	createCmd.Flags().StringVar(&opts.Description, "desc", "", "实例备注描述")
 	createCmd.Flags().StringVar(&opts.LinksPolicy, "links", "minimal", "符号链接策略: minimal|full|none")
 	createCmd.Flags().StringVar(&opts.InheritFrom, "inherit", "host", "配置继承源: host 或空")
 	createCmd.Flags().BoolVar(&noMCP, "no-mcp", false, "跳过脱敏继承 mcp_config.json")
 	createCmd.Flags().BoolVar(&opts.Launch, "launch", false, "创建后立即启动")
 	createCmd.Flags().StringVar(&opts.WorkspacePath, "workspace", "", "启动时打开的工作区路径")
 
-	root.AddCommand(launchCmd, stopCmd, healCmd, createCmd)
+	var forceDelete bool
+	deleteCmd := &cobra.Command{
+		Use:   "delete <profile>",
+		Short: "删除隔离实例目录及启动器 (严格禁止 main / ide)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			if err := instances.DeleteProfile(loadCfg(), args[0], forceDelete); err != nil {
+				return err
+			}
+			fmt.Printf("已删除隔离实例 %s\n", args[0])
+			return nil
+		},
+	}
+	deleteCmd.Flags().BoolVar(&forceDelete, "force", false, "若实例仍在运行先停止再删除")
+
+	root.AddCommand(launchCmd, stopCmd, healCmd, createCmd, deleteCmd)
 	return root
 }
 
 func cmdDoctor() *cobra.Command {
-	var fix, asJSON bool
+	var fix, asJSON, redact bool
 	cmd := &cobra.Command{
 		Use:   "doctor",
-		Short: "执行六维健康体检 (Box版本/URL Scheme/Keychain只读元数据/断链/OAuth/Hooks+Sidecar)",
+		Short: "执行健康体检 (客户端版本/URL Scheme/Keychain只读元数据/断链/OAuth/Hooks+Sidecar)",
 		Run: func(_ *cobra.Command, _ []string) {
 			cfg := loadCfg()
 			instList := instances.DiscoverAll(cfg)
@@ -454,9 +872,12 @@ func cmdDoctor() *cobra.Command {
 			targets := cdp.NewWatcher().ProbeTargetStatus(ctx, instList)
 
 			if fix {
-				frep := doctor.FixSafe(cfg, "")
+				frep := doctor.FixSafe(cfg, setup.ResolveCLIBin(""))
 				instList = instances.DiscoverAll(cfg)
 				rep := doctor.RunChecks(cfg, instList, targets)
+				if redact {
+					rep = redactDoctorReport(rep)
+				}
 				if asJSON {
 					printJSON(map[string]any{"fix": frep, "doctor": rep})
 					return
@@ -469,6 +890,14 @@ func cmdDoctor() *cobra.Command {
 				return
 			}
 			rep := doctor.RunChecks(cfg, instList, targets)
+			if redact {
+				if asJSON {
+					printJSON(doctorDiagnosticBundle(rep))
+					return
+				}
+				printDoctorReport(redactDoctorReport(rep))
+				return
+			}
 			if asJSON {
 				printJSON(rep)
 				return
@@ -478,11 +907,16 @@ func cmdDoctor() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&fix, "fix", false, "执行一键安全修复")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "以 JSON 格式输出")
+	cmd.Flags().BoolVar(&redact, "redact", false, "脱敏路径与邮箱（便于直接附在 GitHub Issue 中排障）")
 	return cmd
 }
 
 func printDoctorReport(rep doctor.Report) {
-	fmt.Printf("Antigravity Main: %s | Box: %s | IDE: %s\n", rep.MainVersion, rep.BoxVersion, rep.IDEVersion)
+	if rep.IDEVersion != "" {
+		fmt.Printf("Antigravity: %s | IDE: %s\n", rep.MainVersion, rep.IDEVersion)
+	} else {
+		fmt.Printf("Antigravity: %s\n", rep.MainVersion)
+	}
 	for _, c := range rep.Checks {
 		icon := "✓"
 		if c.Status == "warn" {
@@ -497,31 +931,15 @@ func printDoctorReport(rep doctor.Report) {
 	}
 }
 
-func cmdBoxSync() *cobra.Command {
-	return &cobra.Command{
-		Use:   "box-sync",
-		Short: "将 Antigravity.app 版本同步至 Antigravity-Box.app (需先停止运行中的分身)",
-		RunE: func(_ *cobra.Command, _ []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
-			defer cancel()
-			out, err := doctor.SyncBox(ctx, loadCfg())
-			if out != "" {
-				fmt.Println(out)
-			}
-			return err
-		},
-	}
-}
-
 func cmdZh() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "zh",
-		Short: "CDP 中文补丁与 Shadow-DOM 窗口微胶囊探针/立即注入",
+		Short: "CDP 扩展注入与 Shadow-DOM 窗口微胶囊探针/立即注入",
 	}
 
 	root.AddCommand(&cobra.Command{
 		Use:   "status",
-		Short: "探测全部 Antigravity 窗口的 CDP 汉化与 HUD 状态",
+		Short: "探测全部 Antigravity 窗口的 CDP 注入与 HUD 状态",
 		Run: func(_ *cobra.Command, _ []string) {
 			cfg := loadCfg()
 			instList := instances.DiscoverAll(cfg)
@@ -533,20 +951,23 @@ func cmdZh() *cobra.Command {
 	})
 
 	root.AddCommand(&cobra.Command{
-		Use:   "inject",
-		Short: "立即向所有运行中的 Antigravity CDP 窗口注入中文补丁与 HUD",
+		Use:     "inject",
+		Aliases: []string{"sync"},
+		Short:   "立即向所有运行中的 Antigravity CDP 窗口同步脚本与右上角中文浮窗",
 		Run: func(_ *cobra.Command, _ []string) {
 			cfg := loadCfg()
 			// If local Hub is running, ask Hub to execute SyncCDP so HUD carries fresh telemetry.
-			hc := &http.Client{Timeout: 4 * time.Second}
-			if resp, err := hc.Post("http://"+cfg.ListenAddr+"/api/cdp/inject-now", "application/json", strings.NewReader("{}")); err == nil {
-				defer resp.Body.Close()
-				if resp.StatusCode == http.StatusOK {
-					var res map[string]any
-					if json.NewDecoder(resp.Body).Decode(&res) == nil {
-						printJSON(res)
-						return
-					}
+			for _, ep := range []string{"/api/cdp/sync", "/api/cdp/inject-now"} {
+				resp, err := hubRequest(http.MethodPost, "http://"+cfg.ListenAddr+ep, []byte("{}"), 4*time.Second)
+				if err != nil {
+					break
+				}
+				var res map[string]any
+				ok := resp.StatusCode == http.StatusOK && json.NewDecoder(resp.Body).Decode(&res) == nil
+				resp.Body.Close()
+				if ok {
+					printJSON(res)
+					return
 				}
 			}
 			srv := hub.NewServer(cfg, nil)
@@ -610,19 +1031,15 @@ func cmdCache() *cobra.Command {
 func cmdInstallHooks() *cobra.Command {
 	return &cobra.Command{
 		Use:   "install-hooks",
-		Short: "无损合并安装 Antigravity Hooks（保留 herdr / marktoast）并注册原生 Sidecar",
+		Short: "无损合并安装 Antigravity Hooks（保留已有第三方 Hooks）并注册原生 Sidecar",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			cfg := loadCfg()
-			home, _ := os.UserHomeDir()
-			cliBin := filepath.Join(home, ".local", "bin", "agymate")
-			if exe, err := os.Executable(); err == nil && strings.Contains(exe, ".local/bin") {
-				cliBin = exe
-			}
+			cliBin := setup.ResolveCLIBin("")
 			updated, err := hooks.InstallHooks(cfg, cliBin)
 			if err != nil {
 				return err
 			}
-			scPath, err := doctor.EnsureSidecar(cliBin)
+			scPaths, err := doctor.EnsureSidecarForProfiles(cfg, cliBin)
 			if err != nil {
 				return err
 			}
@@ -630,7 +1047,10 @@ func cmdInstallHooks() *cobra.Command {
 			for _, p := range updated {
 				fmt.Println("  -", p)
 			}
-			fmt.Println("原生 Sidecar 已注册:", scPath)
+			fmt.Printf("原生 Sidecar 已注册 (%d 个目标):\n", len(scPaths))
+			for _, p := range scPaths {
+				fmt.Println("  -", p)
+			}
 			return nil
 		},
 	}
@@ -667,12 +1087,202 @@ func cmdSidecarProxy() *cobra.Command {
 	}
 }
 
+func cmdMCP() *cobra.Command {
+	return &cobra.Command{
+		Use:    "mcp",
+		Short:  "以 Antigravity 原生 stdio MCP Server & MCP App 模式运行",
+		Hidden: true,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			cfg := loadCfg()
+			ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+			defer stop()
+			return mcpapp.NewServer(cfg).ServeStdio(ctx)
+		},
+	}
+}
+
 func cmdVersion() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "输出 AgyMate 版本号",
 		Run: func(_ *cobra.Command, _ []string) {
-			fmt.Printf("agymate %s\n", version.Version)
+			fmt.Printf("agymate %s\n", version.Full())
 		},
 	}
+}
+
+func cmdService() *cobra.Command {
+	root := &cobra.Command{
+		Use:   "service",
+		Short: "管理 AgyMate Hub 后台常驻服务 (macOS LaunchAgent / Linux systemd)",
+	}
+
+	var binPath string
+	installCmd := &cobra.Command{
+		Use:   "install",
+		Short: "安装并启动 AgyMate Hub 后台服务（自动迁移旧服务配置）",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			msg, err := service.Install(binPath)
+			if err != nil {
+				return err
+			}
+			fmt.Println(msg)
+			return nil
+		},
+	}
+	installCmd.Flags().StringVar(&binPath, "bin", "", "agymate 可执行文件路径（默认当前二进制）")
+
+	uninstallCmd := &cobra.Command{
+		Use:   "uninstall",
+		Short: "停止并移除 AgyMate Hub 后台服务",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			msg, err := service.Uninstall()
+			if err != nil {
+				return err
+			}
+			fmt.Println(msg)
+			return nil
+		},
+	}
+
+	restartCmd := &cobra.Command{
+		Use:   "restart",
+		Short: "重启 AgyMate Hub 后台服务",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			msg, err := service.Restart()
+			if err != nil {
+				return err
+			}
+			fmt.Println(msg)
+			return nil
+		},
+	}
+
+	var asJSON bool
+	statusCmd := &cobra.Command{
+		Use:   "status",
+		Short: "查看 AgyMate Hub 后台服务运行状态",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			info, err := service.Status()
+			if err != nil {
+				return err
+			}
+			if asJSON {
+				printJSON(info)
+				return nil
+			}
+			instTxt := "未安装"
+			if info.Installed {
+				instTxt = "已安装"
+			}
+			runTxt := "未运行"
+			if info.Running {
+				runTxt = "运行中"
+			}
+			fmt.Printf("服务管理: %s (%s)\n安装状态: %s\n运行状态: %s\n",
+				info.Manager, info.Label, instTxt, runTxt)
+			if info.UnitPath != "" {
+				fmt.Printf("服务文件: %s\n", info.UnitPath)
+			}
+			if info.Detail != "" {
+				fmt.Printf("运行详情: %s\n", info.Detail)
+			}
+			return nil
+		},
+	}
+	statusCmd.Flags().BoolVar(&asJSON, "json", false, "以 JSON 格式输出")
+
+	root.AddCommand(installCmd, uninstallCmd, restartCmd, statusCmd)
+	return root
+}
+
+func cliLiveState(state string) string {
+	switch strings.ToLower(strings.TrimSpace(state)) {
+	case "waiting_approval", "waiting":
+		return "待确认"
+	case "running":
+		return "运行中"
+	case "offline":
+		return "离线"
+	default:
+		return "空闲"
+	}
+}
+
+func cliColabStatus(status string) string {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "authenticated":
+		return "已授权"
+	case "unauthenticated":
+		return "未授权"
+	case "missing_cli":
+		return "缺少CLI"
+	case "disabled":
+		return "已禁用"
+	case "empty":
+		return "未绑定"
+	case "error":
+		return "连接异常"
+	default:
+		if status == "" {
+			return "-"
+		}
+		return status
+	}
+}
+
+func cliPricingMode(mode string) string {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "promo":
+		return "优惠价+缓存折扣"
+	case "nc_std":
+		return "标准价无缓存"
+	case "nc_promo":
+		return "优惠价无缓存"
+	default:
+		return "标准价+缓存折扣"
+	}
+}
+
+func cliInstKind(kind string) string {
+	switch kind {
+	case instances.KindMain:
+		return "主客户端"
+	case instances.KindIDE:
+		return "IDE客户端"
+	case instances.KindProfile:
+		return "隔离沙盒"
+	case instances.KindCustom:
+		return "外部目录"
+	default:
+		return kind
+	}
+}
+
+func cliAuthState(auth string) string {
+	switch auth {
+	case "ok":
+		return "有效"
+	case "missing":
+		return "未登录"
+	case "expired":
+		return "已过期"
+	case "no_refresh_token":
+		return "无刷新令牌"
+	case "keychain_managed":
+		return "钥匙串托管"
+	default:
+		return auth
+	}
+}
+
+func cliMoney(usd float64, pricing config.PricingConfig) string {
+	if strings.EqualFold(pricing.Currency, "CNY") {
+		rate := pricing.USDToCNY
+		if rate <= 0 {
+			rate = 7.20
+		}
+		return fmt.Sprintf("¥%.2f", usd*rate)
+	}
+	return fmt.Sprintf("$%.2f", usd)
 }

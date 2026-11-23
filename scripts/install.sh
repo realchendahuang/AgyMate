@@ -1,91 +1,45 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source installer for developers cloning the AgyMate repository.
+# Compiles a Pure Go (CGO_ENABLED=0) binary, installs it to ~/.local/bin/agymate,
+# and delegates all setup/migration/plugin registration to `agymate setup`.
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${VERSION:-0.1.0}"
-LDFLAGS="-s -w -X github.com/realchendahuang/AgyMate/internal/version.Version=${VERSION}"
-PREFIX_BIN="${HOME}/.local/bin"
-APP_NAME="AgyMate.app"
-APP_DEST="/Applications/${APP_NAME}"
-BUNDLE_ID="com.realchendahuang.agymate"
+VERSION="${VERSION:-0.3.0}"
+GIT_COMMIT="$(git -C "${ROOT_DIR}" describe --tags --always --dirty 2>/dev/null || git -C "${ROOT_DIR}" rev-parse --short HEAD 2>/dev/null || echo dev)"
+BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+LDFLAGS="-s -w -X github.com/realchendahuang/AgyMate/internal/version.Version=${VERSION} -X github.com/realchendahuang/AgyMate/internal/version.Commit=${GIT_COMMIT} -X github.com/realchendahuang/AgyMate/internal/version.BuildTime=${BUILD_TIME}"
+PREFIX_BIN="${AGYMATE_PREFIX_BIN:-${HOME}/.local/bin}"
+INSTALL_BIN="${PREFIX_BIN}/agymate"
+MAGPIE_PLUGIN_DEV="${MAGPIE_PLUGIN_DEV:-0}"
 
-echo "==> Building AgyMate CLI & Desktop (${VERSION})"
 cd "${ROOT_DIR}"
-mkdir -p bin "${PREFIX_BIN}"
 
-CGO_ENABLED=1 go build -trimpath -ldflags "${LDFLAGS}" -o "bin/agymate" ./cmd/agymate
-install -m 755 "bin/agymate" "${PREFIX_BIN}/agymate"
-codesign --force --sign - "${PREFIX_BIN}/agymate" >/dev/null 2>&1 || true
-echo "    Installed CLI: ${PREFIX_BIN}/agymate"
-
-CGO_ENABLED=1 \
-CGO_CFLAGS="-mmacosx-version-min=12.0" \
-CGO_LDFLAGS="-mmacosx-version-min=12.0" \
-MACOSX_DEPLOYMENT_TARGET=12.0 \
-go build -trimpath -ldflags "${LDFLAGS}" -o "bin/agymate-desktop" ./cmd/agymate-desktop
-
-STAGE_DIR="$(mktemp -d)"
-trap 'rm -rf "${STAGE_DIR}"' EXIT
-BUNDLE_STAGE="${STAGE_DIR}/${APP_NAME}"
-mkdir -p "${BUNDLE_STAGE}/Contents/MacOS" "${BUNDLE_STAGE}/Contents/Resources"
-
-install -m 755 "bin/agymate-desktop" "${BUNDLE_STAGE}/Contents/MacOS/agymate-desktop"
-
-if [[ -f "cmd/agymate-desktop/icon.png" ]] && command -v iconutil >/dev/null 2>&1 && command -v sips >/dev/null 2>&1; then
-  ICONSET="${STAGE_DIR}/icon.iconset"
-  mkdir -p "${ICONSET}"
-  for sz in 16 32 128 256 512; do
-    sips -z "${sz}" "${sz}" "cmd/agymate-desktop/icon.png" --out "${ICONSET}/icon_${sz}x${sz}.png" >/dev/null
-    sz2=$((sz * 2))
-    if [[ "${sz2}" -le 512 ]]; then
-      sips -z "${sz2}" "${sz2}" "cmd/agymate-desktop/icon.png" --out "${ICONSET}/icon_${sz}x${sz}@2x.png" >/dev/null
-    else
-      cp "cmd/agymate-desktop/icon.png" "${ICONSET}/icon_${sz}x${sz}@2x.png"
-    fi
-  done
-  iconutil -c icns "${ICONSET}" -o "${BUNDLE_STAGE}/Contents/Resources/icon.icns"
+if [[ ! -f "internal/mcpapp/dist/app.html" ]]; then
+  echo "==> [0/2] 构建内置 MCP App UI (internal/mcpapp/dist/app.html)"
+  make build-mcp-app
 fi
 
-cat > "${BUNDLE_STAGE}/Contents/Info.plist" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>CFBundleDevelopmentRegion</key>
-  <string>zh_CN</string>
-  <key>CFBundleDisplayName</key>
-  <string>AgyMate</string>
-  <key>CFBundleExecutable</key>
-  <string>agymate-desktop</string>
-  <key>CFBundleIconFile</key>
-  <string>icon.icns</string>
-  <key>CFBundleIdentifier</key>
-  <string>${BUNDLE_ID}</string>
-  <key>CFBundleInfoDictionaryVersion</key>
-  <string>6.0</string>
-  <key>CFBundleName</key>
-  <string>AgyMate</string>
-  <key>CFBundlePackageType</key>
-  <string>APPL</string>
-  <key>CFBundleShortVersionString</key>
-  <string>${VERSION}</string>
-  <key>CFBundleVersion</key>
-  <string>${VERSION}</string>
-  <key>LSMinimumSystemVersion</key>
-  <string>12.0</string>
-  <key>NSHighResolutionCapable</key>
-  <true/>
-</dict>
-</plist>
-EOF
+echo "==> [1/2] 编译并安装 AgyMate (${VERSION}+${GIT_COMMIT}, Pure Go)"
+mkdir -p bin "${PREFIX_BIN}"
+CGO_ENABLED=0 go build -trimpath -ldflags "${LDFLAGS}" -o "bin/agymate" ./cmd/agymate
 
-echo "==> Packaging & Signing ${APP_DEST}"
-pkill -x agymate-desktop >/dev/null 2>&1 || true
-sleep 0.3
-rm -rf "${APP_DEST}"
-ditto "${BUNDLE_STAGE}" "${APP_DEST}"
-xattr -cr "${APP_DEST}"
-codesign --force --deep --sign - "${APP_DEST}"
-codesign --verify --deep --strict "${APP_DEST}"
+TMP_CLI="${PREFIX_BIN}/.agymate.new.$$"
+cp "bin/agymate" "${TMP_CLI}"
+chmod 755 "${TMP_CLI}"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  codesign --force --sign - "${TMP_CLI}" >/dev/null 2>&1 || true
+fi
+mv -f "${TMP_CLI}" "${INSTALL_BIN}"
+echo "    已安装二进制: ${INSTALL_BIN}"
 
-echo "==> Done: ${APP_DEST} & ${PREFIX_BIN}/agymate"
+echo "==> [2/2] 执行自包含部署 (agymate setup)"
+SETUP_ARGS=(setup --bin "${INSTALL_BIN}")
+if [[ "${MAGPIE_PLUGIN_DEV}" == "1" ]]; then
+  SETUP_ARGS+=(--magpie-dev-dir "${ROOT_DIR}/magpie-plugin")
+fi
+if [[ "$#" -gt 0 ]]; then
+  SETUP_ARGS+=("$@")
+fi
+"${INSTALL_BIN}" "${SETUP_ARGS[@]}"

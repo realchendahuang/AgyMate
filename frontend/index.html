@@ -3,468 +3,612 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AgyMate — Antigravity 五开伴侣</title>
+  <title>AgyMate 控制台</title>
   <meta name="color-scheme" content="light dark">
   <script>
-  try {
-    var saved = localStorage.getItem('agymate-color-scheme');
-    if (saved === 'light' || saved === 'dark') {
-      document.querySelector('meta[name="color-scheme"]').content = saved;
+  (function () {
+    var root = document.documentElement;
+    var qs = new URLSearchParams(location.search);
+    if (qs.get('embed') === 'magpie') root.classList.add('embed-magpie');
+    if (qs.get('mode') === 'sidecar') root.classList.add('sidecar-mode');
+
+    var theme = qs.get('theme');
+    if (theme !== 'dark' && theme !== 'light') {
+      try {
+        var saved = localStorage.getItem('agymate-color-scheme');
+        if (saved === 'dark' || saved === 'light') theme = saved;
+      } catch (e) {}
     }
-  } catch (e) {}
+    if (theme === 'dark' || theme === 'light') {
+      root.dataset.theme = theme;
+      var meta = document.querySelector('meta[name="color-scheme"]');
+      if (meta) meta.content = theme;
+    }
+
+    var rawTokens = qs.get('tokens');
+    if (rawTokens) {
+      try {
+        var bin = atob(rawTokens);
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        var obj = JSON.parse(new TextDecoder().decode(bytes));
+        var keys = Object.keys(obj || {});
+        for (var j = 0; j < keys.length; j++) {
+          var k = keys[j];
+          if (/^--[a-z0-9-]+$/i.test(k) && typeof obj[k] === 'string' && obj[k].trim()) {
+            root.style.setProperty(k, obj[k].trim());
+          }
+        }
+      } catch (e) {}
+    }
+  })();
   </script>
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="shell" id="app-shell">
-    <aside class="sidebar" aria-label="主导航">
-      <div class="brand">
-        <img src="/logo.svg" alt="" class="brand-logo" width="28" height="28">
-        <div class="brand-copy">
-          <div class="brand-title">AgyMate <span class="ver" id="hdr-ver">v0.1</span></div>
-          <div class="brand-sub">Antigravity 五开伴侣</div>
-        </div>
+  <header class="page-top">
+    <nav class="segs" id="main-nav" role="tablist" aria-label="视图切换">
+      <div class="thumb" aria-hidden="true"></div>
+      <button type="button" class="opt on" role="tab" aria-selected="true" data-view="overview">总览</button>
+      <button type="button" class="opt" role="tab" aria-selected="false" data-view="telemetry">账单</button>
+      <button type="button" class="opt" role="tab" aria-selected="false" data-view="sessions">会话<span class="opt-badge" id="badge-sessions" hidden>0</span></button>
+      <button type="button" class="opt" role="tab" aria-selected="false" data-view="doctor">体检<span class="opt-badge warn" id="badge-doctor" hidden>0</span></button>
+      <button type="button" class="opt" role="tab" aria-selected="false" data-view="storage">缓存</button>
+      <button type="button" class="opt" role="tab" aria-selected="false" data-view="settings">设置</button>
+    </nav>
+
+    <div class="page-tools">
+      <div class="sse-dot-btn" id="sse-pill" data-tip="正在连接后台实时数据流…">
+        <i></i>
+        <span id="top-running-chip">0/0</span>
       </div>
-
-      <nav class="nav" id="main-nav">
-        <button type="button" class="nav-item active" data-view="overview">
-          <span class="nav-ic">◈</span><span>全局总览</span>
-        </button>
-        <button type="button" class="nav-item" data-view="telemetry">
-          <span class="nav-ic">◔</span><span>Token 账单</span>
-        </button>
-        <button type="button" class="nav-item" data-view="sessions">
-          <span class="nav-ic">⌘</span><span>会话与上下文</span>
-          <span class="nav-badge" id="badge-sessions" hidden>0</span>
-        </button>
-        <button type="button" class="nav-item" data-view="doctor">
-          <span class="nav-ic">✚</span><span>体检与护航</span>
-          <span class="nav-badge warn" id="badge-doctor" hidden>0</span>
-        </button>
-        <button type="button" class="nav-item" data-view="storage">
-          <span class="nav-ic">◫</span><span>缓存瘦身</span>
-        </button>
-        <button type="button" class="nav-item" data-view="settings">
-          <span class="nav-ic">⚙</span><span>设置与通知</span>
-        </button>
-      </nav>
-
-      <div class="side-foot">
-        <div class="sse-pill" id="sse-pill">
-          <span class="dot" id="sse-dot"></span>
-          <span id="sse-label">正在连接 Hub…</span>
-        </div>
-        <div class="side-meta" id="side-updated">最近同步 --</div>
+      <div class="segs compact" id="cur-seg" role="group" aria-label="计价币种">
+        <div class="thumb" aria-hidden="true"></div>
+        <button type="button" class="opt on" data-currency="USD" data-tip="切换为美元计价 ($)" aria-label="美元计价">$</button>
+        <button type="button" class="opt" data-currency="CNY" data-tip="切换为人民币计价 (¥)" aria-label="人民币计价">¥</button>
       </div>
-    </aside>
+      <button type="button" class="text" id="btn-cdp-now" data-tip="立即向运行中的客户端窗口同步监控浮窗">同步浮窗</button>
+      <button type="button" class="text" id="btn-open-create-top" data-tip="新建多开隔离客户端实例">+ 实例</button>
+      <button type="button" class="text" id="btn-lang" data-tip="切换界面语言（中 / EN）" aria-label="切换界面语言（中 / EN）">EN</button>
+      <button type="button" class="icon" id="btn-theme" data-tip="切换深浅色外观" aria-label="切换深浅色外观">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.2 10.1A5.8 5.8 0 0 1 5.9 2.8a6 6 0 1 0 7.3 7.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="icon" id="btn-refresh" data-tip="立即刷新全局数据" aria-label="立即刷新全局数据">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 8a5.5 5.5 0 1 1-1.4-3.67M13.5 2.5v2.75H10.75" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </header>
 
-    <div class="main-col">
-      <header class="topbar">
-        <div class="top-left">
-          <h1 class="view-title" id="view-title">全局总览</h1>
-          <span class="top-chip" id="top-running-chip">0/6 在线</span>
+  <main class="view-scroll" id="view-scroll">
+    <!-- 视图 1：总览 -->
+    <section class="view-panel" id="view-overview">
+      <div class="stats" id="overview-kpis"></div>
+      <div id="colab-radar-host"></div>
+      <div class="row-head">
+        <span class="label">账号与配额</span>
+      </div>
+      <div class="subscription-usage" id="instance-grid"></div>
+    </section>
+
+    <!-- 视图 2：账单 -->
+    <section class="view-panel" id="view-telemetry" hidden>
+      <div class="usage-head">
+        <div class="segs compact" id="telemetry-presets" role="group" aria-label="统计区间">
+          <div class="thumb" aria-hidden="true"></div>
+          <button type="button" class="opt on" data-preset="today">今日</button>
+          <button type="button" class="opt" data-preset="yesterday">昨日</button>
+          <button type="button" class="opt" data-preset="last_5h">近5小时</button>
+          <button type="button" class="opt" data-preset="last_7d">近7天</button>
+          <button type="button" class="opt" data-preset="this_month">本月</button>
+          <button type="button" class="opt" data-preset="all_time">全部</button>
         </div>
-        <div class="top-actions">
-          <div class="seg" role="group" aria-label="货币单位">
-            <button type="button" class="seg-btn active" data-currency="USD">USD $</button>
-            <button type="button" class="seg-btn" data-currency="CNY">CNY ¥</button>
-          </div>
-          <button type="button" class="btn quiet" id="btn-theme" title="切换浅色 / 深色主题">
-            <span class="theme-only-light">🌙 深色</span>
-            <span class="theme-only-dark">☀️ 浅色</span>
+        <div class="right-tools">
+          <button type="button" class="field" data-select="tel-inst-filter" id="tel-inst-filter" data-tip="按账号或客户端实例筛选账单">
+            <span class="k">账号</span>
+            <span class="v">全部账号</span>
+            <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           </button>
-          <button type="button" class="btn quiet" id="btn-cdp-now" title="立即向所有运行窗口注入汉化与 HUD">注入 HUD</button>
-          <button type="button" class="btn primary" id="btn-refresh">立即刷新</button>
+          <button type="button" class="field" data-select="tel-mode-select" id="tel-mode-select" data-tip="切换官方标准或优惠费率计价口径">
+            <span class="k">口径</span>
+            <span class="v">标准 + 缓存</span>
+            <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="text" id="btn-export-csv" data-tip="导出当前筛选条件下的账单明细 CSV">导出账单</button>
         </div>
-      </header>
+      </div>
 
-      <main class="content" id="main-content">
-        <!-- View 1: Overview -->
-        <section class="view-panel active" id="view-overview">
-          <div class="kpi-grid" id="overview-kpis"></div>
-          <div class="section-head">
-            <div>
-              <h2>五开 + IDE 实例矩阵</h2>
-              <p class="section-sub">Main (Ultra) 与 Antigravity IDE 严格只读保护；仅 ParaGravity 分身允许启动、停止与自愈。</p>
+      <div class="stats" id="tel-kpis"></div>
+
+      <div class="chart">
+        <div class="chart-top">
+          <div class="legend">
+            <span><i style="background:var(--c3)"></i>缓存命中</span>
+            <span><i style="background:var(--c2)"></i>输入</span>
+            <span><i style="background:var(--c4)"></i>输出</span>
+          </div>
+          <span id="chart-tooltip"></span>
+        </div>
+        <div class="chart-stage">
+          <div id="tel-chart-host" class="chart-host"></div>
+          <div id="chart-hover-pop" class="chart-pop" hidden></div>
+        </div>
+      </div>
+
+      <div class="chart" id="tel-heatmap-card" hidden>
+        <div class="chart-top">
+          <div class="legend"><span>近 26 周活跃热力图</span></div>
+          <span id="hm-tooltip"></span>
+        </div>
+        <div id="tel-heatmap-host" class="hm-grid-26"></div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="row-head"><span class="label">按模型统计</span></div>
+          <div class="list" id="tel-models-list"></div>
+        </div>
+        <div>
+          <div class="row-head"><span class="label">按账号统计</span></div>
+          <div class="list" id="tel-inst-list"></div>
+        </div>
+      </div>
+
+      <div class="row-head"><span class="label">最近调用明细</span></div>
+      <div class="qt-wrap">
+        <table class="qt">
+          <thead><tr><th>时间</th><th>账号</th><th>会话</th><th>模型</th><th>输入</th><th>缓存命中</th><th>输出</th><th>速度 · 首字</th><th>等值费用</th></tr></thead>
+          <tbody id="tel-calls-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 视图 3：会话与上下文 -->
+    <section class="view-panel" id="view-sessions" hidden>
+      <div class="row-head"><span class="label">活跃会话</span></div>
+      <div class="list" id="live-sessions-list"></div>
+
+      <div class="row-head"><span class="label">上下文水位</span></div>
+      <div class="subscription-usage" id="context-cards"></div>
+
+      <div class="row-head"><span class="label">历史会话检索</span></div>
+      <form class="search-bar" id="session-search-form">
+        <input type="search" id="session-search-input" placeholder="搜索会话标题、路径或对话内容…">
+        <button type="button" class="field" data-select="session-search-inst" id="session-search-inst" data-tip="按账号筛选会话">
+          <span class="k">账号</span>
+          <span class="v">全部账号</span>
+          <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </button>
+        <button type="submit" class="text primary">搜索</button>
+      </form>
+      <div class="list" id="session-hits"></div>
+    </section>
+
+    <!-- 视图 4：体检与窗口注入 -->
+    <section class="view-panel" id="view-doctor" hidden>
+      <div class="usage-head">
+        <div class="head-with-tip">
+          <span class="label">环境健康检查</span>
+          <span class="badge mono" id="doctor-versions-sub">--</span>
+        </div>
+        <div class="right-tools">
+          <button type="button" class="text" id="btn-doctor-fix" data-tip="自动修复常见的钩子配置与目录权限问题">安全修复</button>
+          <button type="button" class="text" id="btn-doctor-cdp" data-tip="立即重新扫描客户端窗口并注入监控浮窗">重注浮窗</button>
+          <button type="button" class="text primary" id="btn-open-create">+ 新建实例</button>
+        </div>
+      </div>
+
+      <div class="list" id="doctor-grid"></div>
+
+      <div class="row-head"><span class="label">窗口注入目标</span></div>
+      <div class="qt-wrap">
+        <table class="qt">
+          <thead><tr><th>实例</th><th>端口</th><th>窗口标题</th><th>扩展脚本</th><th>监控浮窗</th><th>诊断操作</th></tr></thead>
+          <tbody id="cdp-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 视图 5：本地缓存管理 -->
+    <section class="view-panel" id="view-storage" hidden>
+      <div class="usage-head">
+        <div class="head-with-tip">
+          <span class="label">历史会话缓存</span>
+          <button type="button" class="help-dot" aria-label="清理说明" data-tip="安全清理早期历史会话文件，自动保护正在运行与最近活跃的会话">?</button>
+        </div>
+        <div class="right-tools">
+          <span class="label">保留</span>
+          <input type="number" class="keep-input" id="cache-keep-input" min="1" max="500" value="20" aria-label="每个实例保留最近会话条数" data-tip="每个客户端实例保留最近活跃的会话条数">
+          <button type="button" class="field" data-select="cache-inst-filter" id="cache-inst-filter" data-tip="按账号或实例筛选缓存列表">
+            <span class="k">账号</span>
+            <span class="v">全部账号</span>
+            <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button type="button" class="text" id="btn-cache-scan">重新扫描</button>
+          <button type="button" class="text danger" id="btn-cache-clean">清理缓存</button>
+        </div>
+      </div>
+
+      <div class="stats" id="cache-kpis"></div>
+
+      <div class="qt-wrap">
+        <table class="qt">
+          <thead><tr><th>账号 / 实例</th><th>会话标题 / 标识</th><th>推理缓存</th><th>会话库</th><th>合计占用</th><th>清理策略</th></tr></thead>
+          <tbody id="cache-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 视图 6：系统设置 -->
+    <section class="view-panel" id="view-settings" hidden>
+      <form id="settings-form" class="settings-stack">
+        <div class="row-head"><span class="label">界面与语言</span></div>
+        <div class="list" id="set-group-lang">
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>界面语言</span><button type="button" class="help-dot" aria-label="说明" data-tip="切换控制台、原生插件与窗口浮窗的显示语言">?</button></div>
             </div>
-            <div class="section-actions">
-              <button type="button" class="btn quiet" command="show-modal" commandfor="create-profile-dialog" id="btn-open-create-from-ov">+ 新建分身</button>
+            <button type="button" class="field" data-select="cfg-lang" id="cfg-lang">
+              <span class="v">跟随系统（推荐）</span>
+              <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="row-head"><span class="label">窗口浮窗与注入</span></div>
+        <div class="list" id="set-group-cdp">
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>自动注入守护</span><button type="button" class="help-dot" aria-label="说明" data-tip="后台持续探测运行中的客户端窗口并自动保持连接">?</button></div>
+            </div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-cdp-enabled"><i></i></button>
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>启用窗口监控浮窗</span><button type="button" class="help-dot" aria-label="说明" data-tip="在客户端窗口内显示实时配额、上下文水位与今日消耗">?</button></div>
+            </div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-cdp-hud"><i></i></button>
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>浮窗默认位置</span><button type="button" class="help-dot" aria-label="说明" data-tip="新窗口首次挂载或归位时的默认停靠角落">?</button></div>
+            </div>
+            <button type="button" class="field" data-select="cfg-cdp-pos" id="cfg-cdp-pos">
+              <span class="v">右上角（推荐）</span>
+              <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>加载扩展注入脚本</span><button type="button" class="help-dot" aria-label="说明" data-tip="向客户端窗口额外注入下方指定的自定义增强脚本">?</button></div>
+            </div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-cdp-zh"><i></i></button>
+          </div>
+          <div class="row pref stack-narrow">
+            <div class="who">
+              <div class="name"><span>扩展脚本路径</span><button type="button" class="help-dot" aria-label="说明" data-tip="本地脚本文件路径，开启扩展注入后生效">?</button></div>
+            </div>
+            <input type="text" class="set-field wide mono" id="cfg-cdp-path" placeholder="~/.antigravity-zh/inject.js">
+          </div>
+          <div class="row pref stack-narrow">
+            <div class="who">
+              <div class="name"><span>浮窗实例白名单</span><button type="button" class="help-dot" aria-label="说明" data-tip="留空默认对全部实例生效，多个实例用英文逗号分隔">?</button></div>
+            </div>
+            <input type="text" class="set-field wide mono" id="cfg-cdp-insts" placeholder="全部实例">
+          </div>
+        </div>
+
+        <div class="row-head">
+          <span class="label">消息通知（Telegram）</span>
+          <button type="button" class="text" id="btn-tg-test">发送测试消息</button>
+        </div>
+        <div class="list" id="set-group-tg">
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>启用消息推送</span><button type="button" class="help-dot" aria-label="说明" data-tip="通过机器人实时接收任务完成、卡顿与低配额提醒">?</button></div>
+            </div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-tg-enabled"><i></i></button>
+          </div>
+          <div class="row pref stack-narrow">
+            <div class="who">
+              <div class="name"><span>机器人令牌</span><button type="button" class="help-dot" aria-label="说明" data-tip="在 @BotFather 创建机器人后获取的访问凭据">?</button></div>
+            </div>
+            <input type="password" class="set-field wide mono" id="cfg-tg-token" autocomplete="off" placeholder="123456:ABC-...">
+          </div>
+          <div class="row pref stack-narrow">
+            <div class="who">
+              <div class="name"><span>接收会话标识</span><button type="button" class="help-dot" aria-label="说明" data-tip="接收通知的个人或群组数字编号">?</button></div>
+            </div>
+            <input type="text" class="set-field mono" id="cfg-tg-chatid" placeholder="123456789">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>完成通知耗时门槛（秒）</span><button type="button" class="help-dot" aria-label="说明" data-tip="仅当任务执行时长达到该秒数时才推送完成通知">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-tg-mindur" min="0" max="3600">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>待确认超时告警（秒）</span><button type="button" class="help-dot" aria-label="说明" data-tip="会话停留在等待人工确认超过该秒数时推送提醒">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-tg-stuck" min="10" max="3600">
+          </div>
+          <div class="row pref">
+            <div class="who"><div class="name"><span>任务完成通知</span></div></div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-tg-stop"><i></i></button>
+          </div>
+          <div class="row pref">
+            <div class="who"><div class="name"><span>运行异常中断告警</span></div></div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-tg-err"><i></i></button>
+          </div>
+          <div class="row pref">
+            <div class="who"><div class="name"><span>配额低水位预警</span></div></div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-tg-lowq"><i></i></button>
+          </div>
+        </div>
+
+        <div class="row-head">
+          <span class="label">通用 Webhook 通知（Slack / Discord / 飞书 / 钉钉 / Bark）</span>
+          <button type="button" class="text" id="btn-wh-test">测试 Webhook</button>
+        </div>
+        <div class="list" id="set-group-webhook">
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>启用 Webhook 推送</span><button type="button" class="help-dot" aria-label="说明" data-tip="与上方通知条件共享触发规则，可按 URL 自动适配主流平台格式">?</button></div>
+            </div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-wh-enabled"><i></i></button>
+          </div>
+          <div class="row pref stack-narrow">
+            <div class="who">
+              <div class="name"><span>Webhook 地址</span><button type="button" class="help-dot" aria-label="说明" data-tip="支持 Slack、Discord、飞书、钉钉、企业微信、Bark 或自定义 HTTP(S) 接口">?</button></div>
+            </div>
+            <input type="text" class="set-field wide mono" id="cfg-wh-url" autocomplete="off" placeholder="https://hooks.slack.com/services/...">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>负载格式</span><button type="button" class="help-dot" aria-label="说明" data-tip="默认自动根据域名识别目标平台 JSON 负载结构">?</button></div>
+            </div>
+            <button type="button" class="field" data-select="cfg-wh-format" id="cfg-wh-format">
+              <span class="v">自动识别（推荐）</span>
+              <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+          </div>
+          <div class="row pref stack-narrow">
+            <div class="who">
+              <div class="name"><span>签名密钥（可选）</span><button type="button" class="help-dot" aria-label="说明" data-tip="填写后将在请求头附带 X-AgyMate-Signature (HMAC-SHA256)">?</button></div>
+            </div>
+            <input type="password" class="set-field wide mono" id="cfg-wh-secret" autocomplete="off" placeholder="留空则不签名">
+          </div>
+        </div>
+
+        <div class="row-head"><span class="label">计价口径与预警阈值</span></div>
+        <div class="list" id="set-group-pricing">
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>默认计费口径</span><button type="button" class="help-dot" aria-label="说明" data-tip="用于折算每次模型调用与缓存命中的等效账单金额">?</button></div>
+            </div>
+            <button type="button" class="field" data-select="cfg-price-mode" id="cfg-price-mode">
+              <span class="v">标准 + 缓存</span>
+              <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>默认展示币种</span><button type="button" class="help-dot" aria-label="说明" data-tip="控制台与桌面浮窗默认使用的货币符号">?</button></div>
+            </div>
+            <button type="button" class="field" data-select="cfg-price-cur" id="cfg-price-cur">
+              <span class="v">美元 ($)</span>
+              <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>美元兑人民币汇率</span><button type="button" class="help-dot" aria-label="说明" data-tip="切换为人民币计价时的折算汇率">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-price-rate" step="0.01" min="1" max="20">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>月度订阅费基准（美元）</span><button type="button" class="help-dot" aria-label="说明" data-tip="填 0 则根据在线账号套餐自动估算本月回本倍数">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-price-sub" step="1" min="0" max="1000" placeholder="0">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>配额低水位预警（%）</span><button type="button" class="help-dot" aria-label="说明" data-tip="模型配额剩余百分比低于此阈值时高亮提醒">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-warn-quota" min="1" max="90">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>上下文压缩预警（%）</span><button type="button" class="help-dot" aria-label="说明" data-tip="单次会话上下文占用超过此百分比时建议压缩">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-warn-ctx" min="20" max="98">
+          </div>
+        </div>
+
+        <div class="row-head"><span class="label">云算力巡检（Colab）</span></div>
+        <div class="list" id="set-group-colab">
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>启用云算力监控</span><button type="button" class="help-dot" aria-label="说明" data-tip="在总览页实时展示算力点余额、活跃时长与孤儿实例预警">?</button></div>
+            </div>
+            <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-colab-enabled"><i></i></button>
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>巡检轮询间隔（秒）</span><button type="button" class="help-dot" aria-label="说明" data-tip="后台刷新云端算力状态的周期">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-colab-poll" min="15" max="600">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>月度算力基准</span><button type="button" class="help-dot" aria-label="说明" data-tip="用于展示剩余算力进度条的月度总额度（如 2000）">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-colab-allowance" step="100" min="100" max="10000">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>长时挂机告警（分钟）</span><button type="button" class="help-dot" aria-label="说明" data-tip="云端虚拟机连续运行超过此时长时高亮提醒">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-colab-warnmin" min="5" max="1440">
+          </div>
+          <div class="row pref">
+            <div class="who">
+              <div class="name"><span>算力余额预警线</span><button type="button" class="help-dot" aria-label="说明" data-tip="剩余算力点低于该数值时触发低余额提醒">?</button></div>
+            </div>
+            <input type="number" class="set-field" id="cfg-colab-lowccu" min="0" max="5000">
+          </div>
+          <div class="row pref stack-narrow">
+            <div class="who">
+              <div class="name"><span>本地巡检工具路径</span><button type="button" class="help-dot" aria-label="说明" data-tip="可选本地命令行工具路径，未安装时仍可通过网页授权绑定">?</button></div>
+            </div>
+            <input type="text" class="set-field wide mono" id="cfg-colab-cli" placeholder="~/.local/bin/colab-safe">
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button type="button" class="text" id="btn-cfg-reset">重新读取</button>
+          <button type="submit" class="text primary" id="btn-cfg-save">保存设置</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- 模态框 1：新建多开隔离实例 -->
+  <div class="modal" id="create-modal" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="cpd-title">
+      <form id="create-profile-form" class="editor framed">
+        <div class="ehead">
+          <div class="ehead-main">
+            <span class="modal-icon accent" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 12v1a1.5 1.5 0 0 0 1.5 1.5h5.5A1.5 1.5 0 0 0 14 13V7a1.5 1.5 0 0 0-1.5-1.5H11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6.5 5.5v4M4.5 7.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </span>
+            <div class="ehead-titles">
+              <div class="head-with-tip">
+                <b id="cpd-title">新建多开隔离实例</b>
+                <button type="button" class="help-dot" aria-label="说明" data-tip="分配独立配置目录与调试端口，支持多账号并行在线">?</button>
+              </div>
             </div>
           </div>
-          <div class="inst-grid" id="instance-grid"></div>
-        </section>
-
-        <!-- View 2: Telemetry -->
-        <section class="view-panel" id="view-telemetry" hidden>
-          <div class="toolbar">
-            <div class="preset-tabs" id="telemetry-presets">
-              <button type="button" class="tab active" data-preset="today">今日</button>
-              <button type="button" class="tab" data-preset="yesterday">昨日</button>
-              <button type="button" class="tab" data-preset="last_5h">近5h</button>
-              <button type="button" class="tab" data-preset="last_7d">近7天</button>
-              <button type="button" class="tab" data-preset="this_month">本月</button>
-              <button type="button" class="tab" data-preset="all_time">全部</button>
+          <button type="button" class="icon modal-close" id="cp-close-btn" aria-label="关闭弹窗" data-tip="关闭 (Esc)">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 2.5 9.5 9.5M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="ebody">
+          <div class="modal-fields">
+            <div class="row pref stack-narrow">
+              <div class="who">
+                <div class="name"><span>实例标识</span><button type="button" class="help-dot" aria-label="说明" data-tip="字母或数字开头，可含点、连字符与下划线">?</button></div>
+              </div>
+              <input type="text" class="set-field mono" id="cp-name" required pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" placeholder="team-01">
             </div>
-            <div class="toolbar-right">
-              <label class="field-inline">
-                <span>实例</span>
-                <select id="tel-inst-filter">
-                  <option value="all">全部实例</option>
-                  <option value="main">Main (Ultra)</option>
-                  <option value="ide">Antigravity IDE</option>
-                  <option value="p1">p1</option>
-                  <option value="p2">p2</option>
-                  <option value="p3">p3</option>
-                  <option value="p4">p4</option>
-                </select>
-              </label>
-              <label class="field-inline">
-                <span>费率口径</span>
-                <select id="tel-mode-select">
-                  <option value="std">标准 API + 缓存</option>
-                  <option value="promo">优惠阶梯 + 缓存</option>
-                  <option value="nc_std">标准无缓存对比</option>
-                  <option value="nc_promo">优惠无缓存对比</option>
-                </select>
-              </label>
-              <a class="btn quiet" id="btn-export-csv" href="/api/telemetry/export.csv?preset=last_7d" download>导出 CSV</a>
+            <div class="row pref stack-narrow">
+              <div class="who">
+                <div class="name"><span>显示备注</span><button type="button" class="help-dot" aria-label="说明" data-tip="展示在卡片与筛选菜单中的易读名称">?</button></div>
+              </div>
+              <input type="text" class="set-field wide" id="cp-desc" placeholder="主力工作账号">
+            </div>
+            <div class="row pref">
+              <div class="who">
+                <div class="name"><span>目录共享策略</span><button type="button" class="help-dot" aria-label="说明" data-tip="控制新实例与宿主机配置目录的隔离程度">?</button></div>
+              </div>
+              <button type="button" class="field" data-select="cp-links" id="cp-links">
+                <span class="v">精简隔离（推荐）</span>
+                <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              </button>
+            </div>
+            <div class="row pref">
+              <div class="who">
+                <div class="name"><span>初始配置来源</span><button type="button" class="help-dot" aria-label="说明" data-tip="脱敏继承可保留编辑器习惯并清除原账号登录态">?</button></div>
+              </div>
+              <button type="button" class="field" data-select="cp-inherit" id="cp-inherit">
+                <span class="v">宿主机脱敏继承</span>
+                <span class="chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              </button>
+            </div>
+            <div class="row pref">
+              <div class="who">
+                <div class="name"><span>同步扩展服务（MCP）</span><button type="button" class="help-dot" aria-label="说明" data-tip="自动复制工具服务列表并剥离硬编码敏感凭据">?</button></div>
+              </div>
+              <button type="button" class="switch" role="switch" aria-checked="true" id="cp-mcp"><i></i></button>
+            </div>
+            <div class="row pref">
+              <div class="who">
+                <div class="name"><span>创建完成后立即启动</span><button type="button" class="help-dot" aria-label="说明" data-tip="自动拉起新客户端窗口以便登录新账号">?</button></div>
+              </div>
+              <button type="button" class="switch" role="switch" aria-checked="false" id="cp-launch"><i></i></button>
             </div>
           </div>
-          <div class="kpi-grid" id="tel-kpis"></div>
-          <div class="card chart-card">
-            <div class="card-head">
-              <div>
-                <h3>Token 消耗趋势</h3>
-                <p class="card-sub" id="tel-chart-sub">只读扫描 SQLite WAL · 绿=缓存命中 · 青=Input · 橙=Output</p>
-              </div>
-              <div class="chart-tooltip" id="chart-tooltip">悬浮柱状图查看精确数值</div>
-            </div>
-            <div id="tel-chart-host" class="chart-host"></div>
-          </div>
-          <div class="two-col">
-            <div class="card">
-              <div class="card-head"><h3>按模型成本分布</h3></div>
-              <div tabindex="0" role="region" aria-labelledby="tbl-models-cap" class="table-wrapper">
-                <table>
-                  <caption id="tbl-models-cap" class="sr-only">按模型统计 Token 与 API 等值费用</caption>
-                  <thead><tr><th>模型</th><th>调用</th><th>Input</th><th>Cache</th><th>Output</th><th>费用</th></tr></thead>
-                  <tbody id="tel-models-body"></tbody>
-                </table>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-head"><h3>按实例横向对比</h3></div>
-              <div tabindex="0" role="region" aria-labelledby="tbl-inst-cap" class="table-wrapper">
-                <table>
-                  <caption id="tbl-inst-cap" class="sr-only">按实例统计 Token、缓存命中率与 API 费用</caption>
-                  <thead><tr><th>实例</th><th>调用</th><th>总 Token</th><th>缓存命中</th><th>费用</th></tr></thead>
-                  <tbody id="tel-inst-body"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head"><h3>最近 LLM 调用流水 (Top 40)</h3></div>
-            <div tabindex="0" role="region" aria-labelledby="tbl-calls-cap" class="table-wrapper">
-              <table>
-                <caption id="tbl-calls-cap" class="sr-only">最近 LLM 调用详细记录</caption>
-                <thead><tr><th>时间</th><th>实例</th><th>会话</th><th>模型</th><th>Input</th><th>Cache</th><th>Output</th><th>费用</th></tr></thead>
-                <tbody id="tel-calls-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- View 3: Sessions & Context -->
-        <section class="view-panel" id="view-sessions" hidden>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h3>实时会话状态追踪 (Hooks + Connect-RPC)</h3>
-                <p class="card-sub">待审批或阻塞会话高亮提示，点击右侧按钮直接切到对应 Antigravity 窗口。</p>
-              </div>
-            </div>
-            <div id="live-sessions-list" class="session-list"></div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h3>各实例活跃上下文窗口 (Context Window)</h3>
-                <p class="card-sub">基于 GetCascadeTrajectoryGeneratorMetadata 解析上下文构成树；超出预警水位建议执行 /compact。</p>
-              </div>
-            </div>
-            <div id="context-cards" class="ctx-grid"></div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h3>跨实例历史会话 FTS5 检索</h3>
-                <p class="card-sub">并发只读检索 Main 与全部分身 conversation_summaries.db。</p>
-              </div>
-            </div>
-            <form class="search-bar" id="session-search-form">
-              <input type="search" id="session-search-input" placeholder="输入关键词搜索标题、路径或对话正文，例如：paragravity / wails / oauth">
-              <select id="session-search-inst">
-                <option value="all">全部实例</option>
-                <option value="main">main</option>
-                <option value="ide">ide</option>
-                <option value="p1">p1</option>
-                <option value="p2">p2</option>
-                <option value="p3">p3</option>
-                <option value="p4">p4</option>
-              </select>
-              <button type="submit" class="btn primary">搜索</button>
-            </form>
-            <div id="session-hits" class="hits-list"></div>
-          </div>
-        </section>
-
-        <!-- View 4: Doctor & Fleet -->
-        <section class="view-panel" id="view-doctor" hidden>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h3>六维环境体检中心</h3>
-                <p class="card-sub" id="doctor-versions-sub">Main / Box / IDE 版本核验 · Keychain 元数据只读保护</p>
-              </div>
-              <div class="btn-row">
-                <button type="button" class="btn quiet" id="btn-doctor-fix">一键安全修复</button>
-                <button type="button" class="btn quiet" id="btn-sync-box">同步 Antigravity-Box</button>
-                <button type="button" class="btn primary" command="show-modal" commandfor="create-profile-dialog" id="btn-open-create">+ 新建分身</button>
-              </div>
-            </div>
-            <div id="doctor-feedback" class="banner" hidden></div>
-            <div id="doctor-grid" class="doctor-grid"></div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h3>CDP 实时汉化与 Shadow-DOM HUD 探针</h3>
-                <p class="card-sub">内置 3 秒自动巡检并幂等注入中文补丁与右上/右下微胶囊。</p>
-              </div>
-              <button type="button" class="btn quiet" id="btn-doctor-cdp">立即重注并探测</button>
-            </div>
-            <div tabindex="0" role="region" aria-labelledby="tbl-cdp-cap" class="table-wrapper">
-              <table>
-                <caption id="tbl-cdp-cap" class="sr-only">CDP 页面目标与注入状态</caption>
-                <thead><tr><th>实例</th><th>CDP 端口</th><th>窗口标题</th><th>汉化补丁</th><th>HUD 胶囊</th><th>备注</th></tr></thead>
-                <tbody id="cdp-table-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- View 5: Cache Storage -->
-        <section class="view-panel" id="view-storage" hidden>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h3>Brain 与 Conversations 安全瘦身</h3>
-                <p class="card-sub">严格仅识别 UUID 命名目录与数据库，自动锁定运行中对话与每个实例最近保留数。</p>
-              </div>
-              <div class="btn-row">
-                <label class="field-inline">
-                  <span>保留最近</span>
-                  <input type="number" id="cache-keep-input" min="1" max="200" value="20" style="width:64px">
-                  <span>条</span>
-                </label>
-                <label class="field-inline">
-                  <span>目标</span>
-                  <select id="cache-inst-filter">
-                    <option value="all">全部实例</option>
-                    <option value="main">main</option>
-                    <option value="p1">p1</option>
-                    <option value="p2">p2</option>
-                    <option value="p3">p3</option>
-                    <option value="p4">p4</option>
-                  </select>
-                </label>
-                <button type="button" class="btn quiet" id="btn-cache-scan">重新扫描</button>
-                <button type="button" class="btn danger" id="btn-cache-clean">清理可回收缓存</button>
-              </div>
-            </div>
-            <div id="cache-feedback" class="banner" hidden></div>
-            <div class="kpi-grid" id="cache-kpis"></div>
-            <div tabindex="0" role="region" aria-labelledby="tbl-cache-cap" class="table-wrapper">
-              <table>
-                <caption id="tbl-cache-cap" class="sr-only">可清理会话缓存列表</caption>
-                <thead><tr><th>实例</th><th>会话标题 / UUID</th><th>Brain</th><th>DB</th><th>合计</th><th>状态</th></tr></thead>
-                <tbody id="cache-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- View 6: Settings -->
-        <section class="view-panel" id="view-settings" hidden>
-          <form id="settings-form" class="settings-grid">
-            <div class="card">
-              <div class="card-head"><h3>CDP 汉化与窗口 HUD</h3></div>
-              <div class="form-stack">
-                <label class="check"><input type="checkbox" id="cfg-cdp-enabled"> 启用 3 秒 CDP 自动守护</label>
-                <label class="check"><input type="checkbox" id="cfg-cdp-zh"> 自动注入中文界面补丁</label>
-                <label class="check"><input type="checkbox" id="cfg-cdp-hud"> 注入窗口内 Shadow-DOM 状态微胶囊</label>
-                <label class="field">
-                  <span>HUD 默认位置</span>
-                  <select id="cfg-cdp-pos">
-                    <option value="bottom-right">右下角 (bottom-right)</option>
-                    <option value="top-right">右上角 (top-right)</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span>汉化词库路径</span>
-                  <input type="text" id="cfg-cdp-path" placeholder="~/.antigravity-zh/inject.js">
-                </label>
-                <label class="field">
-                  <span>允许显示 HUD 的实例 (逗号分隔，例如 main,p1,p2,p3,p4)</span>
-                  <input type="text" id="cfg-cdp-insts">
-                </label>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-head">
-                <h3>专属 Telegram Bot 告警</h3>
-                <button type="button" class="btn quiet" id="btn-tg-test">发送测试消息</button>
-              </div>
-              <div class="form-stack">
-                <label class="check"><input type="checkbox" id="cfg-tg-enabled"> 开启 Telegram 异步告警通知</label>
-                <label class="field">
-                  <span>Bot Token</span>
-                  <input type="password" id="cfg-tg-token" autocomplete="off" placeholder="123456:ABC-...">
-                </label>
-                <label class="field">
-                  <span>Chat ID</span>
-                  <input type="text" id="cfg-tg-chatid" placeholder="你的数字 Chat ID">
-                </label>
-                <div class="two-mini">
-                  <label class="field">
-                    <span>最短完成耗时 (秒)</span>
-                    <input type="number" id="cfg-tg-mindur" min="0" max="3600">
-                  </label>
-                  <label class="field">
-                    <span>待审批超时告警 (秒)</span>
-                    <input type="number" id="cfg-tg-stuck" min="10" max="3600">
-                  </label>
-                </div>
-                <label class="check"><input type="checkbox" id="cfg-tg-stop"> 任务结束时通知</label>
-                <label class="check"><input type="checkbox" id="cfg-tg-err"> 异常中断时优先告警</label>
-                <label class="check"><input type="checkbox" id="cfg-tg-lowq"> 配额低于阈值自动预警 (每重置周期一次)</label>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-head"><h3>计价口径、阈值与路径</h3></div>
-              <div class="form-stack">
-                <div class="two-mini">
-                  <label class="field">
-                    <span>默认计价模式</span>
-                    <select id="cfg-price-mode">
-                      <option value="std">标准 API + 缓存</option>
-                      <option value="promo">优惠阶梯 + 缓存</option>
-                      <option value="nc_std">标准无缓存</option>
-                      <option value="nc_promo">优惠无缓存</option>
-                    </select>
-                  </label>
-                  <label class="field">
-                    <span>默认币种</span>
-                    <select id="cfg-price-cur">
-                      <option value="USD">USD ($)</option>
-                      <option value="CNY">CNY (¥)</option>
-                    </select>
-                  </label>
-                </div>
-                <div class="two-mini">
-                  <label class="field">
-                    <span>USD → CNY 汇率</span>
-                    <input type="number" id="cfg-price-rate" step="0.01" min="1" max="20">
-                  </label>
-                  <label class="field">
-                    <span>Ultra 月费基准 (USD)</span>
-                    <input type="number" id="cfg-price-sub" step="1" min="1" max="1000">
-                  </label>
-                </div>
-                <div class="two-mini">
-                  <label class="field">
-                    <span>配额低水位告警 (%)</span>
-                    <input type="number" id="cfg-warn-quota" min="1" max="90">
-                  </label>
-                  <label class="field">
-                    <span>上下文压缩提醒 (%)</span>
-                    <input type="number" id="cfg-warn-ctx" min="20" max="98">
-                  </label>
-                </div>
-                <label class="field">
-                  <span>Antigravity-Box 路径</span>
-                  <input type="text" id="cfg-box-app">
-                </label>
-                <label class="field">
-                  <span>update-box.sh 路径</span>
-                  <input type="text" id="cfg-box-script">
-                </label>
-              </div>
-            </div>
-
-            <div class="settings-footer">
-              <div id="settings-feedback" class="banner" hidden></div>
-              <button type="submit" class="btn primary">保存配置并立即生效</button>
-            </div>
-          </form>
-        </section>
-      </main>
+          <div class="err-line" id="cp-error" role="alert" hidden></div>
+        </div>
+        <div class="bar">
+          <button type="button" class="text" id="cp-cancel-btn">取消</button>
+          <button type="submit" class="text primary" id="cp-submit-btn">立即创建</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Native Modal Dialog for Creating a ParaGravity Profile -->
-  <dialog id="create-profile-dialog" aria-labelledby="cpd-title" closedby="any">
-    <form method="dialog" id="create-profile-form" class="dialog-box">
-      <div class="dialog-head">
-        <h2 id="cpd-title">新建 ParaGravity 分身沙盒</h2>
-        <button type="submit" value="cancel" class="icon-btn" aria-label="关闭">✕</button>
-      </div>
-      <p class="dialog-sub">隔离家目录 ~/.antigravity-profiles/&lt;name&gt; 与 Chromium UserData；不拷贝 OAuth 密钥，仅按需继承脱敏偏好设置。</p>
-      <div class="form-stack">
-        <label class="field">
-          <span>分身名称（如 p5、work）</span>
-          <input type="text" id="cp-name" required pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" placeholder="p5" autofocus>
-        </label>
-        <label class="field">
-          <span>备注描述</span>
-          <input type="text" id="cp-desc" placeholder="例如：备用 Pro 号 #5">
-        </label>
-        <div class="two-mini">
-          <label class="field">
-            <span>符号链接策略</span>
-            <select id="cp-links">
-              <option value="minimal">minimal（推荐，隔离 .ssh/.config）</option>
-              <option value="full">full（继承全部常用环境）</option>
-              <option value="none">none（完全空沙盒）</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>配置继承</span>
-            <select id="cp-inherit">
-              <option value="host">继承宿主机脱敏配置</option>
-              <option value="">空白初始化</option>
-            </select>
-          </label>
+  <!-- 模态框 2：通用中文确认框（清理缓存 / 云算力清场 / 解绑 / 停止与删除实例） -->
+  <div class="modal" id="confirm-modal" hidden>
+    <div class="dialog compact" role="alertdialog" aria-modal="true" aria-labelledby="cfm-title" aria-describedby="cfm-desc">
+      <div class="editor framed">
+        <div class="ehead">
+          <div class="ehead-main">
+            <span class="modal-icon danger" id="cfm-icon" aria-hidden="true"></span>
+            <div class="ehead-titles">
+              <b id="cfm-title">请确认操作</b>
+              <span class="esub" id="cfm-sub" hidden></span>
+            </div>
+          </div>
+          <button type="button" class="icon modal-close" id="cfm-close-btn" aria-label="关闭弹窗" data-tip="关闭 (Esc)">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 2.5 9.5 9.5M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
         </div>
-        <label class="check"><input type="checkbox" id="cp-mcp" checked> 脱敏同步 mcp_config.json（自动置空 key/token）</label>
-        <label class="check"><input type="checkbox" id="cp-launch"> 创建完成后立即通过 Antigravity-Box 启动</label>
+        <div class="ebody confirm-body">
+          <p class="cfm-desc" id="cfm-desc"></p>
+          <div class="cfm-summary" id="cfm-meta" hidden></div>
+          <div class="err-line" id="cfm-error" role="alert" hidden></div>
+        </div>
+        <div class="bar">
+          <button type="button" class="text" id="cfm-cancel-btn">取消</button>
+          <button type="button" class="text danger-fill" id="cfm-ok-btn">确认</button>
+        </div>
       </div>
-      <div id="cp-error" class="banner error" hidden></div>
-      <div class="dialog-actions">
-        <button type="submit" value="cancel" class="btn quiet">取消</button>
-        <button type="button" id="cp-submit-btn" class="btn primary">创建分身</button>
-      </div>
-    </form>
-  </dialog>
+    </div>
+  </div>
 
-  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <!-- 模态框 3：详情检视与授权引导弹窗 -->
+  <div class="modal" id="detail-modal" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dtl-title">
+      <div class="editor framed">
+        <div class="ehead">
+          <div class="ehead-main">
+            <span class="modal-icon accent" id="dtl-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.2v3.6M8 5.1v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </span>
+            <div class="ehead-titles">
+              <b id="dtl-title">详情信息</b>
+              <span class="esub" id="dtl-sub" hidden></span>
+            </div>
+          </div>
+          <button type="button" class="icon modal-close" id="dtl-close-btn" aria-label="关闭弹窗" data-tip="关闭 (Esc)">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 2.5 9.5 9.5M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="ebody detail-body" id="dtl-body"></div>
+        <div class="bar" id="dtl-foot">
+          <button type="button" class="text primary" id="dtl-ok-btn">知道了</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pop" id="pop-host" role="listbox" hidden></div>
+  <div class="tip-pop" id="tip-host" role="tooltip" hidden></div>
+  <div class="status lift" id="status-pill" role="status" aria-live="polite" hidden></div>
+  <script src="/i18n.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify embedded MCP App asset exists
+        run: test -s internal/mcpapp/dist/app.html
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go test (-race)
+        run: go test -race -count=1 ./...
+
+      - name: Cross-compile Pure Go (CGO_ENABLED=0) matrix
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          CGO_ENABLED=0 GOOS=darwin  GOARCH=arm64 go build -o /dev/null ./cmd/agymate
+          CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64 go build -o /dev/null ./cmd/agymate
+          CGO_ENABLED=0 GOOS=linux   GOARCH=amd64 go build -o /dev/null ./cmd/agymate
+          CGO_ENABLED=0 GOOS=linux   GOARCH=arm64 go build -o /dev/null ./cmd/agymate
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o /dev/null ./cmd/agymate
+
+      - name: Check JS syntax
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          for f in frontend/app.js internal/cdp/hud.js magpie-plugin/page/boot.js magpie-plugin/index.mjs mcpapp-ui/src/main.js mcpapp-ui/build.mjs; do
+            node --check "$f"
+          done

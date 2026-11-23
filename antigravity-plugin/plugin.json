@@ -1,0 +1,28 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "agymate",
+  "displayName": "AgyMate",
+  "version": "0.3.0",
+  "description": "AgyMate 本地遥测与多开管理套件：查询 Antigravity 实时配额余量、SQLite Token 等效账单、隔离多开实例、Google Colab 云算力池及环境健康体检（原生支持 MCP App 侧栏/全页/内联卡片）。",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "chendahuang",
+    "url": "https://github.com/realchendahuang"
+  },
+  "homepage": "https://github.com/realchendahuang/AgyMate",
+  "repository": "https://github.com/realchendahuang/AgyMate",
+  "license": "MIT",
+  "keywords": [
+    "agymate",
+    "quota",
+    "telemetry",
+    "tokens",
+    "colab",
+    "mcp-app"
+  ],
+  "suggestedPrompts": [
+    "打开 AgyMate 控制台并查看我当前所有账号的配额余量、重置倒计时与上下文水位",
+    "统计最近 7 天的 Token 消耗、缓存命中节省金额与模型账单明细",
+    "执行 AgyMate 环境健康体检并检查隔离实例与 Colab 云算力状态"
+  ]
+}

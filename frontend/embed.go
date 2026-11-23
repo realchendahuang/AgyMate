@@ -6,7 +6,7 @@ import (
 	"io/fs"
 )
 
-//go:embed index.html style.css app.js logo.svg
+//go:embed index.html style.css i18n.js app.js logo.svg
 var assets embed.FS
 
 // FS returns the embedded frontend root filesystem.

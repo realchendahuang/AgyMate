@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/realchendahuang/AgyMate/internal/config"
 )
 
 func TestExtractAccountInfoV229JSON(t *testing.T) {
@@ -93,5 +95,60 @@ func TestHealHomeSymlinksRepairsBrokenTarget(t *testing.T) {
 	target, err := os.Readlink(brokenDst)
 	if err != nil || target != realZsh {
 		t.Fatalf("expected repaired symlink -> %s, got %s (%v)", realZsh, target, err)
+	}
+}
+
+func TestCreateAndDeleteProfile(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	cfg := config.DefaultConfig()
+	cfg.Paths.ProfilesDir = filepath.Join(home, "profiles")
+
+	// Protected & unsafe names must fail DeleteProfile
+	for _, blocked := range []string{"main", "ide", "../escape", "nonexistent"} {
+		if err := DeleteProfile(cfg, blocked, false); err == nil {
+			t.Fatalf("expected DeleteProfile(%q) error, got nil", blocked)
+		}
+	}
+
+	meta, err := CreateProfile(cfg, CreateProfileOpts{
+		Name:        "work",
+		Description: "Work Account",
+		LinksPolicy: "none",
+	})
+	if err != nil {
+		t.Fatalf("CreateProfile error: %v", err)
+	}
+	if meta.Name != "work" {
+		t.Fatalf("expected meta.Name=work, got %q", meta.Name)
+	}
+
+	profileDir := filepath.Join(cfg.Paths.ProfilesDir, "work")
+	if !dirExists(profileDir) {
+		t.Fatalf("expected %s to exist after CreateProfile", profileDir)
+	}
+
+	got := DiscoverAll(cfg)
+	found := false
+	for _, inst := range got {
+		if inst.ID == "work" {
+			found = true
+			if inst.Label != "Work Account" {
+				t.Fatalf("expected label 'Work Account' from meta.Description, got %q", inst.Label)
+			}
+			if inst.PrimaryGeminiDir != filepath.Join(profileDir, "home", ".gemini", "antigravity") {
+				t.Fatalf("unexpected PrimaryGeminiDir: %s", inst.PrimaryGeminiDir)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected created profile work to be discovered: %+v", got)
+	}
+
+	if err := DeleteProfile(cfg, "work", false); err != nil {
+		t.Fatalf("DeleteProfile(work) failed: %v", err)
+	}
+	if dirExists(profileDir) {
+		t.Fatalf("expected %s removed after DeleteProfile", profileDir)
 	}
 }

@@ -31,6 +31,7 @@ type LiveSession struct {
 	UpdatedAt         int64  `json:"updatedAt"`
 	DurationSec       int64  `json:"durationSec"`
 	stuckAlertedAt    int64
+	lastStepCount     int
 }
 
 // Tracker maintains live session states from Hooks + RPC + SQLite step inspection
@@ -49,6 +50,13 @@ func NewTracker(getCfg func() config.Config) *Tracker {
 		notifier: notify.NewClient(),
 		getCfg:   getCfg,
 	}
+}
+
+func (t *Tracker) config() config.Config {
+	if t.getCfg != nil {
+		return t.getCfg()
+	}
+	return config.DefaultConfig()
 }
 
 // Ingest handles one incoming lifecycle hook payload and triggers notifications if needed.
@@ -127,8 +135,8 @@ func (t *Tracker) Ingest(ev EventPayload) LiveSession {
 			sess.State = "idle"
 		}
 
-		cfg := t.getCfg()
-		if cfg.Telegram.Enabled && cfg.Telegram.BotToken != "" && cfg.Telegram.ChatID != "" {
+		cfg := t.config()
+		if cfg.HasAnyNotificationChannel() {
 			if isErr && cfg.Telegram.NotifyOnError {
 				sendMsg = notify.FormatSessionStop(sess.InstanceID, sess.Title, sess.Workspace, sess.Model, sess.TerminationReason, sess.Error, dur, true)
 			} else if !isErr && cfg.Telegram.NotifyOnStop && ev.TerminationReason != "USER_CANCELED" && dur >= int64(cfg.Telegram.NotifyMinDurationSec) {
@@ -141,12 +149,12 @@ func (t *Tracker) Ingest(ev EventPayload) LiveSession {
 	t.mu.Unlock()
 
 	if sendMsg != "" {
-		cfg := t.getCfg()
-		go func(tok, chat, msg string) {
+		cfg := t.config()
+		go func(c config.Config, msg string) {
 			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 			defer cancel()
-			_ = t.notifier.SendHTML(ctx, tok, chat, msg)
-		}(cfg.Telegram.BotToken, cfg.Telegram.ChatID, sendMsg)
+			_ = t.notifier.Dispatch(ctx, c, "AgyMate Session", msg)
+		}(cfg, sendMsg)
 	}
 	return out
 }
@@ -155,12 +163,17 @@ func (t *Tracker) Ingest(ev EventPayload) LiveSession {
 // catching running sessions even if hooks didn't fire yet and detecting stuck approvals.
 func (t *Tracker) ReconcileRPC(inst instances.Instance, snap rpc.InstanceSnapshot) {
 	now := time.Now().Unix()
-	cfg := t.getCfg()
+	cfg := t.config()
 	stuckThresh := int64(cfg.Telegram.NotifyOnStuckSec)
 	if stuckThresh <= 0 {
 		stuckThresh = 45
 	}
 
+	type approvalProbe struct {
+		cascadeID string
+		idleFor   int64
+	}
+	var probes []approvalProbe
 	var alerts []string
 
 	t.mu.Lock()
@@ -187,8 +200,13 @@ func (t *Tracker) ReconcileRPC(inst instances.Instance, snap rpc.InstanceSnapsho
 				StartedAt:      now,
 				UpdatedAt:      now,
 				State:          "running",
+				lastStepCount:  tr.StepCount,
 			}
 			t.sessions[tr.CascadeID] = sess
+		} else if tr.StepCount > 0 && tr.StepCount != sess.lastStepCount {
+			sess.lastStepCount = tr.StepCount
+			sess.UpdatedAt = now
+			sess.stuckAlertedAt = 0
 		}
 		if tr.Title != "" {
 			sess.Title = tr.Title
@@ -202,13 +220,14 @@ func (t *Tracker) ReconcileRPC(inst instances.Instance, snap rpc.InstanceSnapsho
 		sess.DurationSec = now - sess.StartedAt
 
 		idleFor := now - sess.UpdatedAt
-		if tr.Status == "CASCADE_RUN_STATUS_WAITING" || (idleFor >= stuckThresh && telemetry.CheckStepWaitingApproval(inst.GeminiDirs, tr.CascadeID)) {
+		if tr.Status == "CASCADE_RUN_STATUS_WAITING" {
 			sess.State = "waiting_approval"
-			if cfg.Telegram.Enabled && cfg.Telegram.BotToken != "" && cfg.Telegram.ChatID != "" &&
-				sess.stuckAlertedAt == 0 {
+			if cfg.HasAnyNotificationChannel() && sess.stuckAlertedAt == 0 {
 				sess.stuckAlertedAt = now
 				alerts = append(alerts, notify.FormatWaitingAlert(inst.ID, sess.Title, sess.Workspace, idleFor))
 			}
+		} else if idleFor >= stuckThresh {
+			probes = append(probes, approvalProbe{cascadeID: tr.CascadeID, idleFor: idleFor})
 		} else {
 			sess.State = "running"
 		}
@@ -222,12 +241,38 @@ func (t *Tracker) ReconcileRPC(inst instances.Instance, snap rpc.InstanceSnapsho
 	}
 	t.mu.Unlock()
 
+	if len(probes) > 0 {
+		waitingSet := make(map[string]int64, len(probes))
+		for _, p := range probes {
+			if telemetry.CheckStepWaitingApproval(inst.GeminiDirs, p.cascadeID) {
+				waitingSet[p.cascadeID] = p.idleFor
+			}
+		}
+		t.mu.Lock()
+		for _, p := range probes {
+			sess, ok := t.sessions[p.cascadeID]
+			if !ok {
+				continue
+			}
+			if idleFor, waiting := waitingSet[p.cascadeID]; waiting {
+				sess.State = "waiting_approval"
+				if cfg.HasAnyNotificationChannel() && sess.stuckAlertedAt == 0 {
+					sess.stuckAlertedAt = now
+					alerts = append(alerts, notify.FormatWaitingAlert(inst.ID, sess.Title, sess.Workspace, idleFor))
+				}
+			} else if sess.State != "idle" && sess.State != "error" {
+				sess.State = "running"
+			}
+		}
+		t.mu.Unlock()
+	}
+
 	for _, msg := range alerts {
-		go func(tok, chat, m string) {
+		go func(c config.Config, m string) {
 			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 			defer cancel()
-			_ = t.notifier.SendHTML(ctx, tok, chat, m)
-		}(cfg.Telegram.BotToken, cfg.Telegram.ChatID, msg)
+			_ = t.notifier.Dispatch(ctx, c, "AgyMate Approval", m)
+		}(cfg, msg)
 	}
 }
 

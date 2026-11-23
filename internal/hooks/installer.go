@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -35,20 +36,20 @@ type EventPayload struct {
 	} `json:"toolCall,omitempty"`
 }
 
-// InstallTargets returns all hooks.json paths (global + each ParaGravity profile).
+// InstallTargets returns all hooks.json paths (global + each isolated profile).
 func InstallTargets(cfg config.Config) []string {
 	realHome, _ := os.UserHomeDir()
 	targets := []string{
 		filepath.Join(realHome, ".gemini", "config", "hooks.json"),
 	}
-	profilesDir := config.ExpandPath(cfg.Box.ProfilesDir)
+	profilesDir := config.ExpandPath(cfg.Paths.ProfilesDir)
 	if ents, err := os.ReadDir(profilesDir); err == nil {
 		for _, ent := range ents {
 			if !ent.IsDir() {
 				continue
 			}
 			pdir := filepath.Join(profilesDir, ent.Name())
-			if _, err := os.Stat(filepath.Join(pdir, "profile.json")); err == nil {
+			if hasProfileDirLayout(pdir) {
 				targets = append(targets, filepath.Join(pdir, "home", ".gemini", "config", "hooks.json"))
 			}
 		}
@@ -56,13 +57,42 @@ func InstallTargets(cfg config.Config) []string {
 	return targets
 }
 
-// InstallHooks merges the "agymate" hook spec into global and profile hooks.json files
-// without disturbing existing keys (e.g. "herdr", "marktoast") and without leaving .bak files.
-func InstallHooks(cfg config.Config, cliBin string) ([]string, error) {
-	if cliBin == "" {
-		realHome, _ := os.UserHomeDir()
-		cliBin = filepath.Join(realHome, ".local", "bin", "agymate")
+func hasProfileDirLayout(pdir string) bool {
+	if st, err := os.Stat(filepath.Join(pdir, "profile.json")); err == nil && !st.IsDir() {
+		return true
 	}
+	for _, sub := range []string{"data", "home"} {
+		if st, err := os.Stat(filepath.Join(pdir, sub)); err == nil && st.IsDir() {
+			return true
+		}
+	}
+	return false
+}
+
+func resolveHookCLIBin(cliBin string) string {
+	if trimmed := strings.TrimSpace(cliBin); trimmed != "" {
+		return trimmed
+	}
+	if exe, err := os.Executable(); err == nil {
+		base := strings.ToLower(filepath.Base(exe))
+		if base == "agymate" || base == "agymate.exe" {
+			if realPath, rerr := filepath.EvalSymlinks(exe); rerr == nil {
+				return realPath
+			}
+			return exe
+		}
+	}
+	if found, err := exec.LookPath("agymate"); err == nil && found != "" {
+		return found
+	}
+	realHome, _ := os.UserHomeDir()
+	return filepath.Join(realHome, ".local", "bin", "agymate")
+}
+
+// InstallHooks merges the "agymate" hook spec into global and profile hooks.json files
+// without disturbing existing third-party keys and without leaving .bak files.
+func InstallHooks(cfg config.Config, cliBin string) ([]string, error) {
+	cliBin = resolveHookCLIBin(cliBin)
 	spec := buildHookSpec(cliBin)
 	targets := InstallTargets(cfg)
 	var updated []string
@@ -73,6 +103,48 @@ func InstallHooks(cfg config.Config, cliBin string) ([]string, error) {
 		updated = append(updated, p)
 	}
 	return updated, nil
+}
+
+// UninstallHooks removes only the "agymate" key from global and profile hooks.json files,
+// preserving all other user-configured hooks intact.
+func UninstallHooks(cfg config.Config) ([]string, error) {
+	targets := InstallTargets(cfg)
+	var modified []string
+	for _, p := range targets {
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return modified, fmt.Errorf("read %s: %w", p, err)
+		}
+		if len(bytes.TrimSpace(raw)) == 0 {
+			continue
+		}
+		var doc map[string]any
+		if err := json.Unmarshal(raw, &doc); err != nil {
+			return modified, fmt.Errorf("parse %s: %w", p, err)
+		}
+		if _, exists := doc["agymate"]; !exists {
+			continue
+		}
+		delete(doc, "agymate")
+		out, err := json.MarshalIndent(doc, "", "  ")
+		if err != nil {
+			return modified, err
+		}
+		out = append(out, '\n')
+		tmp := p + ".tmp"
+		if err := os.WriteFile(tmp, out, 0o600); err != nil {
+			return modified, err
+		}
+		if err := os.Rename(tmp, p); err != nil {
+			_ = os.Remove(tmp)
+			return modified, err
+		}
+		modified = append(modified, p)
+	}
+	return modified, nil
 }
 
 // CheckInstalled reports how many target hooks.json files currently contain "agymate".
@@ -155,12 +227,37 @@ func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
 }
 
-// InferInstanceID determines whether a hook event originated from main, ide, or a profile p1..pN.
+// InferInstanceID determines whether a hook event originated from main, ide, or an isolated profile.
 func InferInstanceID(ev EventPayload) string {
+	return InferInstanceIDForDir("~/.antigravity-profiles", ev)
+}
+
+// InferInstanceIDForDir determines instance ownership using the configured profilesDir.
+func InferInstanceIDForDir(profilesDir string, ev EventPayload) string {
+	var customMarker string
+	if strings.TrimSpace(profilesDir) != "" {
+		expanded := filepath.ToSlash(filepath.Clean(config.ExpandPath(profilesDir)))
+		if expanded != "" && expanded != "." && expanded != "/" {
+			customMarker = strings.TrimRight(expanded, "/") + "/"
+		}
+	}
+
 	paths := []string{ev.TranscriptPath, os.Getenv("HOME")}
-	for _, p := range paths {
+	for _, rawPath := range paths {
+		p := filepath.ToSlash(strings.TrimSpace(rawPath))
 		if p == "" {
 			continue
+		}
+		if customMarker != "" {
+			if idx := strings.Index(p, customMarker); idx >= 0 {
+				rest := p[idx+len(customMarker):]
+				if slash := strings.IndexByte(rest, '/'); slash > 0 {
+					return rest[:slash]
+				}
+				if rest != "" {
+					return rest
+				}
+			}
 		}
 		if idx := strings.Index(p, ".antigravity-profiles/"); idx >= 0 {
 			rest := p[idx+len(".antigravity-profiles/"):]
@@ -188,15 +285,23 @@ func IngestFromStdin(listenAddr, eventOverride string) []byte {
 		ev.HookEventName = eventOverride
 	}
 	if ev.InstanceID == "" {
-		ev.InstanceID = InferInstanceID(ev)
+		cfg, _ := config.Load()
+		ev.InstanceID = InferInstanceIDForDir(cfg.Paths.ProfilesDir, ev)
 	}
 	if ev.ConversationID != "" || ev.HookEventName != "" {
 		body, err := json.Marshal(ev)
 		if err == nil {
-			client := &http.Client{Timeout: 100 * time.Millisecond}
-			resp, err := client.Post("http://"+listenAddr+"/api/hooks/ingest", "application/json", bytes.NewReader(body))
-			if err == nil {
-				_ = resp.Body.Close()
+			req, rerr := http.NewRequest(http.MethodPost, "http://"+listenAddr+"/api/hooks/ingest", bytes.NewReader(body))
+			if rerr == nil {
+				req.Header.Set("Content-Type", "application/json")
+				if tok := config.LoadHubToken(); tok != "" {
+					req.Header.Set("X-AgyMate-Token", tok)
+				}
+				client := &http.Client{Timeout: 100 * time.Millisecond}
+				resp, perr := client.Do(req)
+				if perr == nil {
+					_ = resp.Body.Close()
+				}
 			}
 		}
 	}

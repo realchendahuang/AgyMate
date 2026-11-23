@@ -10,13 +10,18 @@ import (
 
 // ModelEnumNames maps known Antigravity protobuf model enum IDs to display names.
 var ModelEnumNames = map[uint64]string{
+	326:  "Gemini 3.8 Flash",
+	1026: "Claude Opus 4.6 (Thinking)",
+	1035: "Claude Sonnet 4.6 (Thinking)",
+	1037: "Gemini 3.1 Pro (High)",
 	1318: "Gemini 3.8 Flash (High)",
 	1319: "Gemini 3.8 Flash (Medium)",
 	1320: "Gemini 3.8 Flash (Low)",
 	1322: "Gemini 3.8 Flash Tiered",
+	1400: "Claude Opus 5.5 (Low)",
 	1401: "Claude Opus 5.5 (Medium)",
 	1402: "Claude Opus 5.5 (High)",
-	1403: "Claude Opus 5.5 (Low)",
+	1403: "Claude Sonnet 5.5 (Low)",
 	1404: "Claude Sonnet 5.5 (Medium)",
 	1405: "Claude Sonnet 5.5 (High)",
 	1417: "Gemini 4 Argon (High)",
@@ -24,11 +29,21 @@ var ModelEnumNames = map[uint64]string{
 	1419: "Gemini 4 Argon (Low)",
 	1427: "Gemini 4 Carbon (High)",
 	1428: "Gemini 4 Carbon (Medium)",
+	1437: "Gemini 4 Carbon (Medium)",
+	1438: "Gemini 4 Carbon (Low)",
 	1525: "Gemini 4 Hydrogen (High)",
 	1526: "Gemini 4 Hydrogen (Medium)",
+	1527: "Gemini 4 Hydrogen (Low)",
 	1528: "Gemini 4 Hydrogen (XHigh)",
+	1530: "Gemini 4 Hydrogen (High)",
+	1532: "Gemini 4 Neon (High)",
+	1533: "Gemini 4 Neon (Medium)",
+	1534: "Gemini 4 Neon (Low)",
+	1535: "Gemini 4 Neon (XHigh)",
+	1537: "Orchestrator (Neon)",
 	1667: "Orchestrator (Carbon)",
 	1669: "Gemini Flash",
+	1681: "Orchestrator (Argon)",
 }
 
 // ModelPricing stores per-1M-token prices in USD.
@@ -42,8 +57,12 @@ type ModelPricing struct {
 }
 
 // PricingForModel returns promo and standard rates per 1M tokens.
+// Custom rules in ~/.config/agymate/pricing.json take precedence when present.
 func PricingForModel(modelName, modelID string) ModelPricing {
 	low := strings.ToLower(modelName + " " + modelID)
+	if custom, ok := lookupPricingOverride(low); ok {
+		return custom
+	}
 	switch {
 	case strings.Contains(low, "opus"):
 		return ModelPricing{4.00, 0.20, 20.00, 4.00, 0.20, 20.00}
@@ -51,8 +70,10 @@ func PricingForModel(modelName, modelID string) ModelPricing {
 		return ModelPricing{3.00, 0.30, 15.00, 3.00, 0.30, 15.00}
 	case strings.Contains(low, "flash"):
 		return ModelPricing{0.75, 0.075, 3.75, 1.50, 0.15, 7.50}
+	case strings.Contains(low, "gpt-oss"):
+		return ModelPricing{0.50, 0.05, 2.00, 1.00, 0.10, 4.00}
 	default:
-		// Gemini 4 Argon / Carbon / Hydrogen / Orchestrator
+		// Gemini 4 Neon / Argon / Carbon / Hydrogen / Orchestrator
 		return ModelPricing{2.00, 0.10, 10.00, 4.00, 0.20, 20.00}
 	}
 }
@@ -108,6 +129,7 @@ func ComputeCallCost(modelName, modelID string, inp, cache, out, think, resp int
 
 // CallRecord represents one parsed LLM call from conversations/*.db.
 type CallRecord struct {
+	GenIndex    int
 	Timestamp   int64
 	InstanceID  string
 	CascadeID   string
@@ -119,6 +141,25 @@ type CallRecord struct {
 	Output      int64
 	Thinking    int64
 	ResponseOut int64
+	TTFTMs      int64
+	StreamMs    int64
+}
+
+func parseProtoDurationMs(data []byte) int64 {
+	if len(data) == 0 {
+		return 0
+	}
+	d := parseProtoDict(data)
+	sec := int64(d.firstVarint(1))
+	nanos := int64(d.firstVarint(2))
+	if sec < 0 || nanos < 0 || sec > 86400 {
+		return 0
+	}
+	ms := sec*1000 + (nanos+500_000)/1_000_000
+	if ms < 0 {
+		return 0
+	}
+	return ms
 }
 
 // ImageEvent records one generate_image tool invocation ($0.04 unit cost).
@@ -234,10 +275,20 @@ func resolveModelName(me uint64, mid, mn string, labelFn func(string) string) st
 	if mn != "" {
 		return mn
 	}
-	if labelFn != nil && mid != "" {
-		if l := labelFn(mid); l != "" {
-			return l
+	if labelFn != nil {
+		if mid != "" {
+			if l := labelFn(mid); l != "" {
+				return l
+			}
 		}
+		if me >= 1000 && me < 2000 {
+			if l := labelFn(fmt.Sprintf("MODEL_PLACEHOLDER_M%d", me-1000)); l != "" {
+				return l
+			}
+		}
+	}
+	if n, ok := lookupEnumOverride(me); ok {
+		return n
 	}
 	if n, ok := ModelEnumNames[me]; ok {
 		return n

@@ -1,5 +1,6 @@
-bin/
-dist/
+/bin/
+/dist/
 *.app/
 .DS_Store
 *.log
+mcpapp-ui/node_modules/

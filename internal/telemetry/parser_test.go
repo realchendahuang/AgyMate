@@ -96,6 +96,27 @@ func TestParseSingleDBAndComputeCosts(t *testing.T) {
 	}
 }
 
+func TestResolveModelNameNewModelsAndDynamicFallback(t *testing.T) {
+	labelFn := func(id string) string {
+		if id == "MODEL_PLACEHOLDER_M599" {
+			return "Gemini 4 Experimental (XHigh)"
+		}
+		return ""
+	}
+	if got := resolveModelName(1535, "", "", labelFn); got != "Gemini 4 Neon (XHigh)" {
+		t.Fatalf("enum 1535 = %q, want Gemini 4 Neon (XHigh)", got)
+	}
+	if got := resolveModelName(1537, "", "", labelFn); got != "Orchestrator (Neon)" {
+		t.Fatalf("enum 1537 = %q, want Orchestrator (Neon)", got)
+	}
+	if got := resolveModelName(1403, "", "", labelFn); got != "Claude Sonnet 5.5 (Low)" {
+		t.Fatalf("enum 1403 = %q, want Claude Sonnet 5.5 (Low)", got)
+	}
+	if got := resolveModelName(1599, "", "", labelFn); got != "Gemini 4 Experimental (XHigh)" {
+		t.Fatalf("dynamic placeholder M599 = %q, want Gemini 4 Experimental (XHigh)", got)
+	}
+}
+
 func TestCacheScanPreservesNonUUIDAndKeepCount(t *testing.T) {
 	tmp := t.TempDir()
 	gdir := filepath.Join(tmp, "antigravity")

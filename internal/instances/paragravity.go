@@ -1,6 +1,7 @@
 package instances
 
 import (
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -9,18 +10,20 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
+
+	_ "modernc.org/sqlite"
 
 	"github.com/realchendahuang/AgyMate/internal/config"
 )
 
 var (
 	// ErrReadOnlyLifecycle prevents lifecycle mutations on main or ide.
-	ErrReadOnlyLifecycle = errors.New("main and ide lifecycles are protected and strictly read-only")
+	ErrReadOnlyLifecycle = errors.New("默认客户端 (main) 与 IDE 客户端受保护，禁止执行启停、修复或删除操作")
 	validProfileNameRe   = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 	secretKeyRe          = regexp.MustCompile(`(?i)key|token|secret|password|credential|auth|signature|private`)
 )
@@ -36,7 +39,7 @@ type ProfileMeta struct {
 	LastAppVersion string `json:"last_app_version,omitempty"`
 }
 
-// AccountInfo describes extracted Google OAuth metadata inside a ParaGravity profile.
+// AccountInfo describes extracted Google OAuth metadata inside an isolated profile.
 type AccountInfo struct {
 	Email           string `json:"email"`
 	TokenExp        string `json:"tokenExp"`
@@ -58,7 +61,7 @@ type HealReport struct {
 	UpdaterSuppressed bool     `json:"updaterSuppressed"`
 }
 
-// CreateProfileOpts configures creation of a new ParaGravity sandbox profile.
+// CreateProfileOpts configures creation of a new isolated Antigravity profile.
 type CreateProfileOpts struct {
 	Name          string `json:"name"`
 	Description   string `json:"description"`
@@ -90,17 +93,21 @@ var (
 		"GPUCache",
 		"DawnGraphiteCache",
 		"DawnWebGPUCache",
+		"GraphiteDawnCache",
 		"Cache",
 	}
 )
 
-// ValidateProfileName checks name safety and rejects reserved slots main/ide.
+// ValidateProfileName checks name safety and rejects reserved slots (main, ide, all, custom).
 func ValidateProfileName(name string) error {
 	if name == "main" || name == "ide" {
 		return ErrReadOnlyLifecycle
 	}
+	if name == "all" || name == "custom" {
+		return fmt.Errorf("保留实例名称 %q 不可用于隔离沙盒", name)
+	}
 	if !validProfileNameRe.MatchString(name) {
-		return fmt.Errorf("invalid profile name %q: must match ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$", name)
+		return fmt.Errorf("实例名称 %q 格式无效（需以字母或数字开头，仅允许字母、数字、点、下划线或连字符，长度不超过 64）", name)
 	}
 	return nil
 }
@@ -108,8 +115,11 @@ func ValidateProfileName(name string) error {
 // ExtractAccountInfo reads google_accounts.json and jetski-standalone-oauth-token,
 // supporting both v2.29+ JSON format (with persistent refresh_token) and legacy JWT.
 func ExtractAccountInfo(profileDir string) AccountInfo {
+	return extractAccountFromGeminiRoot(filepath.Join(profileDir, "home", ".gemini"))
+}
+
+func extractAccountFromGeminiRoot(geminiDir string) AccountInfo {
 	var info AccountInfo
-	geminiDir := filepath.Join(profileDir, "home", ".gemini")
 	if !dirExists(geminiDir) {
 		return info
 	}
@@ -172,6 +182,80 @@ func ExtractAccountInfo(profileDir string) AccountInfo {
 	return info
 }
 
+// extractEmailFromUserDataDir inspects an Antigravity user-data-dir for cached login email
+// via app_storage.json or read-only User/globalStorage/state.vscdb.
+func extractEmailFromUserDataDir(userDataDir string) string {
+	if strings.TrimSpace(userDataDir) == "" {
+		return ""
+	}
+	appStoragePath := filepath.Join(userDataDir, "app_storage.json")
+	if raw, err := os.ReadFile(appStoragePath); err == nil {
+		var m map[string]any
+		if json.Unmarshal(raw, &m) == nil {
+			if email := pickLoginEmailFromMap(m); email != "" {
+				return email
+			}
+		}
+	}
+
+	vscdbPath := filepath.Join(userDataDir, "User", "globalStorage", "state.vscdb")
+	if !fileExists(vscdbPath) {
+		return ""
+	}
+	dsn := fmt.Sprintf("file:%s?mode=ro&_pragma=query_only(1)&_pragma=busy_timeout(500)", vscdbPath)
+	con, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return ""
+	}
+	defer con.Close()
+
+	rows, err := con.Query(`SELECT value FROM ItemTable WHERE key = 'google.google-antigravity' LIMIT 1`)
+	if err != nil {
+		return ""
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var val string
+		if rows.Scan(&val) == nil && val != "" {
+			var outer map[string]any
+			if json.Unmarshal([]byte(val), &outer) == nil {
+				if sub, ok := outer["antigravity-storage"].(map[string]any); ok {
+					if email := pickLoginEmailFromMap(sub); email != "" {
+						return email
+					}
+				} else if subStr, ok := outer["antigravity-storage"].(string); ok && subStr != "" {
+					var subMap map[string]any
+					if json.Unmarshal([]byte(subStr), &subMap) == nil {
+						if email := pickLoginEmailFromMap(subMap); email != "" {
+							return email
+						}
+					}
+				}
+				if email := pickLoginEmailFromMap(outer); email != "" {
+					return email
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func pickLoginEmailFromMap(m map[string]any) string {
+	if m == nil {
+		return ""
+	}
+	for _, key := range []string{"agy.onboarding.lastLoginUsername", "jetski.onboarding.lastLoginUsername"} {
+		if v, ok := m[key].(string); ok {
+			trimmed := strings.TrimSpace(v)
+			if strings.Contains(trimmed, "@") {
+				return trimmed
+			}
+		}
+	}
+	return ""
+}
+
 func decodeJWTPayload(jwtStr string) map[string]any {
 	parts := strings.Split(strings.TrimSpace(jwtStr), ".")
 	if len(parts) < 2 {
@@ -217,9 +301,9 @@ func writeProfileMeta(profileDir string, meta ProfileMeta) error {
 	return os.Rename(tmp, p)
 }
 
-// ReadAppBundleVersion reads CFBundleShortVersionString from an app's Info.plist via plutil/PlistBuddy.
+// ReadAppBundleVersion reads CFBundleShortVersionString from an app's Info.plist via PlistBuddy on macOS.
 func ReadAppBundleVersion(appPath string) string {
-	if appPath == "" {
+	if runtime.GOOS != "darwin" || appPath == "" {
 		return ""
 	}
 	plist := filepath.Join(appPath, "Contents", "Info.plist")
@@ -238,9 +322,9 @@ func HealProfile(cfg config.Config, name string, force bool) (HealReport, error)
 	if err := ValidateProfileName(name); err != nil {
 		return HealReport{}, err
 	}
-	profileDir := filepath.Join(config.ExpandPath(cfg.Box.ProfilesDir), name)
+	profileDir := filepath.Join(config.ExpandPath(cfg.Paths.ProfilesDir), name)
 	if !dirExists(profileDir) {
-		return HealReport{}, fmt.Errorf("profile %q not found at %s", name, profileDir)
+		return HealReport{}, fmt.Errorf("未找到隔离实例 %q (%s)", name, profileDir)
 	}
 
 	report := HealReport{Profile: name}
@@ -249,7 +333,7 @@ func HealProfile(cfg config.Config, name string, force bool) (HealReport, error)
 	procs := listProcesses()
 	running := findProfilePID(profileDir, dataDir, procs) > 0
 
-	// Always safe to repair broken symlinks inside home/ when target moved (e.g. /Users/kim -> /Users/chendahuang).
+	// Always safe to repair broken symlinks inside home/ when target moved (e.g. across user home paths).
 	realHome, _ := os.UserHomeDir()
 	meta := readProfileMeta(profileDir)
 	repaired, removed := healHomeSymlinks(realHome, homeDir, meta.SymlinkPolicy)
@@ -277,11 +361,7 @@ func HealProfile(cfg config.Config, name string, force bool) (HealReport, error)
 		}
 	}
 
-	boxPath := cfg.Box.BoxAppPath
-	if !fileExists(filepath.Join(boxPath, "Contents", "MacOS", "Antigravity")) {
-		boxPath = cfg.Box.MainAppPath
-	}
-	curVer := ReadAppBundleVersion(boxPath)
+	curVer := ReadAppBundleVersion(config.ExpandPath(cfg.Paths.MainAppPath))
 	report.OldVersion = meta.LastAppVersion
 	report.NewVersion = curVer
 	report.VersionChanged = curVer != "" && meta.LastAppVersion != curVer
@@ -325,7 +405,7 @@ func healHomeSymlinks(realHome, profileHome, policy string) (repaired []string, 
 			_ = os.Remove(dst)
 			src := filepath.Join(realHome, ent.Name())
 			if _, err := os.Stat(src); err == nil {
-				if os.Symlink(src, dst) == nil {
+				if createLink(src, dst) {
 					repaired = append(repaired, ent.Name())
 					continue
 				}
@@ -347,31 +427,45 @@ func healHomeSymlinks(realHome, profileHome, policy string) (repaired []string, 
 		dst := filepath.Join(profileHome, item)
 		if _, err := os.Stat(src); err == nil {
 			if _, err := os.Lstat(dst); os.IsNotExist(err) {
-				if os.Symlink(src, dst) == nil {
+				if createLink(src, dst) {
 					repaired = append(repaired, item)
 				}
 			}
 		}
 	}
 
-	// Keychain dir symlink for macOS compatibility (same as ParaGravity)
-	realKC := filepath.Join(realHome, "Library", "Keychains")
-	profLib := filepath.Join(profileHome, "Library")
-	profKC := filepath.Join(profLib, "Keychains")
-	if dirExists(realKC) {
-		_ = os.MkdirAll(profLib, 0o700)
-		if linfo, err := os.Lstat(profKC); err == nil {
-			if linfo.Mode()&os.ModeSymlink != 0 {
-				if _, err := os.Stat(profKC); err != nil {
-					_ = os.Remove(profKC)
-					_ = os.Symlink(realKC, profKC)
+	// Keychain dir symlink for macOS compatibility
+	if runtime.GOOS == "darwin" {
+		realKC := filepath.Join(realHome, "Library", "Keychains")
+		profLib := filepath.Join(profileHome, "Library")
+		profKC := filepath.Join(profLib, "Keychains")
+		if dirExists(realKC) {
+			_ = os.MkdirAll(profLib, 0o700)
+			if linfo, err := os.Lstat(profKC); err == nil {
+				if linfo.Mode()&os.ModeSymlink != 0 {
+					if _, err := os.Stat(profKC); err != nil {
+						_ = os.Remove(profKC)
+						_ = os.Symlink(realKC, profKC)
+					}
 				}
+			} else if os.IsNotExist(err) {
+				_ = os.Symlink(realKC, profKC)
 			}
-		} else if os.IsNotExist(err) {
-			_ = os.Symlink(realKC, profKC)
 		}
 	}
 	return repaired, removed
+}
+
+func createLink(src, dst string) bool {
+	if err := os.Symlink(src, dst); err == nil {
+		return true
+	}
+	if runtime.GOOS == "windows" {
+		if info, err := os.Stat(src); err == nil && info.IsDir() {
+			return exec.Command("cmd", "/c", "mklink", "/J", dst, src).Run() == nil
+		}
+	}
+	return false
 }
 
 func suppressSandboxAutoupdate(dataDir string) bool {
@@ -426,14 +520,14 @@ func hardenProfilePerms(profileDir string) {
 	}
 }
 
-// LaunchProfile starts an isolated ParaGravity profile with Antigravity-Box.app.
+// LaunchProfile starts an isolated profile using the official Antigravity client.
 func LaunchProfile(cfg config.Config, name, workspace string, forceHeal bool) (int, error) {
 	if err := ValidateProfileName(name); err != nil {
 		return 0, err
 	}
-	profileDir := filepath.Join(config.ExpandPath(cfg.Box.ProfilesDir), name)
+	profileDir := filepath.Join(config.ExpandPath(cfg.Paths.ProfilesDir), name)
 	if !dirExists(profileDir) {
-		return 0, fmt.Errorf("profile %q does not exist", name)
+		return 0, fmt.Errorf("隔离实例 %q 不存在", name)
 	}
 	dataDir := filepath.Join(profileDir, "data")
 	homeDir := filepath.Join(profileDir, "home")
@@ -447,12 +541,9 @@ func LaunchProfile(cfg config.Config, name, workspace string, forceHeal bool) (i
 		return 0, err
 	}
 
-	appBin := filepath.Join(cfg.Box.BoxAppPath, "Contents", "MacOS", "Antigravity")
+	appBin := resolveAppBinary(cfg)
 	if !fileExists(appBin) {
-		appBin = filepath.Join(cfg.Box.MainAppPath, "Contents", "MacOS", "Antigravity")
-	}
-	if !fileExists(appBin) {
-		return 0, fmt.Errorf("Antigravity binary not found at %s", appBin)
+		return 0, fmt.Errorf("未找到 Antigravity 可执行文件: %s", appBin)
 	}
 
 	resolvedData, err := filepath.EvalSymlinks(dataDir)
@@ -468,7 +559,7 @@ func LaunchProfile(cfg config.Config, name, workspace string, forceHeal bool) (i
 	if workspace != "" {
 		absWS, err := filepath.Abs(config.ExpandPath(workspace))
 		if err != nil || !dirExists(absWS) {
-			return 0, fmt.Errorf("workspace does not exist: %s", workspace)
+			return 0, fmt.Errorf("工作区目录不存在: %s", workspace)
 		}
 		args = append(args, absWS)
 	}
@@ -486,7 +577,7 @@ func LaunchProfile(cfg config.Config, name, workspace string, forceHeal bool) (i
 	cmd.Env = buildProfileEnv(resolvedHome)
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	configureDetachedProcess(cmd)
 
 	if err := cmd.Start(); err != nil {
 		return 0, err
@@ -500,11 +591,11 @@ func LaunchProfile(cfg config.Config, name, workspace string, forceHeal bool) (i
 
 func buildProfileEnv(resolvedHome string) []string {
 	base := os.Environ()
-	out := make([]string, 0, len(base)+4)
+	out := make([]string, 0, len(base)+8)
 	for _, kv := range base {
 		k, _, _ := strings.Cut(kv, "=")
 		switch k {
-		case "HOME", "SSH_CONNECTION", "SSH_CLIENT", "ELECTRON_RUN_AS_NODE":
+		case "HOME", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "SSH_CONNECTION", "SSH_CLIENT", "ELECTRON_RUN_AS_NODE":
 			continue
 		default:
 			out = append(out, kv)
@@ -515,6 +606,17 @@ func buildProfileEnv(resolvedHome string) []string {
 		"SSH_CONNECTION=127.0.0.1 50000 127.0.0.1 22",
 		"SSH_CLIENT=127.0.0.1 50000 22",
 	)
+	if runtime.GOOS == "windows" {
+		roaming := filepath.Join(resolvedHome, "AppData", "Roaming")
+		local := filepath.Join(resolvedHome, "AppData", "Local")
+		_ = os.MkdirAll(roaming, 0o700)
+		_ = os.MkdirAll(local, 0o700)
+		out = append(out,
+			"USERPROFILE="+resolvedHome,
+			"APPDATA="+roaming,
+			"LOCALAPPDATA="+local,
+		)
+	}
 	return out
 }
 
@@ -543,14 +645,14 @@ func pruneLaunchLogs(logDir string, keep int) {
 	}
 }
 
-// StopProfile gracefully stops a running ParaGravity profile (never main/ide).
+// StopProfile gracefully stops a running isolated profile (never main/ide).
 func StopProfile(cfg config.Config, name string, force bool) error {
 	if err := ValidateProfileName(name); err != nil {
 		return err
 	}
-	profileDir := filepath.Join(config.ExpandPath(cfg.Box.ProfilesDir), name)
+	profileDir := filepath.Join(config.ExpandPath(cfg.Paths.ProfilesDir), name)
 	if !dirExists(profileDir) {
-		return fmt.Errorf("profile %q does not exist", name)
+		return fmt.Errorf("隔离实例 %q 不存在", name)
 	}
 	dataDir := filepath.Join(profileDir, "data")
 	procs := listProcesses()
@@ -560,48 +662,70 @@ func StopProfile(cfg config.Config, name string, force bool) error {
 		return nil
 	}
 
-	sig := syscall.SIGTERM
-	if force {
-		sig = syscall.SIGKILL
+	if err := stopProcessTree(pid, force); err != nil {
+		return fmt.Errorf("实例 %q (PID %d) 仍在运行，可尝试强制停止: %w", name, pid, err)
 	}
-	if err := syscall.Kill(pid, sig); err != nil && !errors.Is(err, syscall.ESRCH) {
-		return err
-	}
-	deadline := time.Now().Add(3 * time.Second)
-	for time.Now().Before(deadline) {
-		if !IsPIDAlive(pid) {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	if IsPIDAlive(pid) && force {
-		_ = syscall.Kill(pid, syscall.SIGKILL)
-	}
-	if !IsPIDAlive(pid) {
-		_ = os.Remove(filepath.Join(profileDir, "run.pid"))
-		return nil
-	}
-	return fmt.Errorf("profile %q (pid %d) is still running; retry with force", name, pid)
+	_ = os.Remove(filepath.Join(profileDir, "run.pid"))
+	return nil
 }
 
-// CreateProfile provisions a new isolated ParaGravity profile with sanitized host config inheritance
-// and a macOS ~/Applications/Antigravity (<name>).app launcher stub.
+// DeleteProfile deletes an isolated sandbox profile directory and its macOS launcher bundle.
+func DeleteProfile(cfg config.Config, name string, forceStop bool) error {
+	name = strings.TrimSpace(name)
+	if err := ValidateProfileName(name); err != nil {
+		return err
+	}
+	profilesDir := filepath.Clean(config.ExpandPath(cfg.Paths.ProfilesDir))
+	profileDir := filepath.Join(profilesDir, name)
+	if filepath.Dir(profileDir) != profilesDir {
+		return fmt.Errorf("不安全的实例目录路径 %q", name)
+	}
+	if !dirExists(profileDir) {
+		return fmt.Errorf("隔离实例 %q 不存在", name)
+	}
+
+	procs := listProcesses()
+	if pid := findProfilePID(profileDir, filepath.Join(profileDir, "data"), procs); pid > 0 {
+		if !forceStop {
+			return fmt.Errorf("实例 %q 正在运行 (PID %d)，请先停止后再删除", name, pid)
+		}
+		if err := StopProfile(cfg, name, true); err != nil {
+			return err
+		}
+	}
+
+	if err := os.RemoveAll(profileDir); err != nil {
+		return err
+	}
+	if runtime.GOOS == "darwin" {
+		realHome, _ := os.UserHomeDir()
+		appsDir := filepath.Join(realHome, "Applications")
+		stubPath := filepath.Join(appsDir, fmt.Sprintf("Antigravity (%s).app", name))
+		if filepath.Dir(stubPath) == appsDir {
+			_ = os.RemoveAll(stubPath)
+		}
+	}
+	return nil
+}
+
+// CreateProfile provisions a new isolated profile with sanitized host config inheritance
+// and a macOS ~/Applications/Antigravity (<name>).app launcher bundle.
 func CreateProfile(cfg config.Config, opts CreateProfileOpts) (ProfileMeta, error) {
 	name := strings.TrimSpace(opts.Name)
 	if err := ValidateProfileName(name); err != nil {
 		return ProfileMeta{}, err
 	}
-	profilesDir := config.ExpandPath(cfg.Box.ProfilesDir)
+	profilesDir := config.ExpandPath(cfg.Paths.ProfilesDir)
 	profileDir := filepath.Join(profilesDir, name)
 	if dirExists(profileDir) {
-		return ProfileMeta{}, fmt.Errorf("profile %q already exists", name)
+		return ProfileMeta{}, fmt.Errorf("隔离实例 %q 已存在", name)
 	}
 	policy := opts.LinksPolicy
 	if policy == "" {
 		policy = "minimal"
 	}
 	if policy != "full" && policy != "minimal" && policy != "none" {
-		return ProfileMeta{}, fmt.Errorf("invalid symlink policy %q", policy)
+		return ProfileMeta{}, fmt.Errorf("无效的符号链接策略 %q（可选: full / minimal / none）", policy)
 	}
 
 	homeDir := filepath.Join(profileDir, "home")
@@ -621,7 +745,7 @@ func CreateProfile(cfg config.Config, opts CreateProfileOpts) (ProfileMeta, erro
 	}
 
 	_ = suppressSandboxAutoupdate(dataDir)
-	boxVer := ReadAppBundleVersion(cfg.Box.BoxAppPath)
+	mainVer := ReadAppBundleVersion(config.ExpandPath(cfg.Paths.MainAppPath))
 	meta := ProfileMeta{
 		Name:           name,
 		Description:    strings.TrimSpace(opts.Description),
@@ -629,7 +753,7 @@ func CreateProfile(cfg config.Config, opts CreateProfileOpts) (ProfileMeta, erro
 		InheritedFrom:  opts.InheritFrom,
 		CreatedAt:      time.Now().Format(time.RFC3339),
 		Version:        1,
-		LastAppVersion: boxVer,
+		LastAppVersion: mainVer,
 	}
 	if err := writeProfileMeta(profileDir, meta); err != nil {
 		return ProfileMeta{}, err
@@ -640,7 +764,8 @@ func CreateProfile(cfg config.Config, opts CreateProfileOpts) (ProfileMeta, erro
 }
 
 func inheritSanitizedHostConfig(realHome, tgtHome, tgtData string, inheritMCP bool) {
-	srcAppSupport := filepath.Join(realHome, "Library", "Application Support", "Antigravity", "User")
+	mainDataDir, _ := defaultUserDataDirs(realHome)
+	srcAppSupport := filepath.Join(mainDataDir, "User")
 	tgtUser := filepath.Join(tgtData, "User")
 	for _, fn := range []string{"settings.json", "keybindings.json"} {
 		src := filepath.Join(srcAppSupport, fn)
@@ -701,7 +826,7 @@ func inheritSanitizedHostConfig(realHome, tgtHome, tgtData string, inheritMCP bo
 	}
 }
 
-// EnsureMacOSLauncherStub creates or repairs ~/Applications/Antigravity (<name>).app via osacompile.
+// EnsureMacOSLauncherStub creates or repairs ~/Applications/Antigravity (<name>).app as a native shell bundle.
 func EnsureMacOSLauncherStub(name string) error {
 	if err := ValidateProfileName(name); err != nil {
 		return err
@@ -709,12 +834,106 @@ func EnsureMacOSLauncherStub(name string) error {
 	return createMacOSLauncherStub(name)
 }
 
+func resolveCLIBin(realHome string) string {
+	if exe, err := os.Executable(); err == nil && filepath.Base(exe) == "agymate" && fileExists(exe) {
+		return exe
+	}
+	localBin := filepath.Join(realHome, ".local", "bin", "agymate")
+	if fileExists(localBin) {
+		return localBin
+	}
+	if p, err := exec.LookPath("agymate"); err == nil && p != "" {
+		return p
+	}
+	return localBin
+}
+
+func shellSingleQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
+}
+
 func createMacOSLauncherStub(name string) error {
+	if runtime.GOOS != "darwin" {
+		return nil
+	}
+	if err := ValidateProfileName(name); err != nil {
+		return err
+	}
 	realHome, _ := os.UserHomeDir()
 	appsDir := filepath.Join(realHome, "Applications")
-	_ = os.MkdirAll(appsDir, 0o755)
+	if err := os.MkdirAll(appsDir, 0o755); err != nil {
+		return err
+	}
 	appPath := filepath.Join(appsDir, fmt.Sprintf("Antigravity (%s).app", name))
-	cliBin := filepath.Join(realHome, ".local", "bin", "agymate")
-	script := fmt.Sprintf(`do shell script "'%s' profile launch '%s' > /dev/null 2>&1 &"`, cliBin, name)
-	return exec.Command("osacompile", "-o", appPath, "-e", script).Run()
+	if filepath.Dir(appPath) != appsDir {
+		return fmt.Errorf("unsafe launcher bundle path for %q", name)
+	}
+	if err := os.RemoveAll(appPath); err != nil {
+		return err
+	}
+
+	contentsDir := filepath.Join(appPath, "Contents")
+	macosDir := filepath.Join(contentsDir, "MacOS")
+	if err := os.MkdirAll(macosDir, 0o755); err != nil {
+		return err
+	}
+
+	cliBin := resolveCLIBin(realHome)
+	slug := strings.Trim(nonIDCharsRe.ReplaceAllString(strings.ToLower(name), "-"), "-.")
+	if slug == "" {
+		slug = "profile"
+	}
+	plist := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>launcher</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.agymate.profile.%s</string>
+	<key>CFBundleName</key>
+	<string>Antigravity (%s)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>LSUIElement</key>
+	<true/>
+</dict>
+</plist>
+`, slug, name)
+	if err := os.WriteFile(filepath.Join(contentsDir, "Info.plist"), []byte(plist), 0o644); err != nil {
+		return err
+	}
+
+	script := fmt.Sprintf("#!/bin/sh\nexec %s profile launch %s >/dev/null 2>&1 &\n", shellSingleQuote(cliBin), shellSingleQuote(name))
+	if err := os.WriteFile(filepath.Join(macosDir, "launcher"), []byte(script), 0o755); err != nil {
+		return err
+	}
+	return nil
+}
+
+func resolveAppBinary(cfg config.Config) string {
+	mainPath := config.ExpandPath(cfg.Paths.MainAppPath)
+	if runtime.GOOS == "darwin" {
+		if mainPath != "" {
+			bin := filepath.Join(mainPath, "Contents", "MacOS", "Antigravity")
+			if fileExists(bin) {
+				return bin
+			}
+		}
+		realHome, _ := os.UserHomeDir()
+		userApp := filepath.Join(realHome, "Applications", "Antigravity.app", "Contents", "MacOS", "Antigravity")
+		if fileExists(userApp) {
+			return userApp
+		}
+		return filepath.Join(mainPath, "Contents", "MacOS", "Antigravity")
+	}
+	if mainPath != "" && fileExists(mainPath) {
+		return mainPath
+	}
+	for _, cand := range []string{"antigravity", "Antigravity.exe", "Antigravity"} {
+		if p, err := exec.LookPath(cand); err == nil && p != "" {
+			return p
+		}
+	}
+	return mainPath
 }

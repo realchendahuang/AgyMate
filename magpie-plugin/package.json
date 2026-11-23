@@ -1,0 +1,70 @@
+{
+  "name": "agymate",
+  "version": "0.3.0",
+  "description": "AgyMate 控制台：Antigravity 多账号配额余量、SQLite Token 等效账单、上下文水位、隔离多开实例与 Google Colab 算力池一体化面板（默认本地服务端口 3778，可通过插件选项 port 自定义）。",
+  "author": {
+    "name": "chendahuang",
+    "url": "https://github.com/realchendahuang"
+  },
+  "homepage": "https://github.com/realchendahuang/AgyMate",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/realchendahuang/AgyMate.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": "./index.mjs",
+  "files": [
+    "index.mjs",
+    "page",
+    "README.md"
+  ],
+  "keywords": [
+    "magpie",
+    "magpie-page",
+    "magpie-plugin",
+    "antigravity",
+    "agymate",
+    "telemetry",
+    "quota"
+  ],
+  "engines": {
+    "magpie": ">=0.1.4000"
+  },
+  "magpie": {
+    "icon": "page/icon.svg",
+    "page": {
+      "title": "AgyMate",
+      "titles": {
+        "en": "AgyMate",
+        "zh": "AgyMate",
+        "zh-CN": "AgyMate",
+        "zh-TW": "AgyMate"
+      },
+      "file": "page/index.html",
+      "icon": "page/icon.svg",
+      "keepAlive": true,
+      "service": {
+        "port": 3778,
+        "option": "port"
+      }
+    },
+    "actions": [
+      {
+        "id": "open",
+        "menu": "agent",
+        "title": "Open AgyMate Console",
+        "titles": {
+          "en": "Open AgyMate Console",
+          "zh": "打开 AgyMate 控制台",
+          "zh-CN": "打开 AgyMate 控制台",
+          "zh-TW": "打開 AgyMate 控制台"
+        }
+      }
+    ],
+    "options": {
+      "port": 3778
+    }
+  }
+}

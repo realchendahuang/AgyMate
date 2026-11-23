@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/realchendahuang/AgyMate/internal/config"
 	"github.com/realchendahuang/AgyMate/internal/instances"
 )
 
@@ -22,8 +23,8 @@ func TestFetchInstanceMockRPC(t *testing.T) {
 		case servicePrefix + "GetUserStatus":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"userStatus": map[string]any{
-					"name":  "chendahuang",
-					"email": "realchendahuang@gmail.com",
+					"name":  "Dev User",
+					"email": "dev@example.com",
 					"userTier": map[string]any{
 						"id":   "g1-ultra-tier",
 						"name": "Google AI Ultra",
@@ -111,13 +112,90 @@ func TestFetchInstanceMockRPC(t *testing.T) {
 		CSRFToken: "tok-123",
 	}, nil)
 
-	if snap.Email != "realchendahuang@gmail.com" || snap.PlanName != "Google AI Ultra" {
+	if snap.Email != "dev@example.com" || snap.PlanName != "Google AI Ultra" {
 		t.Fatalf("unexpected user info: %+v", snap)
 	}
 	if len(snap.Buckets) != 1 || snap.Buckets[0].BucketID != "gemini-5h" {
 		t.Fatalf("unexpected buckets: %+v", snap.Buckets)
 	}
+	if snap.Buckets[0].DisplayName != "Gemini · 5小时限额" {
+		t.Fatalf("expected localized bucket DisplayName 'Gemini · 5小时限额', got %q", snap.Buckets[0].DisplayName)
+	}
 	if snap.Context == nil || snap.Context.EstimatedTokensUsed != 160000 || snap.Context.Model != "Gemini 4 Hydrogen (Medium)" {
 		t.Fatalf("unexpected context: %+v", snap.Context)
+	}
+	if len(snap.Context.TokenBreakdown) != 1 || snap.Context.TokenBreakdown[0].Name != "系统提示词" {
+		t.Fatalf("expected localized context breakdown '系统提示词', got %+v", snap.Context.TokenBreakdown)
+	}
+}
+
+func TestFetchInstanceDisabledBucketSkipsStateRecording(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case servicePrefix + "GetUserStatus":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"userStatus": map[string]any{
+					"email": "pro@example.com",
+					"planStatus": map[string]any{
+						"planInfo": map[string]any{"planName": "Pro"},
+					},
+				},
+			})
+		case servicePrefix + "RetrieveUserQuotaSummary":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"response": map[string]any{
+					"groups": []any{
+						map[string]any{
+							"displayName": "Claude and GPT models",
+							"buckets": []any{
+								map[string]any{
+									"bucketId":          "3p-weekly",
+									"displayName":       "Weekly Limit Remaining",
+									"window":            "weekly",
+									"remainingFraction": 0,
+									"resetTime":         "2026-11-25T03:20:28Z",
+								},
+								map[string]any{
+									"bucketId":          "3p-5h",
+									"displayName":       "Five Hour Limit Remaining",
+									"description":       "You have hit your weekly limit, the 5-hour limit does not currently apply.",
+									"window":            "5h",
+									"disabled":          true,
+									"remainingFraction": 1,
+									"resetTime":         "2026-11-22T13:33:29Z",
+								},
+							},
+						},
+					},
+				},
+			})
+		default:
+			_ = json.NewEncoder(w).Encode(map[string]any{})
+		}
+	}))
+	defer srv.Close()
+
+	u, _ := url.Parse(srv.URL)
+	port, _ := strconv.Atoi(u.Port())
+
+	t.Setenv("AGYMATE_STATE", t.TempDir()+"/state.json")
+	st := config.LoadState("")
+	client := NewClient()
+	snap := client.FetchInstance(context.Background(), "main", &instances.HubInfo{
+		PID:      1,
+		HTTPPort: port,
+	}, st)
+
+	if len(snap.Buckets) != 2 {
+		t.Fatalf("expected 2 buckets, got %+v", snap.Buckets)
+	}
+	if !snap.Buckets[0].Disabled || snap.Buckets[0].BucketID != "3p-5h" {
+		t.Fatalf("expected first sorted bucket to be disabled 3p-5h, got %+v", snap.Buckets[0])
+	}
+	if series := st.QuotaSeries("main:3p-5h", 10); len(series["main:3p-5h"]) != 0 {
+		t.Fatalf("disabled bucket must not record history samples, got %+v", series)
+	}
+	if series := st.QuotaSeries("main:3p-weekly", 10); len(series["main:3p-weekly"]) != 1 {
+		t.Fatalf("active bucket should record history sample, got %+v", series)
 	}
 }

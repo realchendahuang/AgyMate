@@ -1,35 +1,171 @@
-# AgyMate — Antigravity 五开伴侣
+# AgyMate
 
-单栈 Go + Wails v3 原生 macOS 桌面应用 + Loopback Hub + CLI，专为 **Main (Ultra) + Antigravity IDE + ParaGravity 多开分身 (`p1..p4`)** 架构设计。
+**Local telemetry hub, quota monitor, read-only SQLite billing analyzer, isolated multi-profile manager, and native MCP App companion for Antigravity.**
 
-## 核心能力与安全边界
+English | [简体中文](README_ZH.md)
 
-- **Main 与 IDE 严格只读保护**：对 `main` (`/Applications/Antigravity.app`) 与 `ide` (`/Applications/Antigravity IDE.app`) 仅读取只读进程信息、本地 Connect-RPC 与 SQLite WAL，**绝不提取 Keychain 密钥、绝不修改应用签名、不提供任何启停/清理按钮**。
-- **全实例配额雷达与耗尽预测**：并行轮询各实例本地 `daemon/hub_*.json` (`GetUserStatus` / `RetrieveUserQuotaSummary`)，按重置周期记录 14 天配额曲线，计算 2 小时滚动燃烧速率并在将在重置前耗尽时预警。
-- **SQLite WAL 只读 Token 与 API 账单**：使用 `?mode=ro` + `query_only=1` 增量解析 `steps.metadata` 与 `gen_metadata.data` protobuf，`std / promo / nc_std / nc_promo` 四口径估算 API 等值账单，统计 Main Ultra `$100/月` 回本倍数。
-- **上下文窗口 (Context Window) 水位计**：解析当前活跃对话 `GetCascadeTrajectoryGeneratorMetadata` 分层构成，超出阈值自动提示 `/compact`。
-- **窗口内 Shadow-DOM HUD + CDP 汉化融合**：3 秒周期发现 `DevToolsActivePort`，幂等注入 `~/.antigravity-zh/inject.js` 并在窗口内挂载隔离 Shadow-DOM 状态微胶囊（支持右键跳转、悬停展开详细配额与上下文）。
-- **ParaGravity 沙盒生命周期与六维健康体检**：`p1..pN` 安全启停/断链修复/缓存重建、Antigravity-Box 版本漂移检测与同步、`LSCopyDefaultHandlerForURLScheme` 核验、Hooks 无损合并（保留 `herdr` / `marktoast`）与 Antigravity 原生 `AUX_PANE` Sidecar 注册。
-- **专属 Telegram Bot 异步告警**：任务完成、异常中断、权限卡住超时或配额低于阈值时发送 HTML 卡片告警。
+> **Community Disclaimer:** AgyMate is an independent, unofficial open-source companion tool. It reads local Antigravity SQLite databases in strictly read-only mode (`mode=ro&query_only=1`) and talks only to local loopback interfaces (`127.0.0.1`). It does not modify official client binaries and collects zero remote telemetry.
 
-## 常用 CLI
+---
 
-```bash
-agymate status                      # 五开 + IDE 全景状态
-agymate quota                       # 各实例配额、重置倒计时与耗尽预测
-agymate tokens --preset last_7d     # SQLite Token 与等值账单（支持 --csv / --json）
-agymate search <query>              # 跨实例 FTS5 全文检索历史对话
-agymate doctor [--fix]              # 六维环境健康体检（并支持一键安全修复）
-agymate profile launch|stop|heal|create <pN>
-agymate zh status | inject          # 探测或立即注入中文界面与窗口内 HUD
-agymate cache scan|clean [--keep 20]
-agymate install-hooks               # 无损合并 hooks.json 并注册 Sidecar
-agymate serve                       # 前台运行 127.0.0.1:3778 HTTP Hub
+## Highlights
+
+- **Per-Account Multi-Instance Overview** — Automatically discovers official `Antigravity`, optional `Antigravity IDE`, isolated profiles (`~/.antigravity-profiles/<name>`), and ad-hoc `--user-data-dir` processes. Groups multiple slots signed into the same Google account under one card with offline quota snapshot persistence.
+- **Real-Time Quota, Reset Countdown & Runway Alerts** — Polls active local Language Server Connect-RPC daemons for 5-hour / weekly quota buckets, per-model remaining percentages, hourly burn-rate runway estimates, and live context-window breakdowns.
+- **Read-Only SQLite Token Billing & Subscription ROI** — Scans local conversation WAL databases in read-only mode (`today`, `yesterday`, `last_5h`, `last_7d`, `this_month`, `all`) to estimate equivalent API cost (USD / CNY), prompt-cache savings, and Pro (`$20`) / Ultra (`$200`) subscription ROI. Supports custom model rates via `~/.config/agymate/pricing.json`.
+- **Multi-Surface Native Experience**
+  - **Antigravity Native Plugin & MCP App (v2.34+)** — Sidebar (`Plugins > AgyMate`), auxiliary pane (`+ > AgyMate`), and inline conversation cards (`agymate_hub`), with graceful text fallback in CLI/IDE.
+  - **Standalone Web Dashboard** — `http://127.0.0.1:3778` (no heavy Electron/WebView wrapper).
+  - **Window Shadow-DOM HUD (CDP)** — Optional floating status capsule in Antigravity windows when a CDP port is active.
+  - **Antigravity Sidecar & Magpie Page Plugin** — Narrow-pane adaptive Sidecar (`AUX_PANE`) and optional [Magpie](https://github.com/yetone/magpie) theme-synced integration.
+- **Safe Isolated Multi-Account Profiles** — Provision, heal, launch, stop, and delete isolated Antigravity sandboxes (`agymate profile ...`) with strict read-only protection on official `main` and `ide` slots.
+- **Multi-Account Google Colab Compute Pool** — Built-in PKCE OAuth2 binding (`agymate colab login`), CCU balance & hourly burn tracking, eligible GPU/TPU discovery, and one-click orphan VM teardown (`agymate colab nuke`).
+- **Non-Destructive Hooks & Flexible Notifications** — Merges only the `"agymate"` key into `~/.gemini/config/hooks.json` (never touching existing third-party hooks or permission dialogs) and dispatches completion, error, approval-wait, and low-quota alerts via **Telegram** and/or **Webhooks** (auto-detects Slack, Discord, Feishu/Lark, DingTalk, WeCom, Bark, or generic signed JSON).
+
+---
+
+## Platform Support
+
+| Platform | Hub / CLI / Billing / MCP App | Background Service | Multi-Profile | Status |
+| :--- | :---: | :---: | :---: | :--- |
+| **macOS** (`arm64` / `amd64`) | Yes | LaunchAgent (`io.agymate.hub`) | Yes (`~/Applications` launcher) | **Tier 1** |
+| **Linux** (`amd64` / `arm64`) | Yes | `systemd --user` (`agymate.service`) | Yes | **Tier 1** |
+| **Windows** (`amd64` / `arm64`) | Yes (Pure Go) | Manual (`agymate serve`) | Experimental | **Beta** |
+
+---
+
+## Quick Install
+
+AgyMate ships as a **single Pure Go (`CGO_ENABLED=0`) binary** with embedded frontend, MCP App UI, and plugin assets.
+
+### Option 1: One-Line Installer (macOS & Linux)
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/realchendahuang/AgyMate/main/scripts/get.sh | sh
 ```
 
-## 构建与安装
+The script downloads the matching release archive, verifies its SHA256 checksum, installs `~/.local/bin/agymate`, and runs `agymate setup`.
+
+### Option 2: Homebrew (macOS)
 
 ```bash
-VERSION=0.1.0 make install
-agymate install-hooks
+brew install realchendahuang/tap/agymate
+agymate setup
 ```
+
+### Option 3: Build from Source
+
+```bash
+git clone https://github.com/realchendahuang/AgyMate.git
+cd AgyMate
+make install
+```
+
+### Transparent Preview & Clean Uninstall
+
+```bash
+agymate setup --dry-run      # Preview every file & service path before writing anything
+agymate setup --minimal      # Hub + background service only (skip Antigravity Hooks/Plugin/Sidecar)
+agymate uninstall            # Cleanly remove service, AgyMate hook key, Sidecar & plugins (keeps user config)
+agymate uninstall --purge    # Also remove ~/.config/agymate and ~/.local/share/agymate
+```
+
+---
+
+## Configuration
+
+Most users need **zero manual configuration** — `agymate setup` auto-detects Antigravity clients and starts the local Hub on `http://127.0.0.1:3778`.
+
+### 1. Visual Settings (Web Dashboard)
+
+Open `http://127.0.0.1:3778` (or **Plugins > AgyMate** inside Antigravity) → **Settings** to configure currency (`USD`/`CNY`), subscription baseline, warning thresholds, HUD position, Telegram Bot, Webhook (Slack/Discord/Feishu/DingTalk/WeCom/Bark), and Colab OAuth accounts.
+
+### 2. CLI Configuration (`agymate config`)
+
+```bash
+agymate config path
+agymate config show
+agymate config set pricing.currency CNY
+agymate config set webhook.enabled true
+agymate config set webhook.url "https://hooks.slack.com/services/..."
+```
+
+### 3. Declarative Files & Environment Overrides
+
+- **Main config (`0600`)**: `~/.config/agymate/config.json` (JSON Schema: [`config.schema.json`](config.schema.json); override via `AGYMATE_CONFIG`)
+- **Custom model names & pricing (hot-reloaded)**: `~/.config/agymate/pricing.json` (override via `AGYMATE_PRICING`)
+  ```json
+  {
+    "enums": { "1700": "New Model Pro" },
+    "models": [
+      { "match": "new model pro", "stdIn": 3.0, "stdCache": 0.15, "stdOut": 15.0 }
+    ]
+  }
+  ```
+- **State & credentials (`0600`)**:
+  - 14-day quota snapshots: `~/.local/share/agymate/state.json` (`AGYMATE_STATE`)
+  - Local CSRF/API token: `~/.config/agymate/hub.token` (`AGYMATE_HUB_TOKEN`)
+  - Colab OAuth credentials: `~/.config/agymate/colab_accounts.json` (`AGYMATE_COLAB_ACCOUNTS`)
+  - Optional custom Colab OAuth client: `AGYMATE_COLAB_CLIENT_ID` / `AGYMATE_COLAB_CLIENT_SECRET`
+
+---
+
+## CLI Cheat Sheet
+
+```bash
+# Setup, configuration & daemon
+agymate setup [--dry-run | --minimal]
+agymate uninstall [--dry-run | --purge]
+agymate config path | show | set <key> <val> | reset --yes
+agymate service status | install | restart | uninstall
+agymate serve [--addr 127.0.0.1:3778]
+
+# Status, quota & billing
+agymate status [--json]
+agymate quota [--json]
+agymate tokens --preset last_7d [--mode std|promo|nc_std|nc_promo] [--csv | --json]
+agymate search "<keyword>" [--limit 25]
+
+# Multi-profile isolation (main and ide are strictly read-only)
+agymate profile list
+agymate profile create <name> [--desc "Work"] [--launch]
+agymate profile launch|stop|heal|delete <name>
+
+# Google Colab compute pool
+agymate colab [--json]
+agymate colab login [--hint user@gmail.com]
+agymate colab remove <email>
+agymate colab nuke [--account <email>]
+
+# Health audit, cache & HUD
+agymate doctor [--fix] [--json] [--redact]
+agymate cache scan | clean [--keep 20]
+agymate zh status | inject
+```
+
+---
+
+## Security & Privacy
+
+See [SECURITY.md](SECURITY.md) for the full threat model and vulnerability reporting instructions. In short:
+
+- **100% Local Loopback**: Strictly enforces loopback remote IPs, `Host` allowlist, `Origin` filtering, and per-installation `X-AgyMate-Token` (`0600`) on all mutating HTTP routes.
+- **Strictly Read-Only Telemetry**: SQLite databases are opened with `mode=ro&_pragma=query_only(1)`.
+- **No Keychain Secret Extraction**: macOS health checks inspect Keychain metadata only and never pass `-w`.
+- **Safe Bug Reports**: Run `agymate doctor --redact --json` to strip home paths and email prefixes before sharing diagnostics.
+
+---
+
+## Development
+
+```bash
+make verify       # go vet ./..., go test -race ./..., and JS syntax check
+make cross-check  # Verify Pure Go (CGO_ENABLED=0) builds across darwin/linux/windows
+make build        # Build ./bin/agymate
+```
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE) — see [NOTICE](NOTICE) for third-party attributions.

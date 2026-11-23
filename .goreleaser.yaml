@@ -1,0 +1,81 @@
+version: 2
+
+project_name: agymate
+
+before:
+  hooks:
+    - go mod tidy
+    - sh -c 'test -f internal/mcpapp/dist/app.html || (echo "missing internal/mcpapp/dist/app.html" >&2; exit 1)'
+
+builds:
+  - id: agymate
+    main: ./cmd/agymate
+    binary: agymate
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/realchendahuang/AgyMate/internal/version.Version={{ .Version }}
+      - -X github.com/realchendahuang/AgyMate/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/realchendahuang/AgyMate/internal/version.BuildTime={{ .Date }}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "agymate_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+      - README_ZH.md
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
+
+# Optional Homebrew Tap auto-publishing:
+# Create repo `realchendahuang/homebrew-tap` and set secret `HOMEBREW_TAP_GITHUB_TOKEN` to enable.
+brews:
+  - name: agymate
+    repository:
+      owner: realchendahuang
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    skip_upload: "{{ if .Env.HOMEBREW_TAP_GITHUB_TOKEN }}false{{ else }}true{{ end }}"
+    homepage: "https://github.com/realchendahuang/AgyMate"
+    description: "Local telemetry hub, quota monitor, token billing analyzer, and multi-profile manager for Antigravity"
+    license: "MIT"
+    install: |
+      bin.install "agymate"
+    caveats: |
+      To finish setup (background service, Hooks, Sidecar, and native MCP App plugin), run:
+        agymate setup
+
+      Preview changes before writing anything:
+        agymate setup --dry-run
+    test: |
+      assert_match version.to_s, shell_output("#{bin}/agymate version")

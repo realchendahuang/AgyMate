@@ -1,0 +1,19 @@
+name: Feature Request
+description: Suggest a new capability or improvement for AgyMate
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What workflow or pain point does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the CLI command, UI control, or integration you envision.
+    validations:
+      required: true

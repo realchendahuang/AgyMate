@@ -266,7 +266,11 @@ func (s *Store) parseSingleDB(instID, dbPath string) ([]CallRecord, []ImageEvent
 				continue
 			}
 
+			ttftMs := parseProtoDurationMs(m1.firstBytes(11))
+			streamMs := parseProtoDurationMs(m1.firstBytes(12))
+
 			records = append(records, CallRecord{
+				GenIndex:    gidx,
 				Timestamp:   ts,
 				InstanceID:  instID,
 				CascadeID:   cid,
@@ -278,6 +282,8 @@ func (s *Store) parseSingleDB(instID, dbPath string) ([]CallRecord, []ImageEvent
 				Output:      out,
 				Thinking:    think,
 				ResponseOut: resp,
+				TTFTMs:      ttftMs,
+				StreamMs:    streamMs,
 			})
 		}
 		grows.Close()
@@ -378,34 +384,35 @@ func (s *Store) collect(instList []instances.Instance) ([]CallRecord, []ImageEve
 
 // TelemetryReport is the JSON/CLI payload returned by QueryTelemetry.
 type TelemetryReport struct {
-	Preset       string            `json:"preset"`
-	PresetLabel  string            `json:"presetLabel"`
-	Mode         string            `json:"mode"`
-	Instance     string            `json:"instance"`
-	Granularity  string            `json:"granularity"`
-	ScanMs       float64           `json:"scanMs"`
-	Summary      TelemetrySummary  `json:"summary"`
-	BurnRate15m  BurnRate          `json:"burnRate15m"`
-	ByModel      []ModelAggregate  `json:"byModel"`
-	ByInstance   []InstAggregate   `json:"byInstance"`
-	Trend        []TrendBucket     `json:"trend"`
-	RecentCalls  []RecentCall      `json:"recentCalls"`
-	MonthROI     MonthlyROI        `json:"monthRoi"`
+	Preset      string             `json:"preset"`
+	PresetLabel string             `json:"presetLabel"`
+	Mode        string             `json:"mode"`
+	Instance    string             `json:"instance"`
+	Granularity string             `json:"granularity"`
+	ScanMs      float64            `json:"scanMs"`
+	Summary     TelemetrySummary   `json:"summary"`
+	BurnRate15m BurnRate           `json:"burnRate15m"`
+	ByModel     []ModelAggregate   `json:"byModel"`
+	ByInstance  []InstAggregate    `json:"byInstance"`
+	ByAccount   []AccountAggregate `json:"byAccount"`
+	Trend       []TrendBucket      `json:"trend"`
+	RecentCalls []RecentCall       `json:"recentCalls"`
+	MonthROI    MonthlyROI         `json:"monthRoi"`
 }
 
 // TelemetrySummary totals for the selected time window.
 type TelemetrySummary struct {
-	Calls          int     `json:"calls"`
-	InputTokens    int64   `json:"inputTokens"`
-	CacheTokens    int64   `json:"cacheTokens"`
-	OutputTokens   int64   `json:"outputTokens"`
-	TotalTokens    int64   `json:"totalTokens"`
-	CacheHitRate   float64 `json:"cacheHitRate"`
-	TotalUSD       float64 `json:"totalUsd"`
-	SavedByCacheUSD float64 `json:"savedByCacheUsd"`
-	ImageCalls     int     `json:"imageCalls"`
-	ImageUSD       float64 `json:"imageUsd"`
-	CostBreakdown  CostComponents `json:"costBreakdown"`
+	Calls           int            `json:"calls"`
+	InputTokens     int64          `json:"inputTokens"`
+	CacheTokens     int64          `json:"cacheTokens"`
+	OutputTokens    int64          `json:"outputTokens"`
+	TotalTokens     int64          `json:"totalTokens"`
+	CacheHitRate    float64        `json:"cacheHitRate"`
+	TotalUSD        float64        `json:"totalUsd"`
+	SavedByCacheUSD float64        `json:"savedByCacheUsd"`
+	ImageCalls      int            `json:"imageCalls"`
+	ImageUSD        float64        `json:"imageUsd"`
+	CostBreakdown   CostComponents `json:"costBreakdown"`
 }
 
 // BurnRate estimates live consumption speed over the past 15 minutes.
@@ -415,12 +422,12 @@ type BurnRate struct {
 	Calls15m     int     `json:"calls15m"`
 }
 
-// MonthlyROI tracks main Ultra $100/mo API value equivalent for the current calendar month.
+// MonthlyROI tracks monthly API value equivalent against an optional subscription baseline.
 type MonthlyROI struct {
-	MainMonthUSD   float64 `json:"mainMonthUsd"`
-	AllMonthUSD    float64 `json:"allMonthUsd"`
-	SubUSD         float64 `json:"subUsd"`
-	ROIMultiple    float64 `json:"roiMultiple"`
+	MainMonthUSD float64 `json:"mainMonthUsd"`
+	AllMonthUSD  float64 `json:"allMonthUsd"`
+	SubUSD       float64 `json:"subUsd"`
+	ROIMultiple  float64 `json:"roiMultiple"`
 }
 
 // ModelAggregate aggregates token & cost per model.
@@ -438,10 +445,26 @@ type ModelAggregate struct {
 // InstAggregate aggregates token & cost per instance.
 type InstAggregate struct {
 	InstanceID string  `json:"instanceId"`
+	Account    string  `json:"account,omitempty"`
 	Calls      int     `json:"calls"`
+	Input      int64   `json:"inputTokens"`
+	Cache      int64   `json:"cacheTokens"`
 	Total      int64   `json:"totalTokens"`
 	CacheRate  float64 `json:"cacheRate"`
 	TotalUSD   float64 `json:"totalUsd"`
+}
+
+// AccountAggregate aggregates token & cost per Google account across its client slots.
+type AccountAggregate struct {
+	Account     string   `json:"account"`
+	InstanceIDs []string `json:"instanceIds,omitempty"`
+	Calls       int      `json:"calls"`
+	Input       int64    `json:"inputTokens"`
+	Cache       int64    `json:"cacheTokens"`
+	Output      int64    `json:"outputTokens"`
+	Total       int64    `json:"totalTokens"`
+	CacheRate   float64  `json:"cacheRate"`
+	TotalUSD    float64  `json:"totalUsd"`
 }
 
 // TrendBucket represents one chart bar in the selected time preset.
@@ -460,13 +483,46 @@ type RecentCall struct {
 	Timestamp  int64   `json:"timestamp"`
 	TimeStr    string  `json:"timeStr"`
 	InstanceID string  `json:"instanceId"`
+	Account    string  `json:"account,omitempty"`
 	CascadeID  string  `json:"cascadeId"`
 	Title      string  `json:"title"`
 	ModelName  string  `json:"modelName"`
 	Input      int64   `json:"inputTokens"`
 	Cache      int64   `json:"cacheTokens"`
 	Output     int64   `json:"outputTokens"`
+	Thinking   int64   `json:"thinkingTokens,omitempty"`
+	Response   int64   `json:"responseTokens,omitempty"`
+	TTFTMs     int64   `json:"ttftMs,omitempty"`
+	StreamMs   int64   `json:"streamMs,omitempty"`
+	TotalMs    int64   `json:"totalMs,omitempty"`
+	TPS        float64 `json:"tps,omitempty"`
+	PrefillTPS float64 `json:"prefillTps,omitempty"`
 	USD        float64 `json:"usd"`
+}
+
+func buildAccountLookup(instList []instances.Instance) (map[string]string, map[string]string) {
+	acctByInst := make(map[string]string, len(instList))
+	labelByInst := make(map[string]string, len(instList))
+	for _, inst := range instList {
+		acctByInst[inst.ID] = strings.TrimSpace(inst.Account)
+		labelByInst[inst.ID] = strings.TrimSpace(inst.Label)
+	}
+	return acctByInst, labelByInst
+}
+
+func matchesFilter(instID, account, filter string) bool {
+	filter = strings.TrimSpace(filter)
+	if filter == "" || filter == "all" {
+		return true
+	}
+	if strings.HasPrefix(filter, "acct:") {
+		target := strings.TrimSpace(strings.TrimPrefix(filter, "acct:"))
+		if target == "" {
+			return true
+		}
+		return account != "" && strings.EqualFold(strings.TrimSpace(account), target)
+	}
+	return instID == filter
 }
 
 // QueryTelemetry computes aggregated token telemetry and API valuation.
@@ -477,8 +533,8 @@ func (s *Store) QueryTelemetry(instList []instances.Instance, preset, mode, inst
 	if mode == "" {
 		mode = "std"
 	}
-	if ultraSubUSD <= 0 {
-		ultraSubUSD = 100.0
+	if ultraSubUSD < 0 {
+		ultraSubUSD = 0
 	}
 
 	records, imgs, metas, scanMs := s.collect(instList)
@@ -503,14 +559,16 @@ func (s *Store) QueryTelemetry(instList []instances.Instance, preset, mode, inst
 	}
 	modelMap := make(map[string]*modelBucket)
 	instMap := make(map[string]*InstAggregate)
-	instIn := make(map[string]int64)
-	instCache := make(map[string]int64)
+	acctMap := make(map[string]*AccountAggregate)
+	acctInstSet := make(map[string]map[string]bool)
 	trendMap := make(map[string]*TrendBucket)
+	acctByInst, labelByInst := buildAccountLookup(instList)
 
 	var summary TelemetrySummary
 	var recent []RecentCall
 
 	for _, r := range records {
+		acct := acctByInst[r.InstanceID]
 		if r.Timestamp >= monthStart && r.Timestamp <= now.Unix() {
 			mc := ComputeCallCost(r.ModelName, r.ModelID, r.Input, r.CacheRead, r.Output, r.Thinking, r.ResponseOut, mode)
 			allMonthUSD += mc.TotalUSD
@@ -519,7 +577,7 @@ func (s *Store) QueryTelemetry(instList []instances.Instance, preset, mode, inst
 			}
 		}
 
-		if instanceFilter != "" && instanceFilter != "all" && r.InstanceID != instanceFilter {
+		if !matchesFilter(r.InstanceID, acct, instanceFilter) {
 			continue
 		}
 
@@ -567,14 +625,43 @@ func (s *Store) QueryTelemetry(instList []instances.Instance, preset, mode, inst
 
 		ia := instMap[r.InstanceID]
 		if ia == nil {
-			ia = &InstAggregate{InstanceID: r.InstanceID}
+			ia = &InstAggregate{
+				InstanceID: r.InstanceID,
+				Account:    acct,
+			}
 			instMap[r.InstanceID] = ia
 		}
 		ia.Calls++
+		ia.Input += r.Input
+		ia.Cache += r.CacheRead
 		ia.Total += r.Input + r.CacheRead + r.Output
 		ia.TotalUSD += cc.TotalUSD
-		instIn[r.InstanceID] += r.Input
-		instCache[r.InstanceID] += r.CacheRead
+
+		acctDisplay := acct
+		if acctDisplay == "" {
+			if lbl := labelByInst[r.InstanceID]; lbl != "" {
+				acctDisplay = lbl
+			} else {
+				acctDisplay = r.InstanceID
+			}
+		}
+		acctKey := strings.ToLower(acct)
+		if acctKey == "" {
+			acctKey = "slot:" + r.InstanceID
+		}
+		aa := acctMap[acctKey]
+		if aa == nil {
+			aa = &AccountAggregate{Account: acctDisplay}
+			acctMap[acctKey] = aa
+			acctInstSet[acctKey] = make(map[string]bool)
+		}
+		aa.Calls++
+		aa.Input += r.Input
+		aa.Cache += r.CacheRead
+		aa.Output += r.Output
+		aa.Total += r.Input + r.CacheRead + r.Output
+		aa.TotalUSD += cc.TotalUSD
+		acctInstSet[acctKey][r.InstanceID] = true
 
 		bKey, bLabel := bucketForTimestamp(r.Timestamp, gran, now.Location())
 		tb := trendMap[bKey]
@@ -595,22 +682,31 @@ func (s *Store) QueryTelemetry(instList []instances.Instance, preset, mode, inst
 				title = title[:8]
 			}
 		}
+		sm := computeSpeedMetrics(r.Input, r.CacheRead, r.Output, r.ResponseOut, r.TTFTMs, r.StreamMs)
 		recent = append(recent, RecentCall{
 			Timestamp:  r.Timestamp,
 			TimeStr:    time.Unix(r.Timestamp, 0).Format("01-02 15:04:05"),
 			InstanceID: r.InstanceID,
+			Account:    acct,
 			CascadeID:  r.CascadeID,
 			Title:      title,
 			ModelName:  r.ModelName,
 			Input:      r.Input,
 			Cache:      r.CacheRead,
 			Output:     r.Output,
+			Thinking:   r.Thinking,
+			Response:   r.ResponseOut,
+			TTFTMs:     r.TTFTMs,
+			StreamMs:   r.StreamMs,
+			TotalMs:    sm.TotalMs,
+			TPS:        sm.TPS,
+			PrefillTPS: sm.PrefillTPS,
 			USD:        cc.TotalUSD,
 		})
 	}
 
 	for _, img := range imgs {
-		if instanceFilter != "" && instanceFilter != "all" && img.InstanceID != instanceFilter {
+		if !matchesFilter(img.InstanceID, acctByInst[img.InstanceID], instanceFilter) {
 			continue
 		}
 		if img.Timestamp >= monthStart && img.Timestamp <= now.Unix() {
@@ -654,13 +750,26 @@ func (s *Store) QueryTelemetry(instList []instances.Instance, preset, mode, inst
 	sort.Slice(byModel, func(i, j int) bool { return byModel[i].TotalUSD > byModel[j].TotalUSD })
 
 	byInst := make([]InstAggregate, 0, len(instMap))
-	for id, ia := range instMap {
-		if den := instIn[id] + instCache[id]; den > 0 {
-			ia.CacheRate = float64(instCache[id]) * 100.0 / float64(den)
+	for _, ia := range instMap {
+		if den := ia.Input + ia.Cache; den > 0 {
+			ia.CacheRate = float64(ia.Cache) * 100.0 / float64(den)
 		}
 		byInst = append(byInst, *ia)
 	}
 	sort.Slice(byInst, func(i, j int) bool { return byInst[i].TotalUSD > byInst[j].TotalUSD })
+
+	byAcct := make([]AccountAggregate, 0, len(acctMap))
+	for key, aa := range acctMap {
+		if den := aa.Input + aa.Cache; den > 0 {
+			aa.CacheRate = float64(aa.Cache) * 100.0 / float64(den)
+		}
+		for instID := range acctInstSet[key] {
+			aa.InstanceIDs = append(aa.InstanceIDs, instID)
+		}
+		sort.Strings(aa.InstanceIDs)
+		byAcct = append(byAcct, *aa)
+	}
+	sort.Slice(byAcct, func(i, j int) bool { return byAcct[i].TotalUSD > byAcct[j].TotalUSD })
 
 	trend := make([]TrendBucket, 0, len(trendMap))
 	for _, tb := range trendMap {
@@ -688,14 +797,21 @@ func (s *Store) QueryTelemetry(instList []instances.Instance, preset, mode, inst
 		},
 		ByModel:     byModel,
 		ByInstance:  byInst,
+		ByAccount:   byAcct,
 		Trend:       trend,
 		RecentCalls: recent,
-		MonthROI: MonthlyROI{
-			MainMonthUSD: mainMonthUSD,
-			AllMonthUSD:  allMonthUSD,
-			SubUSD:       ultraSubUSD,
-			ROIMultiple:  mainMonthUSD / ultraSubUSD,
-		},
+		MonthROI: func() MonthlyROI {
+			roiMult := 0.0
+			if ultraSubUSD > 0 {
+				roiMult = allMonthUSD / ultraSubUSD
+			}
+			return MonthlyROI{
+				MainMonthUSD: mainMonthUSD,
+				AllMonthUSD:  allMonthUSD,
+				SubUSD:       ultraSubUSD,
+				ROIMultiple:  roiMult,
+			}
+		}(),
 	}
 }
 
@@ -787,6 +903,7 @@ func bucketForTimestamp(ts int64, gran string, loc *time.Location) (string, stri
 // SearchHit represents one matched conversation across instances.
 type SearchHit struct {
 	InstanceID string `json:"instanceId"`
+	Account    string `json:"account,omitempty"`
 	CascadeID  string `json:"cascadeId"`
 	Title      string `json:"title"`
 	Workspace  string `json:"workspace"`
@@ -807,7 +924,8 @@ func (s *Store) SearchConversations(ctx context.Context, instList []instances.In
 	seen := make(map[string]bool)
 
 	for _, inst := range instList {
-		if instFilter != "" && instFilter != "all" && inst.ID != instFilter {
+		acct := strings.TrimSpace(inst.Account)
+		if !matchesFilter(inst.ID, acct, instFilter) {
 			continue
 		}
 		for _, gdir := range inst.GeminiDirs {
@@ -837,6 +955,7 @@ func (s *Store) SearchConversations(ctx context.Context, instList []instances.In
 							}
 							seen[key] = true
 							h.InstanceID = inst.ID
+							h.Account = acct
 							h.Workspace = cleanWorkspaceURI(ws)
 							hits = append(hits, h)
 						}
@@ -888,6 +1007,7 @@ func (s *Store) SearchConversations(ctx context.Context, instList []instances.In
 						}
 						seen[key] = true
 						h.InstanceID = inst.ID
+						h.Account = acct
 						h.Workspace = cleanWorkspaceURI(ws)
 						h.Snippet = snipMap[h.CascadeID]
 						hits = append(hits, h)
@@ -910,6 +1030,7 @@ func (s *Store) SearchConversations(ctx context.Context, instList []instances.In
 				if err == nil && pid == "" {
 					seen[key] = true
 					h.InstanceID = inst.ID
+					h.Account = acct
 					h.Workspace = cleanWorkspaceURI(ws)
 					h.Snippet = snipMap[cid]
 					hits = append(hits, h)
@@ -978,6 +1099,7 @@ func CheckStepWaitingApproval(geminiDirs []string, cascadeID string) bool {
 // CacheItem describes one cleanable conversation/brain UUID entry.
 type CacheItem struct {
 	InstanceID string    `json:"instanceId"`
+	Account    string    `json:"account,omitempty"`
 	UUID       string    `json:"uuid"`
 	Title      string    `json:"title,omitempty"`
 	BrainBytes int64     `json:"brainBytes"`
@@ -990,11 +1112,12 @@ type CacheItem struct {
 
 // CacheSummary summarizes Brain + Conversations disk footprint per instance.
 type CacheSummary struct {
-	KeepCount   int               `json:"keepCount"`
-	TotalBytes  int64             `json:"totalBytes"`
-	Reclaimable int64             `json:"reclaimableBytes"`
-	Items       []CacheItem       `json:"items"`
-	ByInstance  map[string]int64  `json:"byInstance"`
+	KeepCount   int              `json:"keepCount"`
+	TotalBytes  int64            `json:"totalBytes"`
+	Reclaimable int64            `json:"reclaimableBytes"`
+	Items       []CacheItem      `json:"items"`
+	ByInstance  map[string]int64 `json:"byInstance"`
+	ByAccount   map[string]int64 `json:"byAccount,omitempty"`
 }
 
 // CleanResult reports what was removed during CleanCache.
@@ -1019,9 +1142,11 @@ func (s *Store) ScanCache(instList []instances.Instance, keepCount int, activeID
 	summary := CacheSummary{
 		KeepCount:  keepCount,
 		ByInstance: make(map[string]int64),
+		ByAccount:  make(map[string]int64),
 	}
 
 	for _, inst := range instList {
+		acct := strings.TrimSpace(inst.Account)
 		for _, gdir := range inst.GeminiDirs {
 			itemMap := make(map[string]*CacheItem)
 			ensureItem := func(id string) *CacheItem {
@@ -1030,6 +1155,7 @@ func (s *Store) ScanCache(instList []instances.Instance, keepCount int, activeID
 					title := metas[inst.ID+":"+id].Title
 					it = &CacheItem{
 						InstanceID: inst.ID,
+						Account:    acct,
 						UUID:       id,
 						Title:      title,
 						GeminiDir:  gdir,
@@ -1095,6 +1221,9 @@ func (s *Store) ScanCache(instList []instances.Instance, keepCount int, activeID
 				}
 				summary.TotalBytes += instItems[i].TotalBytes
 				summary.ByInstance[inst.ID] += instItems[i].TotalBytes
+				if acct != "" {
+					summary.ByAccount[strings.ToLower(acct)] += instItems[i].TotalBytes
+				}
 				summary.Items = append(summary.Items, instItems[i])
 			}
 		}
@@ -1112,12 +1241,13 @@ func (s *Store) ScanCache(instList []instances.Instance, keepCount int, activeID
 // CleanCache directly deletes non-protected UUID caches (no backup files).
 func (s *Store) CleanCache(instList []instances.Instance, keepCount int, instFilter string, activeIDs map[string]bool) CleanResult {
 	scan := s.ScanCache(instList, keepCount, activeIDs)
+	acctByInst, _ := buildAccountLookup(instList)
 	var res CleanResult
 	for _, it := range scan.Items {
 		if it.Protected {
 			continue
 		}
-		if instFilter != "" && instFilter != "all" && it.InstanceID != instFilter {
+		if !matchesFilter(it.InstanceID, acctByInst[it.InstanceID], instFilter) {
 			continue
 		}
 		if !uuidRe.MatchString(it.UUID) {

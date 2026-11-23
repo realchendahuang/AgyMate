@@ -40,37 +40,143 @@ type TargetStatus struct {
 	LastError  string `json:"lastError,omitempty"`
 }
 
-// HUDData is pushed into each window's Shadow-DOM micro-capsule.
+// HUDData is pushed into each window's Shadow-DOM HUD (titlebar + composer ring + popover).
 type HUDData struct {
-	Badge          string         `json:"badge"`
-	Account        string         `json:"account"`
-	State          string         `json:"state"`
-	Position       string         `json:"position"`
-	HubURL         string         `json:"hubUrl"`
-	ContextUsed    int64          `json:"contextUsed"`
-	ContextMax     int64          `json:"contextMax"`
-	ContextPct     float64        `json:"contextPct"`
-	ContextWarnPct int            `json:"contextWarnPct"`
-	QuotaLabel     string         `json:"quotaLabel"`
-	QuotaPct       float64        `json:"quotaPct"`
-	TodayCostLabel string         `json:"todayCostLabel"`
-	TodayTokens    int64          `json:"todayTokens"`
-	CacheHitRate   float64        `json:"cacheHitRate"`
-	Buckets        []HUDBucket    `json:"buckets,omitempty"`
-	Breakdown      []HUDBreakdown `json:"breakdown,omitempty"`
+	InstanceID       string                     `json:"instanceId,omitempty"`
+	Lang             string                     `json:"lang,omitempty"`
+	Badge            string                     `json:"badge"`
+	Account          string                     `json:"account"`
+	AccountCount     int                        `json:"accountCount,omitempty"`
+	PlanName         string                     `json:"planName,omitempty"`
+	State            string                     `json:"state"`
+	StateLabel       string                     `json:"stateLabel,omitempty"`
+	Position         string                     `json:"position"`
+	HubURL           string                     `json:"hubUrl"`
+	ActiveCascadeID  string                     `json:"activeCascadeId,omitempty"`
+	ActiveTitle      string                     `json:"activeTitle,omitempty"`
+	ActiveModel      string                     `json:"activeModel,omitempty"`
+	BurnHint         string                     `json:"burnHint,omitempty"`
+	CachedQuota      bool                       `json:"cachedQuota,omitempty"`
+	Compacted        bool                       `json:"compacted,omitempty"`
+	CheckpointIndex  int                        `json:"checkpointIndex"`
+	TruncationReason string                     `json:"truncationReason,omitempty"`
+	RequestBudget    int64                      `json:"requestBudget,omitempty"`
+	ContextUsed      int64                      `json:"contextUsed"`
+	ContextMax       int64                      `json:"contextMax"`
+	ContextPct       float64                    `json:"contextPct"`
+	ContextWarnPct   int                        `json:"contextWarnPct"`
+	QuotaLabel       string                     `json:"quotaLabel"`
+	QuotaPct         float64                    `json:"quotaPct"`
+	TodayCostLabel   string                     `json:"todayCostLabel"`
+	CurrencySymbol   string                     `json:"currencySymbol,omitempty"`
+	TodayTokens      int64                      `json:"todayTokens"`
+	CacheHitRate     float64                    `json:"cacheHitRate"`
+	CacheSavedLabel  string                     `json:"cacheSavedLabel,omitempty"`
+	LastTPS          float64                    `json:"lastTps,omitempty"`
+	AvgTPS           float64                    `json:"avgTps,omitempty"`
+	PeakTPS          float64                    `json:"peakTps,omitempty"`
+	LastTTFTMs       int64                      `json:"lastTtftMs,omitempty"`
+	LastPrefillTPS   float64                    `json:"lastPrefillTps,omitempty"`
+	LastOutputTokens int64                      `json:"lastOutputTokens,omitempty"`
+	ColabLabel       string                     `json:"colabLabel,omitempty"`
+	ColabBurning     bool                       `json:"colabBurning,omitempty"`
+	Buckets          []HUDBucket                `json:"buckets,omitempty"`
+	Models           []HUDModelQuota            `json:"models,omitempty"`
+	Breakdown        []HUDBreakdown             `json:"breakdown,omitempty"`
+	CascadeContexts  map[string]HUDContextBrief `json:"cascadeContexts,omitempty"`
+	RecentTurns      []HUDTurnBrief             `json:"recentTurns,omitempty"`
+	Accounts         []HUDAccountBrief          `json:"accounts,omitempty"`
+	Heatmap          []HUDHeatDay               `json:"heatmap,omitempty"`
 }
 
-// HUDBucket displays one rate-limit row inside the HUD hover popover.
+// HUDBucket displays one rate-limit row & trend sparkline inside the HUD popover.
 type HUDBucket struct {
-	Name      string  `json:"name"`
-	Pct       float64 `json:"pct"`
-	ResetLeft string  `json:"resetLeft"`
+	ID                  string    `json:"id,omitempty"`
+	Name                string    `json:"name"`
+	Group               string    `json:"group,omitempty"`
+	Window              string    `json:"window,omitempty"`
+	Description         string    `json:"description,omitempty"`
+	Disabled            bool      `json:"disabled,omitempty"`
+	Pct                 float64   `json:"pct"`
+	ResetLeft           string    `json:"resetLeft"`
+	BurnHint            string    `json:"burnHint,omitempty"`
+	BurnPctPerHour      float64   `json:"burnPctPerHour,omitempty"`
+	HoursUntilEmpty     float64   `json:"hoursUntilEmpty,omitempty"`
+	ExhaustsBeforeReset bool      `json:"exhaustsBeforeReset,omitempty"`
+	Trend               []float64 `json:"trend,omitempty"`
 }
 
-// HUDBreakdown displays one Context group row inside the HUD hover popover.
+// HUDModelQuota displays per-model quota inside the quota tab.
+type HUDModelQuota struct {
+	Label     string  `json:"label"`
+	ModelID   string  `json:"modelId,omitempty"`
+	Pct       float64 `json:"pct"`
+	ResetLeft string  `json:"resetLeft,omitempty"`
+}
+
+// HUDBreakdown displays one Context group row (and optional children) inside the /context tab.
 type HUDBreakdown struct {
-	Name   string `json:"name"`
-	Tokens int64  `json:"tokens"`
+	Key      string         `json:"key,omitempty"`
+	Name     string         `json:"name"`
+	Tokens   int64          `json:"tokens"`
+	Children []HUDBreakdown `json:"children,omitempty"`
+}
+
+// HUDContextBrief provides per-conversation context & speed isolation across tabs/split panes.
+type HUDContextBrief struct {
+	CascadeID        string         `json:"cascadeId"`
+	Title            string         `json:"title,omitempty"`
+	Model            string         `json:"model,omitempty"`
+	Used             int64          `json:"used"`
+	Max              int64          `json:"max"`
+	RequestBudget    int64          `json:"requestBudget,omitempty"`
+	Pct              float64        `json:"pct"`
+	Compacted        bool           `json:"compacted,omitempty"`
+	CheckpointIndex  int            `json:"checkpointIndex"`
+	TruncationReason string         `json:"truncationReason,omitempty"`
+	LastTPS          float64        `json:"lastTps,omitempty"`
+	LastTTFTMs       int64          `json:"lastTtftMs,omitempty"`
+	LastPrefillTPS   float64        `json:"lastPrefillTps,omitempty"`
+	LastOutputTokens int64          `json:"lastOutputTokens,omitempty"`
+	CacheHitRate     float64        `json:"cacheHitRate,omitempty"`
+	Breakdown        []HUDBreakdown `json:"breakdown,omitempty"`
+}
+
+// HUDTurnBrief provides lightweight turn curve & inspector preview points.
+type HUDTurnBrief struct {
+	Turn           int     `json:"turn"`
+	TimeStr        string  `json:"timeStr,omitempty"`
+	Model          string  `json:"model,omitempty"`
+	PromptTokens   int64   `json:"promptTokens"`
+	ContextDelta   int64   `json:"contextDelta"`
+	OutputTokens   int64   `json:"outputTokens"`
+	ThinkingTokens int64   `json:"thinkingTokens,omitempty"`
+	ResponseTokens int64   `json:"responseTokens,omitempty"`
+	TTFTMs         int64   `json:"ttftMs,omitempty"`
+	StreamMs       int64   `json:"streamMs,omitempty"`
+	TPS            float64 `json:"tps,omitempty"`
+	PrefillTPS     float64 `json:"prefillTps,omitempty"`
+	CacheHitPct    float64 `json:"cacheHitPct,omitempty"`
+	Compacted      bool    `json:"compacted,omitempty"`
+	UserSnippet    string  `json:"userSnippet,omitempty"`
+}
+
+// HUDAccountBrief summarizes an account's tightest quota in the multi-account strip.
+type HUDAccountBrief struct {
+	Email        string  `json:"email"`
+	PlanName     string  `json:"planName,omitempty"`
+	TightestPct  float64 `json:"tightestPct"`
+	Active       bool    `json:"active,omitempty"`
+	RunningSlots int     `json:"runningSlots,omitempty"`
+}
+
+// HUDHeatDay represents a compact daily activity cell for the 12-week heatmap.
+type HUDHeatDay struct {
+	Date   string  `json:"date"`
+	Tokens int64   `json:"tokens"`
+	Calls  int     `json:"calls"`
+	USD    float64 `json:"usd,omitempty"`
+	Level  int     `json:"level"`
 }
 
 // Watcher maintains CDP target state and caches inject.js by mtime/hash.
@@ -232,6 +338,9 @@ func (w *Watcher) SyncAll(ctx context.Context, instList []instances.Instance, cf
 				hfpJSON, _ := json.Marshal(w.hudFP)
 				expr := fmt.Sprintf(`(()=>{
 					if (window.__agymateHudFp !== %s) {
+						if (typeof window.__agymateHudRemove === 'function') {
+							try { window.__agymateHudRemove(); } catch (e) {}
+						}
 						window.__agymateHudFp = %s;
 						%s
 					}
@@ -365,25 +474,39 @@ func Eval(ctx context.Context, wsURL, expression string) (any, error) {
 	}
 }
 
-// FormatResetCountdown renders a compact human-readable reset countdown such as "1h17m" or "6d20h".
+// FormatResetCountdown renders a localized Chinese reset countdown such as "1小时17分", "6天20小时", or "15分钟".
 func FormatResetCountdown(resetUnix int64) string {
 	if resetUnix <= 0 {
 		return ""
 	}
-	diff := resetUnix - time.Now().Unix()
+	return formatResetDiff(resetUnix - time.Now().Unix())
+}
+
+func formatResetDiff(diff int64) string {
 	if diff <= 0 {
 		return "即将重置"
+	}
+	if diff < 60 {
+		return "不足1分钟"
 	}
 	mins := diff / 60
 	hrs := mins / 60
 	days := hrs / 24
 	if days > 0 {
-		return fmt.Sprintf("%dd%dh", days, hrs%24)
+		remHrs := hrs % 24
+		if remHrs > 0 {
+			return fmt.Sprintf("%d天%d小时", days, remHrs)
+		}
+		return fmt.Sprintf("%d天", days)
 	}
 	if hrs > 0 {
-		return fmt.Sprintf("%dh%dm", hrs, mins%60)
+		remMins := mins % 60
+		if remMins > 0 {
+			return fmt.Sprintf("%d小时%d分", hrs, remMins)
+		}
+		return fmt.Sprintf("%d小时", hrs)
 	}
-	return fmt.Sprintf("%dm", mins)
+	return fmt.Sprintf("%d分钟", mins)
 }
 
 func init() {

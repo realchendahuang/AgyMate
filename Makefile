@@ -1,29 +1,38 @@
-BINARY         := agymate
-DESKTOP_BINARY := agymate-desktop
-VERSION        ?= 0.1.0
-LDFLAGS        := -s -w -X github.com/realchendahuang/AgyMate/internal/version.Version=$(VERSION)
-UNAME_S        := $(shell uname -s)
+BINARY     := agymate
+VERSION    ?= 0.3.0
+GIT_COMMIT := $(shell git describe --tags --always --dirty 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo dev)
+BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+LDFLAGS    := -s -w -X github.com/realchendahuang/AgyMate/internal/version.Version=$(VERSION) -X github.com/realchendahuang/AgyMate/internal/version.Commit=$(GIT_COMMIT) -X github.com/realchendahuang/AgyMate/internal/version.BuildTime=$(BUILD_TIME)
+JS_FILES   := frontend/i18n.js frontend/app.js internal/cdp/hud.js magpie-plugin/page/boot.js magpie-plugin/index.mjs mcpapp-ui/src/main.js mcpapp-ui/build.mjs
+BUILD_ENV  := CGO_ENABLED=0
 
-ifeq ($(UNAME_S),Darwin)
-DESKTOP_CGO_ENV := CGO_ENABLED=1 CGO_CFLAGS="-mmacosx-version-min=12.0" CGO_LDFLAGS="-mmacosx-version-min=12.0" MACOSX_DEPLOYMENT_TARGET=12.0
-else
-DESKTOP_CGO_ENV := CGO_ENABLED=1
-endif
-
-.PHONY: all build desktop run run-desktop serve test test-race vet fmt tidy check verify install clean
+.PHONY: all build build-mcp-app ensure-mcp-app cross-check run serve test test-race vet fmt tidy js-check check verify install install-dev clean
 
 all: build
 
-build:
-	@mkdir -p bin
-	CGO_ENABLED=1 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BINARY) ./cmd/agymate
+build-mcp-app:
+	@if command -v bun >/dev/null 2>&1; then \
+		cd mcpapp-ui && ([ -d node_modules ] || bun install) && bun run build; \
+	elif [ -f internal/mcpapp/dist/app.html ]; then \
+		echo "bun not found, using prebuilt internal/mcpapp/dist/app.html"; \
+	else \
+		echo "error: bun not found and internal/mcpapp/dist/app.html missing" >&2; exit 1; \
+	fi
 
-desktop:
-	@mkdir -p bin
-	$(DESKTOP_CGO_ENV) go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(DESKTOP_BINARY) ./cmd/agymate-desktop
+ensure-mcp-app:
+	@if [ ! -f internal/mcpapp/dist/app.html ]; then \
+		$(MAKE) build-mcp-app; \
+	fi
 
-run-desktop: desktop
-	./bin/$(DESKTOP_BINARY)
+build: ensure-mcp-app
+	@mkdir -p bin
+	$(BUILD_ENV) go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BINARY) ./cmd/agymate
+
+cross-check: ensure-mcp-app
+	CGO_ENABLED=0 GOOS=darwin  GOARCH=arm64 go build -o /dev/null ./cmd/agymate
+	CGO_ENABLED=0 GOOS=darwin  GOARCH=amd64 go build -o /dev/null ./cmd/agymate
+	CGO_ENABLED=0 GOOS=linux   GOARCH=amd64 go build -o /dev/null ./cmd/agymate
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o /dev/null ./cmd/agymate
 
 serve: build
 	./bin/$(BINARY) serve
@@ -37,18 +46,28 @@ test-race:
 vet:
 	go vet ./...
 
+js-check:
+	@if command -v node >/dev/null 2>&1; then \
+		for f in $(JS_FILES); do node --check "$$f"; done; \
+	else \
+		echo "node not found, skipping JS syntax check"; \
+	fi
+
 fmt:
 	gofmt -w .
 
 tidy:
 	go mod tidy
 
-verify: vet test-race
+verify: vet test-race js-check
 
-check: verify build desktop
+check: verify build
 
 install:
 	VERSION="$(VERSION)" ./scripts/install.sh
+
+install-dev:
+	VERSION="$(VERSION)" MAGPIE_PLUGIN_DEV=1 ./scripts/install.sh
 
 clean:
 	rm -rf bin dist
