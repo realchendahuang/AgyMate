@@ -3,62 +3,74 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AgyMate 控制台</title>
+<title>AgyMate</title>
 <style>
   :root {
     color-scheme: light dark;
-    --ag-bg: var(--magpie-bg, #f8fafc);
-    --ag-fg: var(--magpie-fg, #0f172a);
-    --ag-card: var(--magpie-card, #ffffff);
-    --ag-line: var(--magpie-line, rgba(15, 23, 42, 0.1));
-    --ag-muted: var(--magpie-muted, #64748b);
-    --ag-accent: var(--magpie-accent, #0d9488);
-    --ag-accent-fg: var(--magpie-accent-fg, #ffffff);
-    --ag-accent-soft: var(--magpie-accent-soft, rgba(13, 148, 136, 0.12));
-    --ag-radius: var(--magpie-radius, 14px);
-    --ag-radius-sm: 8px;
-    --ag-shadow: 0 12px 32px -10px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
-    --ag-code-bg: rgba(15, 23, 42, 0.035);
-    --ag-warn: #d97706;
-    --ag-warn-soft: rgba(217, 119, 6, 0.12);
-    --ag-ok: #059669;
-    --ag-ok-soft: rgba(5, 150, 105, 0.14);
+    --notion-bg: #ffffff;
+    --notion-bg-card: #ffffff;
+    --notion-bg-recessed: #f6f5f4;
+    --notion-ink: #37352f;
+    --notion-ink-strong: rgba(0, 0, 0, 0.92);
+    --notion-ink-muted: #78736f;
+    --notion-border: rgba(55, 53, 47, 0.09);
+    --notion-border-strong: #dfdcd9;
+    --notion-blue-600: #0075de;
+    --notion-blue-700: #005bab;
+    --notion-blue-bg: #f2f9ff;
+    --notion-blue-ink: #0075de;
+    --notion-green-bg: #f0faf2;
+    --notion-green-ink: #14832b;
+    --notion-orange-bg: #fff5ed;
+    --notion-orange-ink: #dd5b00;
+    --notion-shadow-300: 0px 0.667px 3.502px 0px rgba(0, 0, 0, 0.01),
+      0px 2.933px 7.252px 0px rgba(0, 0, 0, 0.016),
+      0px 7.2px 14.462px 0px rgba(0, 0, 0, 0.02),
+      0px 13.867px 28.348px 0px rgba(0, 0, 0, 0.026),
+      0px 23.333px 52.123px 0px rgba(0, 0, 0, 0.035),
+      0px 36px 89px 0px rgba(0, 0, 0, 0.045),
+      0 0 0 1px rgba(55, 53, 47, 0.08);
+    --notion-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    --notion-font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --ag-bg: var(--magpie-bg, #0b1117);
-      --ag-fg: var(--magpie-fg, #e6edf3);
-      --ag-card: var(--magpie-card, #121a23);
-      --ag-line: var(--magpie-line, rgba(230, 237, 243, 0.11));
-      --ag-muted: var(--magpie-muted, #8b9bb0);
-      --ag-accent: var(--magpie-accent, #2dd4bf);
-      --ag-accent-fg: var(--magpie-accent-fg, #042f2e);
-      --ag-accent-soft: var(--magpie-accent-soft, rgba(45, 212, 191, 0.14));
-      --ag-shadow: 0 18px 42px -12px rgba(0, 0, 0, 0.48), 0 2px 8px rgba(0, 0, 0, 0.28);
-      --ag-code-bg: rgba(255, 255, 255, 0.04);
-      --ag-warn: #fbbf24;
-      --ag-warn-soft: rgba(251, 191, 36, 0.14);
-      --ag-ok: #34d399;
-      --ag-ok-soft: rgba(52, 211, 153, 0.16);
+      --notion-bg: #191919;
+      --notion-bg-card: #262625;
+      --notion-bg-recessed: #222221;
+      --notion-ink: #e6e6e6;
+      --notion-ink-strong: #ffffff;
+      --notion-ink-muted: #8a8884;
+      --notion-border: rgba(255, 255, 255, 0.09);
+      --notion-border-strong: rgba(255, 255, 255, 0.16);
+      --notion-blue-bg: rgba(0, 117, 222, 0.2);
+      --notion-blue-ink: #62aef0;
+      --notion-green-bg: rgba(20, 131, 43, 0.18);
+      --notion-green-ink: #68ce7e;
+      --notion-orange-bg: rgba(221, 91, 0, 0.18);
+      --notion-orange-ink: #ffad71;
+      --notion-shadow-300: 0 24px 64px rgba(0, 0, 0, 0.68), 0 0 0 1px rgba(255, 255, 255, 0.12);
     }
   }
 
   :root[data-theme="dark"] {
-    --ag-bg: var(--magpie-bg, #0b1117);
-    --ag-fg: var(--magpie-fg, #e6edf3);
-    --ag-card: var(--magpie-card, #121a23);
-    --ag-line: var(--magpie-line, rgba(230, 237, 243, 0.11));
-    --ag-muted: var(--magpie-muted, #8b9bb0);
-    --ag-accent: var(--magpie-accent, #2dd4bf);
-    --ag-accent-fg: var(--magpie-accent-fg, #042f2e);
-    --ag-accent-soft: var(--magpie-accent-soft, rgba(45, 212, 191, 0.14));
-    --ag-shadow: 0 18px 42px -12px rgba(0, 0, 0, 0.48), 0 2px 8px rgba(0, 0, 0, 0.28);
-    --ag-code-bg: rgba(255, 255, 255, 0.04);
-    --ag-warn: #fbbf24;
-    --ag-warn-soft: rgba(251, 191, 36, 0.14);
-    --ag-ok: #34d399;
-    --ag-ok-soft: rgba(52, 211, 153, 0.16);
+    --notion-bg: #191919;
+    --notion-bg-card: #262625;
+    --notion-bg-recessed: #222221;
+    --notion-ink: #e6e6e6;
+    --notion-ink-strong: #ffffff;
+    --notion-ink-muted: #8a8884;
+    --notion-border: rgba(255, 255, 255, 0.09);
+    --notion-border-strong: rgba(255, 255, 255, 0.16);
+    --notion-blue-bg: rgba(0, 117, 222, 0.2);
+    --notion-blue-ink: #62aef0;
+    --notion-green-bg: rgba(20, 131, 43, 0.18);
+    --notion-green-ink: #68ce7e;
+    --notion-orange-bg: rgba(221, 91, 0, 0.18);
+    --notion-orange-ink: #ffad71;
+    --notion-shadow-300: 0 24px 64px rgba(0, 0, 0, 0.68), 0 0 0 1px rgba(255, 255, 255, 0.12);
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -66,9 +78,9 @@
   html, body {
     margin: 0;
     height: 100%;
-    background: var(--ag-bg);
-    color: var(--ag-fg);
-    font: 13px/1.55 var(--magpie-font, -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif);
+    background: var(--notion-bg);
+    color: var(--notion-ink);
+    font: 13.5px/1.55 var(--notion-font-sans);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -78,7 +90,6 @@
     padding: 24px;
   }
 
-  /* Silent initial probe: zero flash when Hub is already running */
   body[data-state="silent"] .card {
     opacity: 0;
     transform: translateY(4px);
@@ -87,50 +98,44 @@
 
   .card {
     width: 100%;
-    max-width: 448px;
-    background: var(--ag-card);
-    border: 1px solid var(--ag-line);
-    border-radius: var(--ag-radius);
-    box-shadow: var(--ag-shadow);
-    padding: 24px 24px 20px;
+    max-width: 420px;
+    background: var(--notion-bg-card);
+    border-radius: 12px;
+    box-shadow: var(--notion-shadow-300);
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition: opacity 150ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .head {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
   }
 
   .brand-mark {
-    width: 44px;
-    height: 44px;
+    width: 34px;
+    height: 34px;
     flex-shrink: 0;
-    border-radius: 12px;
+    border-radius: 8px;
     display: grid;
     place-items: center;
-    background: linear-gradient(145deg, #0f3d3e 0%, #0b1f29 100%);
-    border: 1px solid rgba(94, 234, 212, 0.24);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    background: var(--notion-bg-recessed);
+    color: var(--notion-ink-strong);
   }
 
-  .brand-mark svg {
-    width: 28px;
-    height: 28px;
-    display: block;
-  }
+  .brand-mark svg { width: 20px; height: 20px; display: block; }
 
   .title-wrap {
     min-width: 0;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
 
   .title-row {
@@ -138,144 +143,65 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    flex-wrap: wrap;
   }
 
   .title {
     margin: 0;
     font-size: 15px;
-    font-weight: 650;
-    letter-spacing: -0.01em;
-    color: var(--ag-fg);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--notion-ink-strong);
   }
 
   .badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 2px 9px;
-    border-radius: 999px;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 9999px;
     font-size: 11.5px;
-    font-weight: 550;
-    background: var(--ag-warn-soft);
-    color: var(--ag-warn);
+    font-weight: 500;
+    background: var(--notion-orange-bg);
+    color: var(--notion-orange-ink);
     white-space: nowrap;
   }
 
   body[data-state="probing"] .badge,
   body[data-state="retrying"] .badge {
-    background: var(--ag-accent-soft);
-    color: var(--ag-accent);
+    background: var(--notion-blue-bg);
+    color: var(--notion-blue-ink);
   }
 
   body[data-state="ready"] .badge {
-    background: var(--ag-ok-soft);
-    color: var(--ag-ok);
+    background: var(--notion-green-bg);
+    color: var(--notion-green-ink);
   }
 
   .dot {
-    width: 6.5px;
-    height: 6.5px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: currentColor;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.42; transform: scale(0.86); }
   }
 
   .addr {
-    font: 11.5px/1.3 var(--magpie-code, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace);
-    color: var(--ag-muted);
-  }
-
-  .status-box {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    font: 12px/1.3 var(--notion-font-mono);
+    color: var(--notion-ink-muted);
   }
 
   .said {
     font-size: 13.5px;
-    font-weight: 600;
-    color: var(--ag-fg);
-  }
-
-  .help-dot {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 15px;
-    height: 15px;
-    border-radius: 999px;
-    border: 1px solid var(--ag-line);
-    background: var(--ag-code-bg);
-    color: var(--ag-muted);
-    font: inherit;
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 1;
-    flex-shrink: 0;
-    cursor: help;
-  }
-
-  .help-dot:hover,
-  .help-dot:focus-visible {
-    color: var(--ag-accent);
-    border-color: var(--ag-accent);
-    background: var(--ag-accent-soft);
-    outline: none;
-  }
-
-  .help-dot[data-tip]::after {
-    content: attr(data-tip);
-    position: absolute;
-    left: 50%;
-    bottom: calc(100% + 7px);
-    transform: translateX(-50%) translateY(2px);
-    width: max-content;
-    max-width: min(260px, 76vw);
-    padding: 6px 9px;
-    border-radius: 8px;
-    border: 1px solid var(--ag-line);
-    background: var(--ag-card);
-    color: var(--ag-fg);
-    box-shadow: var(--ag-shadow);
-    font-size: 11.5px;
-    font-weight: 400;
-    line-height: 1.45;
-    white-space: normal;
-    text-align: left;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.14s ease, transform 0.14s ease;
-    z-index: 20;
-  }
-
-  .help-dot[data-tip]:hover::after,
-  .help-dot[data-tip]:focus-visible::after {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    color: var(--notion-ink);
   }
 
   .cmd-panel {
     display: flex;
-    flex-direction: column;
-    gap: 7px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: var(--ag-code-bg);
-    border: 1px solid var(--ag-line);
-  }
-
-  .cmd-row {
-    display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: var(--notion-bg-recessed);
   }
 
   .cmd-code {
@@ -283,46 +209,37 @@
     min-width: 0;
     overflow-x: auto;
     white-space: nowrap;
-    font: 12px/1.5 var(--magpie-code, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace);
-    color: var(--ag-fg);
+    font: 12px/1.5 var(--notion-font-mono);
+    color: var(--notion-ink-strong);
     user-select: all;
-    padding: 2px 0;
   }
 
   .copy-btn {
     flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
     height: 26px;
     padding: 0 10px;
     border-radius: 6px;
-    border: 1px solid var(--ag-line);
-    background: var(--ag-card);
-    color: var(--ag-fg);
+    border: 1px solid var(--notion-border-strong);
+    background: var(--notion-bg-card);
+    color: var(--notion-ink);
     font: inherit;
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    transition: background-color 75ms linear;
   }
 
-  .copy-btn:hover {
-    border-color: var(--ag-muted);
-  }
-
+  .copy-btn:hover { background: rgba(55, 53, 47, 0.05); }
   .copy-btn[data-copied="true"] {
     border-color: transparent;
-    background: var(--ag-ok-soft);
-    color: var(--ag-ok);
+    background: var(--notion-green-bg);
+    color: var(--notion-green-ink);
   }
 
   .footer {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 12px;
-    padding-top: 2px;
   }
 
   .retry-btn {
@@ -331,94 +248,72 @@
     justify-content: center;
     gap: 6px;
     height: 32px;
-    padding: 0 15px;
+    padding: 0 14px;
     border: 0;
-    border-radius: var(--ag-radius-sm);
-    background: var(--ag-accent);
-    color: var(--ag-accent-fg);
+    border-radius: 8px;
+    background: var(--notion-blue-600);
+    color: #ffffff;
     font: inherit;
-    font-size: 12.5px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
-    transition: opacity 0.15s ease, transform 0.1s ease;
+    transition: background-color 150ms ease, transform 100ms ease-out;
   }
 
-  .retry-btn:hover:not(:disabled) {
-    opacity: 0.92;
-  }
+  .retry-btn:hover:not(:disabled) { background: var(--notion-blue-700); }
+  .retry-btn:active:not(:disabled) { transform: scale(0.988); }
+  .retry-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-  .retry-btn:active:not(:disabled) {
-    transform: scale(0.985);
-  }
-
-  .retry-btn:disabled {
-    opacity: 0.68;
-    cursor: default;
-  }
-
-  .retry-icon {
-    width: 13px;
-    height: 13px;
-    flex-shrink: 0;
-  }
+  .retry-icon { width: 13px; height: 13px; flex-shrink: 0; }
 
   body[data-state="retrying"] .retry-icon,
   body[data-state="probing"] .retry-icon {
     animation: spin 0.85s linear infinite;
   }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   body[data-state="probing"] .offline-only,
-  body[data-state="ready"] .offline-only {
-    display: none;
-  }
+  body[data-state="ready"] .offline-only { display: none; }
 </style>
 </head>
 <body data-state="silent">
   <main class="card" id="boot-card" role="status" aria-live="polite">
     <div class="head">
       <div class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 64 64" fill="none">
-          <ellipse cx="32" cy="34" rx="21" ry="10" transform="rotate(-22 32 34)" stroke="#5eead4" stroke-opacity="0.45" stroke-width="2.6"/>
-          <path d="M32 13L47 48H39.8L36.2 39.2H27.8L24.2 48H17L32 13ZM32 23.2L29.6 33.4H34.4L32 23.2Z" fill="#5eead4"/>
-          <circle cx="48.5" cy="18.5" r="3.8" fill="#34d399"/>
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="3.25" y="3.25" width="17.5" height="17.5" rx="4" stroke="currentColor" stroke-width="1.75"/>
+          <path d="M3.5 9.25H20.5M10.25 9.25V20.5" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+          <rect x="6" y="12.25" width="2" height="2" rx="0.6" fill="currentColor"/>
+          <path d="M13.25 13.25H17.5M13.25 16.5H16.25" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
         </svg>
       </div>
       <div class="title-wrap">
         <div class="title-row">
-          <h1 class="title">AgyMate 控制台</h1>
+          <h1 class="title">AgyMate</h1>
           <span class="badge">
             <span class="dot" aria-hidden="true"></span>
-            <span id="boot-badge-text">正在检测服务</span>
+            <span id="boot-badge-text">检测中</span>
           </span>
         </div>
         <span class="addr" id="boot-addr">http://127.0.0.1:3778</span>
       </div>
     </div>
 
-    <div class="status-box">
-      <div class="said" id="said">正在连接本地 AgyMate Hub…</div>
-      <button type="button" class="help-dot" id="boot-help" aria-label="连接说明" data-tip="每 2.5 秒自动检测，服务在线后自动进入控制台">?</button>
-    </div>
+    <div class="said" id="said">正在连接本地服务…</div>
 
     <div class="cmd-panel offline-only" id="boot-hint">
-      <div class="cmd-row">
-        <code class="cmd-code" id="boot-cmd">agymate service install &amp;&amp; agymate service restart</code>
-        <button class="copy-btn" id="boot-copy" type="button" title="复制恢复命令">
-          <span id="boot-copy-label">复制命令</span>
-        </button>
-      </div>
+      <code class="cmd-code" id="boot-cmd">agymate service install &amp;&amp; agymate service restart</code>
+      <button class="copy-btn" id="boot-copy" type="button">
+        <span id="boot-copy-label">复制</span>
+      </button>
     </div>
 
     <div class="footer offline-only">
-      <button class="retry-btn" id="boot-retry" type="button" title="每 2.5 秒自动重连">
-        <svg class="retry-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M13.5 8A5.5 5.5 0 1 1 11.9 4.1M13.5 2.5v3h-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <button class="retry-btn" id="boot-retry" type="button">
+        <svg class="retry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/>
         </svg>
-        <span id="boot-retry-label">立即重连</span>
+        <span id="boot-retry-label">重连</span>
       </button>
     </div>
   </main>

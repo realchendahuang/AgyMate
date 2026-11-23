@@ -29,7 +29,7 @@ const state = {
   canOpenLinks: false,
 };
 
-const app = new App({ name: "AgyMate", version: "0.4.0" }, {});
+const app = new App({ name: "AgyMate", version: "0.5.0" }, {});
 
 function resolveActiveLang() {
   const pref = String(state.lang || "auto").toLowerCase();
@@ -40,43 +40,43 @@ function resolveActiveLang() {
 }
 
 const EN_EXACT = {
-  "Hub 实时": "Hub Live",
+  "Hub 实时": "Live",
   "直连模式": "Direct",
   "Web 控制台": "Web Console",
   "刷新": "Refresh",
   "刷新中…": "Refreshing…",
-  "总览与配额": "Overview",
-  "Token 账单": "Billing",
-  "会话检索": "Sessions",
-  "多开实例": "Profiles",
-  "体检与缓存": "Doctor & Cache",
-  "今日等值账单": "Today Est. Cost",
-  "缓存命中节省": "Cache Saved",
-  "本月订阅回本": "Monthly ROI",
-  "本月累计消耗": "Month Spend",
-  "本月累计等效": "Month est. spend",
-  "客户端在线": "Online Clients",
+  "总览": "Overview",
+  "账单": "Billing",
+  "会话": "Sessions",
+  "实例": "Profiles",
+  "体检": "Doctor",
+  "今日消费": "Today",
+  "缓存节省": "Cache Saved",
+  "本月回本": "Monthly ROI",
+  "本月累计": "This Month",
+  "客户端在线": "Online",
   "待确认": "Waiting",
   "运行中": "Running",
   "在线空闲": "Idle",
+  "空闲": "Idle",
   "离线": "Offline",
   "缓存": "Cached",
   "主客户端": "Main",
   "IDE客户端": "IDE",
   "隔离沙盒": "Isolated",
   "外部实例": "External",
-  "凭证有效": "Valid Token",
+  "凭证有效": "Valid",
   "钥匙串托管": "Keychain",
   "访问令牌过期": "Expired",
-  "无刷新令牌": "No Refresh Token",
+  "无刷新令牌": "No Refresh",
   "未登录": "Signed Out",
-  "不适用": "N/A",
-  "即将重置": "Resetting soon",
+  "不适用": "—",
+  "即将重置": "Resetting",
   "不足1分钟": "<1m",
-  "暂无活跃配额数据": "No active quota data",
-  "正在读取总览数据…": "Loading overview…",
-  "暂未发现 Antigravity 账号实例": "No Antigravity accounts detected",
-  "一键安全修复": "Safe Fix",
+  "暂无配额数据": "No quota data",
+  "加载中…": "Loading…",
+  "暂无账号": "No accounts",
+  "自动修复": "Auto Fix",
   "今日": "Today",
   "昨日": "Yesterday",
   "近5小时": "5h",
@@ -87,12 +87,19 @@ const EN_EXACT = {
   "优惠": "Promo",
   "无缓存": "No Cache",
   "搜索": "Search",
-  "置顶": "Focus",
+  "搜索会话…": "Search sessions…",
+  "聚焦": "Focus",
   "启动": "Launch",
   "停止": "Stop",
-  "修复": "Heal",
+  "自愈": "Heal",
+  "进行中": "Active",
+  "历史检索": "History",
+  "暂无进行中会话": "No active sessions",
+  "暂无历史会话": "No sessions",
+  "暂无实例": "No profiles",
+  "环境体检": "Health Check",
   "总占用": "Total",
-  "会话与 Brain 缓存": "Session & Brain Cache",
+  "本地缓存": "Local Cache",
   "操作完成": "Done",
   "查询失败": "Query failed",
 };
@@ -400,24 +407,24 @@ function renderOverviewTab(isInline) {
   const kpisHTML = `
     <div class="kpis">
       <div class="kpi">
-        <div class="kpi-k">今日等值账单</div>
+        <div class="kpi-k">今日消费</div>
         <div class="kpi-v">${esc(fmtMoney(sum.totalUsd, pricing))}</div>
-        <div class="kpi-sub">${sum.calls || 0} 次调用 · ${fmtTokens(sum.totalTokens)} tok</div>
+        <div class="kpi-sub">${sum.calls || 0} 次调用 · ${fmtTokens(sum.totalTokens)}</div>
       </div>
       <div class="kpi">
-        <div class="kpi-k">缓存命中节省</div>
+        <div class="kpi-k">缓存节省</div>
         <div class="kpi-v">${esc(fmtMoney(sum.savedByCacheUsd, pricing))}</div>
         <div class="kpi-sub">命中率 ${Number(sum.cacheHitRate || 0).toFixed(1)}%</div>
       </div>
       <div class="kpi">
-        <div class="kpi-k">${roi.subUsd > 0 ? "本月订阅回本" : "本月累计消耗"}</div>
+        <div class="kpi-k">${roi.subUsd > 0 ? "本月回本" : "本月累计"}</div>
         <div class="kpi-v">${esc(roiTxt)}</div>
         <div class="kpi-sub">${esc(roiSub)}</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">客户端在线</div>
         <div class="kpi-v">${runningCount} / ${insts.length}</div>
-        <div class="kpi-sub">${accounts.length} 个 Google 账号</div>
+        <div class="kpi-sub">${accounts.length} 个账号</div>
       </div>
     </div>`;
 
@@ -425,31 +432,33 @@ function renderOverviewTab(isInline) {
   const acctCards = shownAccounts.length
     ? `<div class="grid">${shownAccounts
         .map((acct) => {
-          const slots = (acct.instances || []).map((i) => i.id).join("+");
-          const plan = acct.planName ? `<span class="badge">${esc(acct.planName)}</span>` : "";
-          const cached = acct.cachedQuota ? '<span class="badge">缓存</span>' : "";
+          const isOnline = (acct.onlineCount || 0) > 0;
+          const shortPlan = String(acct.planName || "")
+            .replace(/^google\s+ai\s+/i, "")
+            .replace(/\s+quota$/i, "")
+            .trim();
+          const plan = shortPlan ? `<span class="sub-text">${esc(shortPlan)}</span>` : "";
           return `
-            <article class="card">
+            <article class="card ${isOnline ? "" : "is-offline"}">
               <div class="card-head">
                 <div class="card-title" title="${esc(acct.displayName)}">${esc(acct.displayName)}</div>
-                <div class="actions">${liveStateBadge(acct.liveState)}${cached}</div>
+                <div class="actions">${plan}${liveStateBadge(acct.liveState)}</div>
               </div>
-              <div class="sub-text" style="margin-bottom:8px">槽位: <span class="mono">${esc(slots || "-")}</span> · 今日 ${esc(fmtMoney(acct.todayUsd, pricing))} ${plan}</div>
               <div class="q-list">${renderQuotaBars(acct.buckets, acct.context, acct.cachedQuota)}</div>
             </article>`;
         })
         .join("")}</div>`
-    : '<div class="empty">暂未发现 Antigravity 账号实例</div>';
+    : '<div class="empty">暂无账号</div>';
 
   let colabHTML = "";
   const colab = ov.colab;
   if (colab && colab.enabled) {
-    const cBadge = colab.assignmentsCount > 0 ? `<span class="badge warn">活跃 ${colab.assignmentsCount} 台</span>` : '<span class="badge ok">空闲</span>';
+    const cBadge = colab.assignmentsCount > 0 ? `<span class="badge warn">运行 ${colab.assignmentsCount}</span>` : '<span class="badge ok">空闲</span>';
     colabHTML = `
       <div class="banner">
         <div>
-          <strong>Colab 云算力池</strong>：余额 <strong>${Number(colab.currentBalance || 0).toFixed(2)} CCU</strong>
-          （约 $${Number(colab.estimatedValueUsd || 0).toFixed(2)}）· 速率 ${Number(colab.consumptionRateHourly || 0).toFixed(2)} CCU/小时
+          <strong>Colab</strong> · <strong>${Number(colab.currentBalance || 0).toFixed(1)} CCU</strong>
+          · ${Number(colab.consumptionRateHourly || 0).toFixed(2)}/h
         </div>
         ${cBadge}
       </div>`;
@@ -538,46 +547,46 @@ function renderSessionsTab() {
   const hits = data.hits || [];
 
   const liveHTML = live.length
-    ? live
+    ? `<div class="list-wrap">${live
         .slice(0, 8)
         .map(
           (ls) => `
         <div class="list-item">
           <div class="list-main">
             <div class="list-title">${esc(ls.title || ls.conversationId)}</div>
-            <div class="list-sub">实例 <span class="mono">${esc(ls.instanceId)}</span>${ls.model ? ` · ${esc(ls.model)}` : ""}${ls.workspace ? ` · ${esc(ls.workspace)}` : ""}</div>
+            <div class="list-sub"><span class="mono">${esc(ls.instanceId)}</span>${ls.model ? ` · ${esc(ls.model)}` : ""}${ls.workspace ? ` · ${esc(ls.workspace)}` : ""}</div>
           </div>
           ${liveStateBadge(ls.state)}
         </div>`
         )
-        .join("")
-    : '<div class="sub-text">当前无进行中的会话。</div>';
+        .join("")}</div>`
+    : '<div class="empty">暂无进行中会话</div>';
 
   const searchForm = `
     <form class="search-row" id="mcp-search-form">
-      <input class="input" id="mcp-search-input" type="search" value="${esc(state.searchQuery)}" placeholder="FTS5 全文检索历史会话标题、工作区或内容…">
-      <button type="submit" class="btn primary">检索</button>
+      <input class="input" id="mcp-search-input" type="search" value="${esc(state.searchQuery)}" placeholder="搜索会话…">
+      <button type="submit" class="btn primary">搜索</button>
     </form>`;
 
   const hitsHTML = hits.length
-    ? hits
+    ? `<div class="list-wrap">${hits
         .map(
           (h) => `
         <div class="list-item">
           <div class="list-main">
-            <div class="list-title">[<span class="mono">${esc(h.instanceId)}</span>] ${esc(h.title || h.cascadeId)}</div>
-            <div class="list-sub">${esc(h.workspace || "-")} · ${h.stepCount || 0} 步 · ${esc(h.modifiedAt || "")}</div>
+            <div class="list-title">${esc(h.title || h.cascadeId)}</div>
+            <div class="list-sub"><span class="mono">${esc(h.instanceId)}</span> · ${esc(h.workspace || "-")} · ${h.stepCount || 0} 步</div>
             ${h.snippet ? `<div class="list-sub">${esc(h.snippet)}</div>` : ""}
           </div>
         </div>`
         )
-        .join("")
-    : '<div class="empty">输入关键词检索历史会话，或留空查看最近会话</div>';
+        .join("")}</div>`
+    : '<div class="empty">暂无历史会话</div>';
 
   return `
-    <div class="section-head"><span class="section-title">实时活动会话</span></div>
+    <div class="section-head"><span class="section-title">进行中</span></div>
     ${liveHTML}
-    <div class="section-head"><span class="section-title">跨实例历史会话检索 (FTS5)</span></div>
+    <div class="section-head"><span class="section-title">历史检索</span></div>
     ${searchForm}
     ${hitsHTML}`;
 }
@@ -585,45 +594,45 @@ function renderSessionsTab() {
 function renderProfilesTab() {
   const insts = state.overview?.instances || [];
   if (!insts.length) {
-    return '<div class="empty">暂未检测到客户端实例</div>';
+    return '<div class="empty">暂无实例</div>';
   }
-  return insts
+  return `<div class="list-wrap">${insts
     .map((inst) => {
       const protectedSlot = !!inst.readOnlyLifecycle;
       const acts = [];
       if (inst.running) {
-        acts.push(`<button type="button" class="btn" data-act="profile_focus" data-id="${esc(inst.id)}">置前</button>`);
+        acts.push(`<button type="button" class="btn ghost" data-act="profile_focus" data-id="${esc(inst.id)}">聚焦</button>`);
       }
       if (!protectedSlot) {
         if (inst.running) {
           acts.push(`<button type="button" class="btn danger" data-act="profile_stop" data-id="${esc(inst.id)}">停止</button>`);
         } else {
-          acts.push(`<button type="button" class="btn primary" data-act="profile_launch" data-id="${esc(inst.id)}">启动</button>`);
-          acts.push(`<button type="button" class="btn" data-act="profile_heal" data-id="${esc(inst.id)}">自愈</button>`);
+          acts.push(`<button type="button" class="btn soft-blue" data-act="profile_launch" data-id="${esc(inst.id)}">启动</button>`);
+          acts.push(`<button type="button" class="btn ghost" data-act="profile_heal" data-id="${esc(inst.id)}">自愈</button>`);
         }
       }
       return `
         <div class="list-item">
           <div class="list-main">
-            <div class="list-title">${esc(inst.label || inst.id)} <span class="badge">${esc(kindLabel(inst.kind))}</span> ${inst.running ? '<span class="badge ok">运行中</span>' : '<span class="badge">已停止</span>'}</div>
-            <div class="list-sub">ID: <span class="mono">${esc(inst.id)}</span> · 账号: ${esc(inst.account || "-")} · ${authLabel(inst.authState)} · 断链: ${inst.brokenSymlinks || 0}</div>
+            <div class="list-title">${esc(inst.label || inst.id)} <span class="badge">${esc(kindLabel(inst.kind))}</span> ${inst.running ? '<span class="badge ok">运行中</span>' : '<span class="badge">离线</span>'}</div>
+            <div class="list-sub"><span class="mono">${esc(inst.id)}</span> · ${esc(inst.account || "-")} · ${authLabel(inst.authState)}</div>
           </div>
           <div class="row-acts">${acts.join("")}</div>
         </div>`;
     })
-    .join("");
+    .join("")}</div>`;
 }
 
 function renderDoctorTab() {
   const doc = state.doctor;
   const cache = state.cache;
   if (!doc) {
-    return '<div class="empty">正在加载体检结果…</div>';
+    return '<div class="empty">加载中…</div>';
   }
-  const checksHTML = (doc.checks || [])
+  const checksHTML = `<div class="list-wrap">${(doc.checks || [])
     .map((c) => {
       const cls = c.status === "ok" ? "ok" : c.status === "error" ? "danger" : "warn";
-      const lbl = c.status === "ok" ? "正常" : c.status === "error" ? "异常" : "需关注";
+      const lbl = c.status === "ok" ? "正常" : c.status === "error" ? "异常" : "警告";
       return `
         <div class="list-item">
           <div class="list-main">
@@ -634,24 +643,23 @@ function renderDoctorTab() {
           <span class="badge ${cls}">${lbl}</span>
         </div>`;
     })
-    .join("");
+    .join("")}</div>`;
 
   let cacheHTML = "";
   if (cache) {
     cacheHTML = `
       <div class="banner">
         <div>
-          <strong>会话与 Brain 缓存</strong>：总占用 <strong>${fmtBytes(cache.totalBytes)}</strong> ·
-          可安全回收（保留最近 ${cache.keepCount || 20} 条）：<strong>${fmtBytes(cache.reclaimableBytes)}</strong>
+          <strong>本地缓存</strong> · ${fmtBytes(cache.totalBytes)} · 可释放 <strong>${fmtBytes(cache.reclaimableBytes)}</strong>
         </div>
-        <span class="badge info">${(cache.items || []).length} 条记录</span>
+        <span class="badge info">${(cache.items || []).length} 条</span>
       </div>`;
   }
 
   return `
     <div class="section-head">
-      <span class="section-title">环境健康体检 (Antigravity ${esc(doc.mainVersion || "-")}${doc.ideVersion ? ` · IDE ${esc(doc.ideVersion)}` : ""})</span>
-      <button type="button" class="btn primary" id="mcp-doc-fix" ${state.actionBusy ? "disabled" : ""}>一键安全修复</button>
+      <span class="section-title">环境体检 (${esc(doc.mainVersion || "-")}${doc.ideVersion ? ` · ${esc(doc.ideVersion)}` : ""})</span>
+      <button type="button" class="btn primary" id="mcp-doc-fix" ${state.actionBusy ? "disabled" : ""}>自动修复</button>
     </div>
     ${checksHTML}
     ${cacheHTML}`;
@@ -674,13 +682,19 @@ function render() {
   const topbar = `
     <header class="topbar">
       <div class="brand-row">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3.25" y="3.25" width="17.5" height="17.5" rx="4" stroke="currentColor" stroke-width="1.75"/>
+          <path d="M3.5 9.25H20.5M10.25 9.25V20.5" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+          <rect x="6" y="12.25" width="2" height="2" rx="0.6" fill="currentColor"/>
+          <path d="M13.25 13.25H17.5M13.25 16.5H16.25" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+        </svg>
         <span class="brand-title">AgyMate</span>
         ${srcBadge}
       </div>
       <div class="actions">
-        <button type="button" class="btn" id="mcp-lang-btn">${activeLang === "en" ? "中" : "EN"}</button>
-        <button type="button" class="btn" id="mcp-cur-btn">${String(state.currency).toUpperCase() === "CNY" ? "¥ CNY" : "$ USD"}</button>
-        <button type="button" class="btn" id="mcp-refresh-btn" ${state.loading ? "disabled" : ""}>${state.loading ? "刷新中…" : "刷新"}</button>
+        <button type="button" class="btn ghost" id="mcp-lang-btn">${activeLang === "en" ? "中" : "EN"}</button>
+        <button type="button" class="btn ghost" id="mcp-cur-btn">${String(state.currency).toUpperCase() === "CNY" ? "¥" : "$"}</button>
+        <button type="button" class="btn ghost" id="mcp-refresh-btn" ${state.loading ? "disabled" : ""}>${state.loading ? "刷新中…" : "刷新"}</button>
         ${openWebBtn}
       </div>
     </header>`;
@@ -695,11 +709,11 @@ function render() {
   }
 
   const tabs = [
-    ["overview", "总览与配额"],
-    ["telemetry", "Token 账单"],
-    ["sessions", "会话检索"],
-    ["profiles", "多开实例"],
-    ["doctor", "体检与缓存"],
+    ["overview", "总览"],
+    ["telemetry", "账单"],
+    ["sessions", "会话"],
+    ["profiles", "实例"],
+    ["doctor", "体检"],
   ];
   const tabsHTML = `
     <nav class="tabs" role="tablist">

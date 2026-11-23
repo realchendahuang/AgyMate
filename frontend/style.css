@@ -1,116 +1,339 @@
-/* AgyMate — 现代中文桌面级控制台样式系统（支持独立网页 / Magpie 内嵌 / Sidecar 窄栏） */
+/* AgyMate — Notion Tatami Workspace Design System
+ * Pure paper canvas, warm stone sidebar, 1px hairlines, 1.75px compact iconography,
+ * CJK + Latin mixed typography guardrails, and zero-bounce utilitarian motion.
+ */
+
 :root {
-  --bg: var(--magpie-bg, #f4f4f6);
-  --card: var(--magpie-card, #ffffff);
-  --card-2: var(--magpie-card-2, color-mix(in srgb, var(--card) 95%, var(--fg, #1b1b20)));
-  --pill: var(--magpie-pill, color-mix(in srgb, var(--card) 91%, var(--fg, #1b1b20)));
-  --pill-hover: var(--magpie-pill-hover, color-mix(in srgb, var(--card) 86%, var(--fg, #1b1b20)));
-  --seg-track: var(--magpie-seg-track, color-mix(in srgb, var(--bg) 93%, var(--fg, #1b1b20)));
-  --seg-thumb: var(--card);
-  --seg-edge: 0 1px 2px rgba(0, 0, 0, .14), 0 0 0 .5px rgba(0, 0, 0, .08);
-  --ctl-fg: var(--magpie-ctl-fg, #5d5d66);
-  --line: var(--magpie-line, #e2e2e8);
-  --line-2: var(--magpie-line-2, color-mix(in srgb, var(--line) 65%, var(--card)));
-  --fg: var(--magpie-fg, #1b1b20);
-  --fg-2: var(--magpie-fg-2, color-mix(in srgb, var(--fg) 76%, var(--card)));
-  --muted: var(--magpie-muted, #7e7e87);
-  --faint: var(--magpie-faint, #b6b6c0);
-  --accent: var(--magpie-accent, #4f46e5);
-  --accent-soft: var(--magpie-accent-soft, #eeedfd);
-  --accent-fg: var(--magpie-accent-fg, #ffffff);
-  --sel: var(--magpie-sel, color-mix(in srgb, var(--accent) 12%, var(--card)));
-  --mark: var(--fg);
-  --green: var(--magpie-green, #169353);
-  --green-soft: var(--magpie-green-soft, #e3f6ec);
-  --red: var(--magpie-red, #d64045);
-  --red-soft: var(--magpie-red-soft, #fceaea);
-  --amber: var(--magpie-amber, #b45309);
-  --amber-soft: var(--magpie-amber-soft, #fcf1df);
-  --pop-bg: var(--magpie-pop-bg, color-mix(in srgb, var(--card) 95%, transparent));
-  --modal-backdrop: rgba(18, 20, 28, .34);
-  --shadow: 0 16px 44px rgba(20, 22, 30, .16), 0 2px 8px rgba(20, 22, 30, .06), 0 0 0 .5px rgba(20, 22, 30, .1);
-  --dialog-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 0 0 1px rgba(20, 22, 30, .09), 0 28px 68px rgba(15, 18, 28, .24), 0 6px 18px rgba(15, 18, 28, .08);
-  --font: var(--magpie-font, -apple-system, BlinkMacSystemFont, "PingFang SC", "SF Pro Text", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif);
-  --code: var(--magpie-code, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
-  --c1: #4f46e5; --c2: #0ea5e9; --c3: #10b981; --c4: #f59e0b; --c5: #ec4899; --c6: #8b5cf6; --c7: #64748b;
-  --ease: cubic-bezier(.2, .8, .2, 1);
-  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  /* ==========================================================================
+   * 1. Tatami Warm Neutral Gray Scale
+   * ========================================================================== */
+  --notion-white: #ffffff;
+  --notion-black: #000000;
+  --notion-gray-100: #f9f9f8;
+  --notion-gray-200: #f6f5f4;
+  --notion-gray-300: #dfdcd9;
+  --notion-gray-400: #a39e98;
+  --notion-gray-500: #78736f;
+  --notion-gray-600: #615d59;
+  --notion-gray-700: #494744;
+  --notion-gray-800: #31302e;
+  --notion-gray-900: #191918;
+
+  /* ==========================================================================
+   * 2. Signature Blues & 10-Hue Tatami Semantic Spectrum
+   * ========================================================================== */
+  --notion-blue-100: #f2f9ff;
+  --notion-blue-200: #e6f3fe;
+  --notion-blue-300: #93cdfe;
+  --notion-blue-400: #62aef0;
+  --notion-blue-500: #097fe8;
+  --notion-blue-600: #0075de;
+  --notion-blue-700: #005bab;
+  --notion-app-blue: #2383e2;
+
+  --notion-green-200: #d0f4d8;
+  --notion-green-500: #1aae39;
+  --notion-yellow-500: #ffb110;
+  --notion-orange-200: #ffdec4;
+  --notion-yellow-200: #ffe4af;
+  --notion-purple-200: #eadbfa;
+  --notion-teal-200: #bde6e4;
+  --notion-red-200: #fdd3cd;
+
+  --notion-brown-bg: #fcf8f5;
+  --notion-brown-ink: #885d3d;
+  --notion-red-bg: #fef3f1;
+  --notion-red-ink: #e32d14;
+  --notion-orange-bg: #fff5ed;
+  --notion-orange-ink: #dd5b00;
+  --notion-yellow-bg: #fff5e0;
+  --notion-yellow-ink: #c78600;
+  --notion-green-bg: #f0faf2;
+  --notion-green-ink: #14832b;
+  --notion-teal-bg: #f2fafa;
+  --notion-teal-ink: #0a7b77;
+  --notion-blue-bg: #f2f9ff;
+  --notion-blue-ink: #0075de;
+  --notion-purple-bg: #f8f5fc;
+  --notion-purple-ink: #7237ae;
+  --notion-pink-bg: #fff5fc;
+  --notion-pink-ink: #c04873;
+
+  /* ==========================================================================
+   * 3. Semantic Light Surface, Ink & Inline Code Tokens
+   * ========================================================================== */
+  --notion-bg: #ffffff;
+  --notion-bg-sidebar: #f9f9f8;
+  --notion-bg-sidebar-app: #f7f6f3;
+  --notion-bg-recessed: #f6f5f4;
+  --notion-bg-card: #ffffff;
+  --notion-bg-hover: rgba(55, 53, 47, 0.05);
+  --notion-bg-active: rgba(55, 53, 47, 0.08);
+  --notion-bg-stage: #f3f2ef;
+  --notion-ink: #37352f;
+  --notion-ink-strong: rgba(0, 0, 0, 0.92);
+  --notion-ink-secondary: #615d59;
+  --notion-ink-muted: #78736f;
+  --notion-ink-faint: #a39e98;
+  --notion-code-bg: rgba(135, 131, 120, 0.14);
+  --notion-code-ink: #c4412c;
+  --notion-star: #e89d01;
+
+  /* ==========================================================================
+   * 4. Hairline Borders & Official 4-Tier Tatami Ambient Shadows
+   * ========================================================================== */
+  --notion-border: rgba(55, 53, 47, 0.09);
+  --notion-border-strong: #dfdcd9;
+  --notion-shadow-nav: 0 1px 0 rgba(0, 0, 0, 0.06);
+  --notion-shadow-100: 0px 0.7px 1.462px 0px rgba(0, 0, 0, 0.016),
+    0px 3px 9px 0px rgba(0, 0, 0, 0.032);
+  --notion-shadow-200: 0px 0.175px 1.041px 0px rgba(0, 0, 0, 0.012),
+    0px 0.8px 2.925px 0px rgba(0, 0, 0, 0.02),
+    0px 2.025px 7.847px 0px rgba(0, 0, 0, 0.028),
+    0px 4px 18px 0px rgba(0, 0, 0, 0.045);
+  --notion-shadow-popover: var(--notion-shadow-200), 0 0 0 1px rgba(55, 53, 47, 0.09);
+  --notion-shadow-300: 0px 0.667px 3.502px 0px rgba(0, 0, 0, 0.01),
+    0px 2.933px 7.252px 0px rgba(0, 0, 0, 0.016),
+    0px 7.2px 14.462px 0px rgba(0, 0, 0, 0.02),
+    0px 13.867px 28.348px 0px rgba(0, 0, 0, 0.026),
+    0px 23.333px 52.123px 0px rgba(0, 0, 0, 0.035),
+    0px 36px 89px 0px rgba(0, 0, 0, 0.045),
+    0 0 0 1px rgba(55, 53, 47, 0.08);
+  --notion-backdrop: rgba(15, 15, 15, 0.28);
+
+  /* ==========================================================================
+   * 5. Typography (CJK + Latin Mixed Typography Guardrails ?cjk=1)
+   * ========================================================================== */
+  --tn-cjk-sans-fallback: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --notion-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", var(--tn-cjk-sans-fallback);
+  --notion-font-serif: "Newsreader", Georgia, var(--tn-cjk-sans-fallback);
+  --notion-font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ==========================================================================
+   * 6. Tatami Radius & Zero-Bounce Motion Tokens
+   * ========================================================================== */
+  --notion-radius-xs: 4px;
+  --notion-radius-sm: 5px;
+  --notion-radius-md: 6px;
+  --notion-radius-lg: 8px;
+  --notion-radius-popover: 10px;
+  --notion-radius-xl: 12px;
+  --notion-radius-pill: 9999px;
+
+  --notion-dur-whisper: 75ms;
+  --notion-dur-100: 100ms;
+  --notion-dur-150: 150ms;
+  --notion-dur-200: 200ms;
+  --notion-dur-250: 250ms;
+  --notion-dur-shimmer: 1400ms;
+
+  --notion-ease-linear: cubic-bezier(0, 0, 1, 1);
+  --notion-ease-in: cubic-bezier(0.42, 0, 1, 1);
+  --notion-ease-out: cubic-bezier(0, 0, 0.58, 1);
+  --notion-ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --notion-ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --notion-ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ==========================================================================
+   * 7. Host Semantic Aliases (Charts, Legacy Inline Styles & Magpie Compat)
+   * ========================================================================== */
+  --bg: var(--notion-bg);
+  --card: var(--notion-bg-card);
+  --card-2: var(--notion-bg-recessed);
+  --pill: var(--notion-bg-recessed);
+  --pill-hover: var(--notion-bg-active);
+  --line: var(--notion-border);
+  --line-2: var(--notion-border);
+  --fg: var(--notion-ink);
+  --fg-2: var(--notion-ink-secondary);
+  --muted: var(--notion-ink-muted);
+  --faint: var(--notion-ink-faint);
+  --accent: var(--notion-blue-600);
+  --accent-soft: var(--notion-blue-200);
+  --accent-fg: var(--notion-white);
+  --green: var(--notion-green-ink);
+  --green-soft: var(--notion-green-bg);
+  --red: var(--notion-red-ink);
+  --red-soft: var(--notion-red-bg);
+  --amber: var(--notion-orange-ink);
+  --amber-soft: var(--notion-orange-bg);
+  --font: var(--notion-font-sans);
+  --code: var(--notion-font-mono);
+
+  /* Tatami Chart Spectrum (calm editorial ink hues) */
+  --c1: #0075de;
+  --c2: #62aef0;
+  --c3: #2a9d6f;
+  --c4: #e09132;
+  --c5: #c04873;
+  --c6: #7237ae;
+  --c7: #78736f;
+
+  --hm-0: var(--notion-bg-recessed);
+  --hm-1: #d9ecfd;
+  --hm-2: #93cdfe;
+  --hm-3: #3993e6;
+  --hm-4: #0075de;
+
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: var(--magpie-bg, #18181c);
-    --card: var(--magpie-card, #222227);
-    --card-2: var(--magpie-card-2, color-mix(in srgb, var(--card) 86%, #000));
-    --pill: var(--magpie-pill, color-mix(in srgb, var(--card) 88%, var(--fg, #efeff3)));
-    --pill-hover: var(--magpie-pill-hover, color-mix(in srgb, var(--card) 82%, var(--fg, #efeff3)));
-    --seg-track: var(--magpie-seg-track, rgba(255, 255, 255, .045));
-    --seg-thumb: rgba(255, 255, 255, .15);
-    --seg-edge: inset 0 .5px 0 rgba(255, 255, 255, .09), 0 1px 2px rgba(0, 0, 0, .34);
-    --line: var(--magpie-line, #323239);
-    --line-2: var(--magpie-line-2, color-mix(in srgb, var(--line) 72%, var(--card)));
-    --fg: var(--magpie-fg, #efeff3);
-    --fg-2: var(--magpie-fg-2, color-mix(in srgb, var(--fg) 78%, var(--card)));
-    --muted: var(--magpie-muted, #8c8c96);
-    --faint: var(--magpie-faint, #575761);
-    --ctl-fg: var(--magpie-ctl-fg, #a4a4ae);
-    --accent: var(--magpie-accent, #9aa8ff);
-    --accent-soft: var(--magpie-accent-soft, #2a2c48);
-    --accent-fg: var(--magpie-accent-fg, #131429);
-    --sel: var(--magpie-sel, color-mix(in srgb, var(--accent) 18%, var(--card)));
-    --green: var(--magpie-green, #6ad897);
-    --green-soft: var(--magpie-green-soft, #1d392a);
-    --red: var(--magpie-red, #f4867d);
-    --red-soft: var(--magpie-red-soft, #432528);
-    --amber: var(--magpie-amber, #f3b749);
-    --amber-soft: var(--magpie-amber-soft, #3e311f);
-    --pop-bg: var(--magpie-pop-bg, color-mix(in srgb, var(--card) 96%, transparent));
-    --modal-backdrop: rgba(6, 7, 11, .62);
-    --shadow: 0 18px 46px rgba(0, 0, 0, .58), 0 3px 10px rgba(0, 0, 0, .32), 0 0 0 .5px rgba(255, 255, 255, .11);
-    --dialog-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 0 1px rgba(255, 255, 255, .11), 0 30px 76px rgba(0, 0, 0, .68), 0 8px 22px rgba(0, 0, 0, .42);
-    --c1: #a5b4fc; --c2: #7dd3fc; --c3: #6ee7b7; --c4: #fcd34d; --c5: #f9a8d4; --c6: #c4b5fd; --c7: #94a3b8;
+    --notion-bg: #191919;
+    --notion-bg-sidebar: #202020;
+    --notion-bg-sidebar-app: #202020;
+    --notion-bg-recessed: #222221;
+    --notion-bg-card: #262625;
+    --notion-bg-hover: rgba(255, 255, 255, 0.06);
+    --notion-bg-active: rgba(255, 255, 255, 0.1);
+    --notion-bg-stage: #141413;
+    --notion-ink: #e6e6e6;
+    --notion-ink-strong: #ffffff;
+    --notion-ink-secondary: #adaba7;
+    --notion-ink-muted: #8a8884;
+    --notion-ink-faint: #666562;
+    --notion-code-bg: rgba(255, 255, 255, 0.08);
+    --notion-code-ink: #ff8b7c;
+    --notion-star: #ffd786;
+
+    --notion-border: rgba(255, 255, 255, 0.09);
+    --notion-border-strong: rgba(255, 255, 255, 0.16);
+    --notion-shadow-nav: 0 1px 0 rgba(255, 255, 255, 0.08);
+    --notion-shadow-100: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    --notion-shadow-200: 0 10px 28px rgba(0, 0, 0, 0.52);
+    --notion-shadow-popover: 0 10px 30px rgba(0, 0, 0, 0.58), 0 0 0 1px rgba(255, 255, 255, 0.11);
+    --notion-shadow-300: 0 24px 64px rgba(0, 0, 0, 0.68), 0 0 0 1px rgba(255, 255, 255, 0.12);
+    --notion-backdrop: rgba(0, 0, 0, 0.56);
+
+    --notion-blue-100: rgba(0, 117, 222, 0.14);
+    --notion-blue-200: rgba(0, 117, 222, 0.24);
+    --notion-blue-700: #93cdfe;
+    --notion-green-200: rgba(26, 174, 57, 0.22);
+    --notion-green-500: #4ade80;
+    --notion-orange-200: rgba(221, 91, 0, 0.26);
+    --notion-yellow-200: rgba(232, 157, 1, 0.24);
+    --notion-purple-200: rgba(152, 73, 232, 0.24);
+    --notion-teal-200: rgba(10, 123, 119, 0.26);
+    --notion-red-200: rgba(227, 45, 20, 0.24);
+
+    --notion-brown-bg: rgba(177, 129, 100, 0.2);
+    --notion-brown-ink: #d9b79f;
+    --notion-red-bg: rgba(227, 45, 20, 0.18);
+    --notion-red-ink: #ff8b7c;
+    --notion-orange-bg: rgba(221, 91, 0, 0.18);
+    --notion-orange-ink: #ffad71;
+    --notion-yellow-bg: rgba(232, 157, 1, 0.18);
+    --notion-yellow-ink: #ffd786;
+    --notion-green-bg: rgba(20, 131, 43, 0.18);
+    --notion-green-ink: #68ce7e;
+    --notion-teal-bg: rgba(10, 123, 119, 0.18);
+    --notion-teal-ink: #83cbc9;
+    --notion-blue-bg: rgba(0, 117, 222, 0.2);
+    --notion-blue-ink: #62aef0;
+    --notion-purple-bg: rgba(114, 55, 174, 0.22);
+    --notion-purple-ink: #d6b6f6;
+    --notion-pink-bg: rgba(192, 72, 115, 0.2);
+    --notion-pink-ink: #ff9dd8;
+
+    --c1: #62aef0;
+    --c2: #4b94d6;
+    --c3: #5ec28b;
+    --c4: #f0b15d;
+    --c5: #ff9dd8;
+    --c6: #d6b6f6;
+    --c7: #8a8884;
+
+    --hm-0: rgba(255, 255, 255, 0.05);
+    --hm-1: rgba(35, 131, 226, 0.24);
+    --hm-2: rgba(35, 131, 226, 0.45);
+    --hm-3: rgba(35, 131, 226, 0.7);
+    --hm-4: #4fa1f2;
   }
 }
 
-:root[data-theme="dark"] {
-  --bg: var(--magpie-bg, #18181c);
-  --card: var(--magpie-card, #222227);
-  --card-2: var(--magpie-card-2, color-mix(in srgb, var(--card) 86%, #000));
-  --pill: var(--magpie-pill, color-mix(in srgb, var(--card) 88%, var(--fg, #efeff3)));
-  --pill-hover: var(--magpie-pill-hover, color-mix(in srgb, var(--card) 82%, var(--fg, #efeff3)));
-  --seg-track: var(--magpie-seg-track, rgba(255, 255, 255, .045));
-  --seg-thumb: rgba(255, 255, 255, .15);
-  --seg-edge: inset 0 .5px 0 rgba(255, 255, 255, .09), 0 1px 2px rgba(0, 0, 0, .34);
-  --line: var(--magpie-line, #323239);
-  --line-2: var(--magpie-line-2, color-mix(in srgb, var(--line) 72%, var(--card)));
-  --fg: var(--magpie-fg, #efeff3);
-  --fg-2: var(--magpie-fg-2, color-mix(in srgb, var(--fg) 78%, var(--card)));
-  --muted: var(--magpie-muted, #8c8c96);
-  --faint: var(--magpie-faint, #575761);
-  --ctl-fg: var(--magpie-ctl-fg, #a4a4ae);
-  --accent: var(--magpie-accent, #9aa8ff);
-  --accent-soft: var(--magpie-accent-soft, #2a2c48);
-  --accent-fg: var(--magpie-accent-fg, #131429);
-  --sel: var(--magpie-sel, color-mix(in srgb, var(--accent) 18%, var(--card)));
-  --green: var(--magpie-green, #6ad897);
-  --green-soft: var(--magpie-green-soft, #1d392a);
-  --red: var(--magpie-red, #f4867d);
-  --red-soft: var(--magpie-red-soft, #432528);
-  --amber: var(--magpie-amber, #f3b749);
-  --amber-soft: var(--magpie-amber-soft, #3e311f);
-  --pop-bg: var(--magpie-pop-bg, color-mix(in srgb, var(--card) 96%, transparent));
-  --modal-backdrop: rgba(6, 7, 11, .62);
-  --shadow: 0 18px 46px rgba(0, 0, 0, .58), 0 3px 10px rgba(0, 0, 0, .32), 0 0 0 .5px rgba(255, 255, 255, .11);
-  --dialog-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 0 1px rgba(255, 255, 255, .11), 0 30px 76px rgba(0, 0, 0, .68), 0 8px 22px rgba(0, 0, 0, .42);
-  --c1: #a5b4fc; --c2: #7dd3fc; --c3: #6ee7b7; --c4: #fcd34d; --c5: #f9a8d4; --c6: #c4b5fd; --c7: #94a3b8;
+:root[data-theme="dark"],
+:root.dark {
+  --notion-bg: #191919;
+  --notion-bg-sidebar: #202020;
+  --notion-bg-sidebar-app: #202020;
+  --notion-bg-recessed: #222221;
+  --notion-bg-card: #262625;
+  --notion-bg-hover: rgba(255, 255, 255, 0.06);
+  --notion-bg-active: rgba(255, 255, 255, 0.1);
+  --notion-bg-stage: #141413;
+  --notion-ink: #e6e6e6;
+  --notion-ink-strong: #ffffff;
+  --notion-ink-secondary: #adaba7;
+  --notion-ink-muted: #8a8884;
+  --notion-ink-faint: #666562;
+  --notion-code-bg: rgba(255, 255, 255, 0.08);
+  --notion-code-ink: #ff8b7c;
+  --notion-star: #ffd786;
+
+  --notion-border: rgba(255, 255, 255, 0.09);
+  --notion-border-strong: rgba(255, 255, 255, 0.16);
+  --notion-shadow-nav: 0 1px 0 rgba(255, 255, 255, 0.08);
+  --notion-shadow-100: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --notion-shadow-200: 0 10px 28px rgba(0, 0, 0, 0.52);
+  --notion-shadow-popover: 0 10px 30px rgba(0, 0, 0, 0.58), 0 0 0 1px rgba(255, 255, 255, 0.11);
+  --notion-shadow-300: 0 24px 64px rgba(0, 0, 0, 0.68), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --notion-backdrop: rgba(0, 0, 0, 0.56);
+
+  --notion-blue-100: rgba(0, 117, 222, 0.14);
+  --notion-blue-200: rgba(0, 117, 222, 0.24);
+  --notion-blue-700: #93cdfe;
+  --notion-green-200: rgba(26, 174, 57, 0.22);
+  --notion-green-500: #4ade80;
+  --notion-orange-200: rgba(221, 91, 0, 0.26);
+  --notion-yellow-200: rgba(232, 157, 1, 0.24);
+  --notion-purple-200: rgba(152, 73, 232, 0.24);
+  --notion-teal-200: rgba(10, 123, 119, 0.26);
+  --notion-red-200: rgba(227, 45, 20, 0.24);
+
+  --notion-brown-bg: rgba(177, 129, 100, 0.2);
+  --notion-brown-ink: #d9b79f;
+  --notion-red-bg: rgba(227, 45, 20, 0.18);
+  --notion-red-ink: #ff8b7c;
+  --notion-orange-bg: rgba(221, 91, 0, 0.18);
+  --notion-orange-ink: #ffad71;
+  --notion-yellow-bg: rgba(232, 157, 1, 0.18);
+  --notion-yellow-ink: #ffd786;
+  --notion-green-bg: rgba(20, 131, 43, 0.18);
+  --notion-green-ink: #68ce7e;
+  --notion-teal-bg: rgba(10, 123, 119, 0.18);
+  --notion-teal-ink: #83cbc9;
+  --notion-blue-bg: rgba(0, 117, 222, 0.2);
+  --notion-blue-ink: #62aef0;
+  --notion-purple-bg: rgba(114, 55, 174, 0.22);
+  --notion-purple-ink: #d6b6f6;
+  --notion-pink-bg: rgba(192, 72, 115, 0.2);
+  --notion-pink-ink: #ff9dd8;
+
+  --c1: #62aef0;
+  --c2: #4b94d6;
+  --c3: #5ec28b;
+  --c4: #f0b15d;
+  --c5: #ff9dd8;
+  --c6: #d6b6f6;
+  --c7: #8a8884;
+
+  --hm-0: rgba(255, 255, 255, 0.05);
+  --hm-1: rgba(35, 131, 226, 0.24);
+  --hm-2: rgba(35, 131, 226, 0.45);
+  --hm-3: rgba(35, 131, 226, 0.7);
+  --hm-4: #4fa1f2;
 }
 
 :root[data-theme="light"] body { color-scheme: light only; }
-:root[data-theme="dark"] body { color-scheme: dark; }
+:root[data-theme="dark"] body,
+:root.dark body { color-scheme: dark; }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; max-width: 100%; overflow-x: hidden; }
+/* ==========================================================================
+ * Base Reset & CJK Typography
+ * ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; max-width: 100%; overflow: hidden; }
 
 html.magpie-out-of-sight .icon.spin svg,
 html.magpie-out-of-sight .btn-spin { animation-play-state: paused !important; }
@@ -119,33 +342,30 @@ html.theming,
 html.theming *,
 html.theming *::before,
 html.theming *::after {
-  transition: background-color .25s var(--ease), background .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease), box-shadow .25s var(--ease) !important;
+  transition: background-color 200ms var(--notion-ease-in-out-cubic),
+    color 200ms var(--notion-ease-in-out-cubic),
+    border-color 200ms var(--notion-ease-in-out-cubic) !important;
 }
 
 body {
-  font: 13px/1.45 var(--font);
-  color: var(--fg);
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  font-family: var(--notion-font-sans);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--notion-ink);
+  background: var(--notion-bg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis-weight: none;
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
 }
-body.modal-open .view-scroll {
-  overflow: hidden;
-}
 
-:where(p, pre, code, td, .mono, .quota-reset, .quota-read, .err, .banner, .hit-snippet, .dtl-val, .dtl-codebox code, .cfm-desc) {
+body.modal-open .view-scroll { overflow: hidden; }
+
+:where(p, pre, code, td, .mono, .hit-snippet, .dtl-val, .dtl-codebox code, .cfm-desc, .doc-detail) {
   user-select: text;
   -webkit-user-select: text;
-}
-:where(button, label, nav, [role="tab"], [role="option"], [role="switch"], .pop, .segs, .seg, .opt),
-:where(button, label, nav, [role="tab"], [role="option"], [role="switch"], .pop, .segs, .seg, .opt) * {
-  user-select: none;
-  -webkit-user-select: none;
 }
 :where(input, textarea) { user-select: text; -webkit-user-select: text; }
 
@@ -159,107 +379,512 @@ button {
   -webkit-appearance: none;
   text-align: center;
 }
-button:disabled { cursor: not-allowed; }
-button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-input { font: inherit; color: var(--fg); }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--notion-app-blue);
+  outline-offset: 2px;
+}
+
+input {
+  font: inherit;
+  color: var(--notion-ink-strong);
+}
+
 :where(input:not([type=checkbox], [type=radio], [type=range], [type=hidden], [type=file], [type=color], [type=button], [type=submit])) {
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--card);
-  transition: border-color .15s, box-shadow .15s;
+  border: 1px solid var(--notion-border-strong);
+  border-radius: var(--notion-radius-md);
+  background: var(--notion-bg-card);
+  color: var(--notion-ink-strong);
+  transition: border-color var(--notion-dur-150) var(--notion-ease-in-out-cubic),
+    background-color var(--notion-dur-150) var(--notion-ease-in-out-cubic);
+}
+:where(input:not([type=checkbox], [type=radio], [type=range], [type=hidden], [type=file], [type=color], [type=button], [type=submit]))::placeholder {
+  color: var(--notion-ink-faint);
 }
 :where(input:not([type=checkbox], [type=radio], [type=range], [type=hidden], [type=file], [type=color], [type=button], [type=submit])):focus {
-  border-color: var(--accent);
+  border-color: var(--notion-app-blue);
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--notion-app-blue) 22%, transparent);
 }
 
-.grow { flex: 1; }
 [hidden] { display: none !important; }
-.mono { font-family: var(--code); font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--notion-font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.tabular { font-variant-numeric: tabular-nums; letter-spacing: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
-/* Magpie 内嵌宿主隐藏独立主题切换按钮 */
 html.embed-magpie #btn-theme { display: none; }
 
-/* ---- 滚动条 ---- */
+/* Subtle Tatami Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--fg) 18%, transparent);
+  background: color-mix(in srgb, var(--notion-ink) 14%, transparent);
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: 999px;
   background-clip: padding-box;
 }
-::-webkit-scrollbar-thumb:hover { background-color: var(--muted); }
-::-webkit-scrollbar-corner, ::-webkit-scrollbar-button { display: none; background: transparent; }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--notion-ink) 28%, transparent); }
+::-webkit-scrollbar-corner, ::-webkit-scrollbar-button { display: none; }
 
-/* ---- 顶部导航与工具栏 ---- */
+/* ==========================================================================
+ * Tatami Motion Primitives (Zero Bounce)
+ * ========================================================================== */
+.notion-whisper {
+  transition:
+    background-color var(--notion-dur-whisper) var(--notion-ease-linear),
+    color var(--notion-dur-100) var(--notion-ease-linear);
+}
+.notion-btn-motion {
+  transition:
+    background-color var(--notion-dur-200) var(--notion-ease-in),
+    color var(--notion-dur-200) var(--notion-ease-in),
+    border-color var(--notion-dur-150) var(--notion-ease-in-out-cubic),
+    filter var(--notion-dur-150) var(--notion-ease-out),
+    transform var(--notion-dur-100) var(--notion-ease-out);
+}
+.notion-btn-motion:active:not(:disabled) { transform: scale(0.988); }
+
+@keyframes notion-popover-enter {
+  0% { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes notion-row-enter {
+  0% { opacity: 0; transform: translateY(3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes flash {
+  0%, 30% { background: var(--notion-green-bg); }
+  100% {}
+}
+
+/* ==========================================================================
+ * App Shell: Warm-Stone Sidebar (#f7f6f3) + Pure Paper Canvas (#ffffff)
+ * ========================================================================== */
+.app-shell {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background: var(--notion-bg);
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 224px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--notion-bg-sidebar-app);
+  border-right: 1px solid var(--notion-border);
+  padding: 12px 10px 12px;
+  gap: 12px;
+  overflow: hidden;
+  transition: width var(--notion-dur-250) var(--notion-ease-in-out-quart),
+    padding var(--notion-dur-250) var(--notion-ease-in-out-quart),
+    border-color var(--notion-dur-200) var(--notion-ease-out);
+}
+.app-shell.sidebar-collapsed .sidebar {
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-right-color: transparent;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: var(--notion-radius-md);
+  min-height: 32px;
+}
+.brand-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.brand-mark {
+  width: 18px;
+  height: 18px;
+  color: var(--notion-ink-strong);
+  flex: none;
+}
+.brand-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--notion-ink-strong);
+  white-space: nowrap;
+}
+
+/* Quick Find Trigger */
+.qf-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: var(--notion-radius-md);
+  font-size: 13px;
+  color: var(--notion-ink-secondary);
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear),
+    color var(--notion-dur-100) var(--notion-ease-linear);
+}
+.qf-trigger:hover {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+.qf-trigger-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.qf-trigger svg {
+  color: var(--notion-ink-muted);
+  flex: none;
+}
+.qf-kbd {
+  font-family: var(--notion-font-mono);
+  font-size: 10.5px;
+  color: var(--notion-ink-faint);
+  letter-spacing: 0;
+}
+
+/* Primary Sidebar Navigation (#main-nav) */
+.sidebar-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.sidebar-section-label {
+  padding: 6px 8px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--notion-ink-muted);
+  letter-spacing: 0.01em;
+}
+#main-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+#main-nav .thumb { display: none; }
+#main-nav .opt {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  justify-content: flex-start;
+  gap: 8px;
+  border-radius: var(--notion-radius-md);
+  font-size: 13px;
+  font-weight: 450;
+  color: var(--notion-ink-secondary);
+  background: transparent;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear),
+    color var(--notion-dur-100) var(--notion-ease-linear);
+}
+#main-nav .opt svg {
+  width: 15px;
+  height: 15px;
+  color: var(--notion-ink-muted);
+  flex: none;
+  transition: color var(--notion-dur-100) var(--notion-ease-linear);
+}
+#main-nav .opt:hover {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+#main-nav .opt:hover svg { color: var(--notion-ink-strong); }
+#main-nav .opt.on {
+  background: var(--notion-bg-active);
+  color: var(--notion-ink-strong);
+  font-weight: 550;
+}
+#main-nav .opt.on svg { color: var(--notion-ink-strong); }
+#main-nav .opt:active { transform: none; }
+
+.opt-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: var(--notion-radius-pill);
+  background: var(--notion-bg-active);
+  color: var(--notion-ink-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.opt-badge.warn {
+  background: var(--notion-orange-bg);
+  color: var(--notion-orange-ink);
+}
+
+/* Sidebar Footer */
+.sidebar-foot {
+  border-top: 1px solid var(--notion-border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: none;
+}
+.sidebar-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: var(--notion-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--notion-ink-secondary);
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear),
+    color var(--notion-dur-100) var(--notion-ease-linear);
+}
+.sidebar-create-btn:hover {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+.sidebar-create-btn svg { color: var(--notion-ink-muted); }
+
+.sidebar-utils {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 2px;
+}
+.sidebar-utils-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ==========================================================================
+ * Workspace Main Canvas & Top Breadcrumb Bar
+ * ========================================================================== */
+.workspace-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--notion-bg);
+  overflow: hidden;
+}
+
 .page-top {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 8px max(16px, calc(50% - 560px)) 6px;
+  justify-content: space-between;
+  gap: 12px;
+  height: 46px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--notion-border);
+  background: var(--notion-bg);
 }
-.page-tools {
-  margin-left: auto;
+
+.top-left {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: nowrap;
+  min-width: 0;
 }
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  min-width: 0;
+}
+.crumb-root {
+  color: var(--notion-ink-muted);
+  white-space: nowrap;
+}
+.crumb-sep {
+  color: var(--notion-ink-faint);
+  font-size: 12px;
+}
+.crumb-current {
+  color: var(--notion-ink-strong);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
 .sse-dot-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 24px;
+  gap: 6px;
+  height: 26px;
   padding: 0 8px;
-  border-radius: 999px;
-  background: var(--pill);
-  font-size: 11px;
-  color: var(--ctl-fg);
+  border-radius: var(--notion-radius-pill);
+  background: transparent;
+  font-size: 12px;
+  color: var(--notion-ink-muted);
   font-variant-numeric: tabular-nums;
   flex: none;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
 }
+.sse-dot-btn:hover { background: var(--notion-bg-hover); }
 .sse-dot-btn i {
-  width: 7px;
-  height: 7px;
+  width: 6.5px;
+  height: 6.5px;
   border-radius: 50%;
-  background: var(--faint);
+  background: var(--notion-ink-faint);
   flex: none;
-  transition: background .2s, box-shadow .2s;
+  transition: background-color var(--notion-dur-150) var(--notion-ease-out);
 }
-.sse-dot-btn.ok i { background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
-.sse-dot-btn.err i { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.sse-dot-btn.ok i { background: var(--notion-green-500); }
+.sse-dot-btn.err i { background: var(--notion-red-ink); }
 
-/* ---- 分段控制器 (.segs + 滑动指示块 .thumb) ---- */
+/* Mobile/Sidecar Compact Nav Strip (hidden on wide desktop) */
+.mobile-nav-bar {
+  display: none;
+  flex: none;
+  border-bottom: 1px solid var(--notion-border);
+  background: var(--notion-bg-sidebar);
+  padding: 6px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mobile-nav-bar::-webkit-scrollbar { display: none; }
+
+/* ==========================================================================
+ * Document Scroll Canvas & Editorial Page Header
+ * ========================================================================== */
+.view-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 36px 48px 72px;
+}
+
+.view-panel {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding-bottom: 4px;
+}
+.page-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.page-title {
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  color: var(--notion-ink-strong);
+  text-wrap: balance;
+}
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 24px;
+}
+.row-head .label,
+.head-with-tip .label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--notion-ink-muted);
+  letter-spacing: 0.01em;
+}
+.head-with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* ==========================================================================
+ * Segmented Control (.segs + sliding .thumb, Tatami 200ms cubic)
+ * ========================================================================== */
 .segs {
   position: relative;
   display: inline-flex;
   align-items: center;
   padding: 2px;
-  border-radius: 8px;
-  background: var(--seg-track);
+  border-radius: var(--notion-radius-lg);
+  background: var(--notion-bg-recessed);
+  border: 1px solid var(--notion-border);
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .segs::-webkit-scrollbar { display: none; }
-.segs.compact { border-radius: 7px; background: var(--pill); }
+.segs.compact { border-radius: 7px; }
 .segs .thumb {
   position: absolute;
   top: 2px;
   bottom: 2px;
   left: 0;
   width: 0;
-  border-radius: 6px;
-  background: var(--mark-fill, var(--seg-thumb));
-  box-shadow: var(--seg-edge);
-  pointer-events: none;
-  transition: transform .22s var(--ease-out), width .22s var(--ease-out), opacity .15s;
-}
-.segs.compact .thumb {
   border-radius: 5px;
-  background: var(--mark-fill, var(--card));
+  background: var(--notion-bg-card);
+  box-shadow: var(--notion-shadow-100);
+  pointer-events: none;
+  transition:
+    transform var(--notion-dur-200) var(--notion-ease-in-out-cubic),
+    width var(--notion-dur-200) var(--notion-ease-in-out-cubic);
 }
 .segs.still .thumb { transition: none; }
 .opt {
@@ -269,80 +894,119 @@ html.embed-magpie #btn-theme { display: none; }
   align-items: center;
   justify-content: center;
   gap: 4px;
-  height: 24px;
+  height: 26px;
   padding: 0 11px;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: 12.5px;
-  color: var(--ctl-fg);
+  font-weight: 500;
+  color: var(--notion-ink-muted);
   white-space: nowrap;
-  transition: color .18s var(--ease), transform .14s var(--ease);
+  transition: color var(--notion-dur-150) var(--notion-ease-out);
 }
 .segs.compact .opt {
-  height: 20px;
-  padding: 0 8px;
-  font-size: 11.5px;
-  border-radius: 5px;
+  height: 22px;
+  padding: 0 9px;
+  font-size: 12px;
 }
-.opt.on { color: var(--mark); font-weight: 500; }
-.opt:hover:not(.on) { color: var(--fg); }
-.opt:active { transform: scale(.96); }
-.opt-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.opt-badge.warn { background: var(--amber-soft); color: var(--amber); }
+.opt.on { color: var(--notion-ink-strong); }
+.opt:hover:not(.on) { color: var(--notion-ink); }
 
-/* ---- 主滚动内容区 ---- */
-.view-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 2px max(16px, calc(50% - 560px)) 36px;
-}
-.view-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-}
-
-/* ---- 按钮与图标 ---- */
+/* ==========================================================================
+ * Buttons & Icons (Notion Dual-Register: blue / soft-blue / outline / ghost)
+ * ========================================================================== */
 .text {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  height: 24px;
+  height: 28px;
   padding: 0 10px;
-  border-radius: 6px;
+  border-radius: var(--notion-radius-md);
   font-size: 12.5px;
-  color: var(--ctl-fg);
-  background: var(--pill);
+  font-weight: 500;
+  color: var(--notion-ink);
+  background: var(--notion-bg-card);
+  border: 1px solid var(--notion-border-strong);
   white-space: nowrap;
-  transition: background .14s, color .14s, transform .14s var(--ease), filter .14s, opacity .14s;
+  transition:
+    background-color var(--notion-dur-150) var(--notion-ease-out),
+    color var(--notion-dur-150) var(--notion-ease-out),
+    border-color var(--notion-dur-150) var(--notion-ease-in-out-cubic),
+    filter var(--notion-dur-150) var(--notion-ease-out),
+    transform var(--notion-dur-100) var(--notion-ease-out);
 }
-.text:hover:not(:disabled) { color: var(--fg); background: var(--pill-hover); }
-.text:active:not(:disabled) { transform: scale(.97); }
-.text:disabled { opacity: .52; }
-.text.primary { color: var(--accent-fg); background: var(--accent); font-weight: 500; }
-.text.primary:hover:not(:disabled) { color: var(--accent-fg); background: var(--accent); filter: brightness(1.07); }
-.text.danger { color: var(--red); background: var(--red-soft); }
-.text.danger:hover:not(:disabled) { color: var(--red); background: color-mix(in srgb, var(--red) 20%, var(--card)); }
-.text.danger-fill { color: #fff; background: var(--red); font-weight: 500; }
-.text.danger-fill:hover:not(:disabled) { color: #fff; background: var(--red); filter: brightness(1.07); }
-.text.quiet { background: none; color: var(--ctl-fg); padding: 0 7px; }
-.text.quiet:hover:not(:disabled) { background: var(--pill); color: var(--fg); }
+.text:hover:not(:disabled) {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+.text:active:not(:disabled) { transform: scale(0.988); }
+
+.text.ghost,
+.text.quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--notion-ink-secondary);
+  padding: 0 8px;
+  transition:
+    background-color var(--notion-dur-whisper) var(--notion-ease-linear),
+    color var(--notion-dur-100) var(--notion-ease-linear);
+}
+.text.ghost:hover:not(:disabled),
+.text.quiet:hover:not(:disabled) {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+
+.text.primary {
+  background: var(--notion-blue-600);
+  border-color: transparent;
+  color: var(--notion-white);
+  border-radius: var(--notion-radius-lg);
+}
+.text.primary:hover:not(:disabled) {
+  background: var(--notion-blue-700);
+  color: var(--notion-white);
+}
+
+.text.soft-blue {
+  background: var(--notion-blue-200);
+  border-color: transparent;
+  color: var(--notion-blue-700);
+  border-radius: var(--notion-radius-lg);
+}
+.text.soft-blue:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.text.danger {
+  background: transparent;
+  border-color: transparent;
+  color: var(--notion-red-ink);
+}
+.text.danger:hover:not(:disabled) {
+  background: var(--notion-red-bg);
+  color: var(--notion-red-ink);
+}
+
+.text.danger-outline {
+  background: var(--notion-red-bg);
+  border-color: color-mix(in srgb, var(--notion-red-ink) 22%, transparent);
+  color: var(--notion-red-ink);
+}
+.text.danger-outline:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.text.danger-fill {
+  background: var(--notion-red-ink);
+  border-color: transparent;
+  color: var(--notion-white);
+  border-radius: var(--notion-radius-lg);
+}
+.text.danger-fill:hover:not(:disabled) {
+  filter: brightness(0.93);
+  color: var(--notion-white);
+}
 
 .btn-spin {
   width: 12px;
@@ -352,102 +1016,118 @@ html.embed-magpie #btn-theme { display: none; }
   border-radius: 50%;
   display: inline-block;
   flex: none;
-  animation: spin .75s linear infinite;
+  animation: spin 0.75s linear infinite;
 }
 
 .icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--notion-radius-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--muted);
-  background: var(--pill);
+  color: var(--notion-ink-muted);
+  background: transparent;
   flex: none;
-  transition: background .12s, color .12s, transform .14s var(--ease);
+  transition:
+    background-color var(--notion-dur-whisper) var(--notion-ease-linear),
+    color var(--notion-dur-100) var(--notion-ease-linear);
 }
-.icon:hover, .icon.on { background: var(--pill-hover); color: var(--fg); }
-.icon:active { transform: scale(.92); }
-.icon.spin svg { animation: spin .9s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.icon:hover, .icon.on {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+.icon.spin svg { animation: spin 0.9s linear infinite; }
 
-/* ---- 自定义下拉触发器 (.field) 与毛玻璃菜单 (.pop) ---- */
+/* ==========================================================================
+ * Select Trigger (.field) & Floating Menu (.pop, 150ms Expo Out)
+ * ========================================================================== */
 .field {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 24px;
+  gap: 6px;
+  height: 28px;
   max-width: 100%;
   min-width: 0;
-  padding: 0 7px 0 9px;
-  border-radius: 6px;
-  background: var(--pill);
+  padding: 0 8px 0 10px;
+  border-radius: var(--notion-radius-md);
+  background: var(--notion-bg-card);
+  border: 1px solid var(--notion-border-strong);
   font-size: 12.5px;
-  color: var(--fg-2);
-  transition: background .14s, box-shadow .14s, color .14s;
+  color: var(--notion-ink);
+  transition:
+    background-color var(--notion-dur-whisper) var(--notion-ease-linear),
+    border-color var(--notion-dur-150) var(--notion-ease-in-out-cubic);
 }
-.field:hover, .field.open { background: var(--pill-hover); color: var(--fg); }
-.field.open { box-shadow: inset 0 0 0 1px var(--accent); }
-.field .k { color: var(--muted); font-size: 11.5px; flex: none; }
-.field .v { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-variant-numeric: tabular-nums; }
-.field .chev { color: var(--faint); display: inline-flex; margin-left: auto; flex: none; transition: transform .16s var(--ease), color .12s; }
-.field.open .chev { transform: rotate(180deg); color: var(--accent); }
+.field:hover { background: var(--notion-bg-hover); }
+.field.open {
+  border-color: var(--notion-app-blue);
+  background: var(--notion-bg-card);
+}
+.field .k { color: var(--notion-ink-muted); font-size: 12px; flex: none; }
+.field .v {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.field .chev {
+  color: var(--notion-ink-faint);
+  display: inline-flex;
+  margin-left: auto;
+  flex: none;
+  transition: transform var(--notion-dur-150) var(--notion-ease-in-out-cubic), color var(--notion-dur-100);
+}
+.field.open .chev { transform: rotate(180deg); color: var(--notion-app-blue); }
 
 .pop {
   position: fixed;
   z-index: 60;
-  min-width: 168px;
-  max-width: min(320px, calc(100vw - 16px));
-  max-height: min(340px, 62vh);
+  min-width: 180px;
+  max-width: min(300px, calc(100vw - 16px));
+  max-height: min(320px, 60vh);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 5px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--pop-bg);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
-  backdrop-filter: blur(20px) saturate(1.2);
-  box-shadow: var(--shadow);
-  display: grid;
-  gap: 2px;
+  padding: 4px;
+  border-radius: var(--notion-radius-popover);
+  background: var(--notion-bg-card);
+  box-shadow: var(--notion-shadow-popover);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   transform-origin: var(--ox, 24px) top;
-  animation: pop-fade .14s ease-out, pop-in .2s var(--ease-out);
+  animation: notion-popover-enter var(--notion-dur-150) var(--notion-ease-expo-out) both;
 }
-.pop.up { transform-origin: var(--ox, 24px) bottom; --pop-dy: 6px; }
-@keyframes pop-fade { from { opacity: 0; } }
-@keyframes pop-in { from { transform: translateY(var(--pop-dy, -6px)) scale(.96); } }
+.pop.up { transform-origin: var(--ox, 24px) bottom; }
 
 .pop-item {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 32px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12.5px;
-  color: var(--fg-2);
+  min-height: 30px;
+  padding: 5px 8px;
+  border-radius: var(--notion-radius-md);
+  font-size: 13px;
+  color: var(--notion-ink);
   text-align: left;
-  transition: background .12s, color .12s;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
 }
 .pop-item:hover, .pop-item.focus {
-  background: var(--sel);
-  color: var(--fg);
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
 }
 .pop-item.on {
-  background: color-mix(in srgb, var(--accent) 11%, transparent);
-  color: var(--fg);
-  font-weight: 600;
-}
-.pop-item.on:hover, .pop-item.on.focus {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--notion-ink-strong);
+  font-weight: 500;
 }
 .pop-item .pm-check {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   flex: none;
-  color: var(--accent);
+  color: var(--notion-app-blue);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -457,216 +1137,160 @@ html.embed-magpie #btn-theme { display: none; }
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
 }
 .pop-item .pi-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.pop-item .pi-desc {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--muted);
-  white-space: normal;
-  line-height: 1.35;
-}
 
-/* ---- 统一毛玻璃悬停提示弹窗 (.tip-pop) 与小圆点帮助触发器 (.help-dot) ---- */
-.help-dot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--pill);
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-  flex: none;
-  cursor: help;
-  transition: background .14s, color .14s, border-color .14s, transform .12s;
-}
-.help-dot:hover,
-.help-dot:focus-visible {
-  background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-  color: var(--accent);
-}
-.head-with-tip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
+/* ==========================================================================
+ * Whisper Tooltip (.tip-pop)
+ * ========================================================================== */
 .tip-pop {
   position: fixed;
   z-index: 80;
-  max-width: min(290px, calc(100vw - 16px));
-  padding: 7px 10px;
-  border-radius: 9px;
-  border: 1px solid var(--line);
-  background: var(--pop-bg);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
-  backdrop-filter: blur(18px) saturate(1.25);
-  box-shadow: var(--shadow);
-  color: var(--fg);
-  font-size: 11.5px;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 6px 10px;
+  border-radius: var(--notion-radius-lg);
+  background: var(--notion-bg-card);
+  box-shadow: var(--notion-shadow-popover);
+  color: var(--notion-ink);
+  font-size: 12px;
   line-height: 1.45;
   pointer-events: none;
   word-break: break-word;
-  animation: tip-in .12s var(--ease-out);
-}
-.tip-pop.below {
-  animation: tip-in-down .12s var(--ease-out);
+  animation: notion-popover-enter var(--notion-dur-100) var(--notion-ease-expo-out) both;
 }
 .tip-pop .tip-title {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--fg);
+  color: var(--notion-ink-strong);
   margin-bottom: 2px;
 }
 .tip-pop .tip-body {
-  color: var(--fg-2);
+  color: var(--notion-ink-secondary);
   font-variant-numeric: tabular-nums;
 }
-@keyframes tip-in {
-  from { opacity: 0; transform: translateY(3px) scale(.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes tip-in-down {
-  from { opacity: 0; transform: translateY(-3px) scale(.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
 
-/* ---- 拨动开关 (.switch) ---- */
+/* ==========================================================================
+ * Notion Zero-Bounce Switch (.switch)
+ * ========================================================================== */
 .switch {
   flex: none;
   position: relative;
-  width: 30px;
-  height: 18px;
-  border-radius: 999px;
-  background: var(--pill);
-  box-shadow: inset 0 0 0 1px var(--line);
+  width: 34px;
+  height: 20px;
+  border-radius: var(--notion-radius-pill);
+  background: var(--notion-bg-active);
   padding: 2px;
   display: inline-flex;
   align-items: center;
-  transition: background .16s var(--ease), box-shadow .16s var(--ease);
+  transition: background-color var(--notion-dur-150) var(--notion-ease-in-out-cubic);
 }
 .switch i {
   display: block;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: var(--card);
-  box-shadow: 0 1px 2.5px rgba(0, 0, 0, .24);
-  transition: transform .18s var(--ease-out);
+  background: var(--notion-white);
+  box-shadow: var(--notion-shadow-100);
+  transition: transform var(--notion-dur-150) var(--notion-ease-in-out-cubic);
 }
 .switch[aria-checked="true"] {
-  background: var(--accent);
-  box-shadow: none;
+  background: var(--notion-app-blue);
 }
 .switch[aria-checked="true"] i {
-  transform: translateX(12px);
+  transform: translateX(14px);
 }
 
-/* ---- KPI 指标条 (.stats + .kpi) ---- */
+/* ==========================================================================
+ * Editorial KPI Strip (.stats + .kpi)
+ * ========================================================================== */
 .stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--notion-border);
+  border-radius: var(--notion-radius-popover);
+  background: var(--notion-bg-card);
   overflow: hidden;
   flex: none;
 }
 .kpi {
-  background: var(--card);
-  padding: 12px 14px 11px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
+  gap: 6px;
   min-width: 0;
-  transition: background .14s;
+  position: relative;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
+}
+.kpi + .kpi {
+  border-left: 1px solid var(--notion-border);
 }
 .kpi[data-tip]:hover {
-  background: color-mix(in srgb, var(--pill) 40%, var(--card));
+  background: var(--notion-bg-hover);
+}
+.kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--notion-ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kpi-val {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
 }
 .kpi b {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
-  letter-spacing: -.01em;
+  letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums;
-  line-height: 1.18;
+  line-height: 1.15;
+  color: var(--notion-ink-strong);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.kpi b .u {
-  font-style: normal;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--green);
-  margin-left: 3px;
+.kpi b .warn { color: var(--notion-orange-ink); }
+.kpi-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--notion-radius-pill);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: var(--notion-green-bg);
+  color: var(--notion-green-ink);
 }
-.kpi b .warn { color: var(--amber); }
-.kpi span {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .03em;
-  color: var(--muted);
-  margin-top: 3px;
+.kpi-pill.warn {
+  background: var(--notion-orange-bg);
+  color: var(--notion-orange-ink);
 }
-.kpi small {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
+.kpi-sub {
+  font-size: 11.5px;
+  color: var(--notion-ink-faint);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-variant-numeric: tabular-nums;
 }
 
-/* ---- 分区标题栏与页面工具条 ---- */
-.row-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 6px 8px;
-  min-height: 26px;
-  padding: 2px 2px 0;
-}
-.row-head .label,
-.head-with-tip .label {
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: .03em;
-  color: var(--muted);
-}
-.ctx-foot-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.doc-item > summary .badge {
-  margin-left: auto;
-}
+/* ==========================================================================
+ * Toolbar Row (.usage-head)
+ * ========================================================================== */
 .usage-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px;
-  min-height: 32px;
+  gap: 10px 12px;
   flex: none;
 }
 .usage-head .right-tools {
@@ -677,184 +1301,197 @@ html.embed-magpie #btn-theme { display: none; }
   flex-wrap: wrap;
 }
 
-/* ---- 账号与算力卡片网格 (.subscription-usage & .subscription-card) ---- */
+/* ==========================================================================
+ * Account & Quota Cards (Active #ffffff + 1px #dfdcd9 vs Recessed #f6f5f4)
+ * ========================================================================== */
 .subscription-usage {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
   align-items: start;
-  gap: 8px;
+  gap: 14px;
 }
 .subscription-usage.single { grid-template-columns: minmax(0, 1fr); }
 
 .subscription-card {
-  padding: 12px 13px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
+  padding: 18px 20px;
+  border: 1px solid var(--notion-border-strong);
+  border-radius: var(--notion-radius-popover);
+  background: var(--notion-bg-card);
+  box-shadow: var(--notion-shadow-100);
   min-width: 0;
-  transition: border-color .16s, box-shadow .16s, background .16s;
+  transition: border-color var(--notion-dur-150) var(--notion-ease-in-out-cubic),
+    background-color var(--notion-dur-150) var(--notion-ease-out);
+}
+.subscription-card.is-offline {
+  background: var(--notion-bg-recessed);
+  border-color: transparent;
+  box-shadow: none;
+}
+.subscription-card.is-offline .quota-windows {
+  opacity: 0.72;
 }
 .subscription-card.clickable { cursor: pointer; }
 .subscription-card.clickable:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-color: var(--notion-ink-faint);
 }
-.subscription-card.waiting { border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); }
-.subscription-card.orphan { border-color: color-mix(in srgb, var(--red) 60%, var(--line)); }
-.subscription-card.burning { border-color: color-mix(in srgb, var(--amber) 45%, var(--line)); }
-.subscription-card.flash, .row.pref.flash { animation: flash 1.2s ease-out; }
-.row.pref.flash { border-radius: 11px; }
-@keyframes flash {
-  0%, 35% { box-shadow: inset 0 0 0 1px var(--green); background: var(--green-soft); }
-  100% {}
+.subscription-card.waiting,
+.subscription-card.burning {
+  border-color: color-mix(in srgb, var(--notion-orange-ink) 40%, var(--notion-border-strong));
 }
+.subscription-card.orphan {
+  border-color: color-mix(in srgb, var(--notion-red-ink) 45%, var(--notion-border-strong));
+}
+.subscription-card.flash, .row.pref.flash { animation: flash 1.1s ease-out; }
 
 .subscription-head {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 5px 7px;
-  margin-bottom: 5px;
+  gap: 8px;
+  margin-bottom: 14px;
   min-width: 0;
 }
 .subscription-head b {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
+  color: var(--notion-ink-strong);
   min-width: 0;
-  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .subscription-head .inst-name {
-  color: var(--fg-2);
-  font-size: 12px;
+  color: var(--notion-ink-muted);
+  font-size: 12.5px;
   min-width: 0;
   flex: 1 1 80px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.subscription-head .plan {
+.subscription-head-right {
   margin-left: auto;
-  font-size: 10.5px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.subscription-account {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 9px;
-  font-size: 11px;
-  color: var(--muted);
-  min-width: 0;
+  flex: none;
 }
-.subscription-account .user {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.subscription-head .plan {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--notion-ink-faint);
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
 .quota-windows {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px 14px;
+  gap: 12px 20px;
 }
 .quota-windows.single { grid-template-columns: minmax(0, 1fr); }
 .quota { min-width: 0; }
+.quota.muted { opacity: 0.48; }
 .quota[data-tip] {
-  border-radius: 6px;
-  padding: 2px 3px;
-  margin: -2px -3px;
-  transition: background .12s;
+  border-radius: var(--notion-radius-xs);
+  padding: 3px 4px;
+  margin: -3px -4px;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
 }
-.quota[data-tip]:hover {
-  background: color-mix(in srgb, var(--pill) 45%, transparent);
-}
-.q-warn-dot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 13px;
-  height: 13px;
-  margin-left: 3px;
-  border-radius: 999px;
-  background: var(--amber-soft);
-  color: var(--amber);
-  font-size: 9.5px;
-  font-weight: 700;
-  flex: none;
-}
+.quota[data-tip]:hover { background: var(--notion-bg-hover); }
+
 .quota-labels {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
-  font-size: 11px;
-  color: var(--muted);
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--notion-ink-secondary);
 }
-.quota-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.quota-n { flex: none; display: inline-flex; align-items: center; color: var(--fg-2); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.quota-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quota-n {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--notion-ink-strong);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.q-warn-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--notion-orange-ink);
+  flex: none;
+}
 .quota-track {
-  height: 5px;
-  border-radius: 999px;
-  background: var(--pill);
+  height: 4px;
+  border-radius: var(--notion-radius-pill);
+  background: var(--notion-bg-active);
   overflow: hidden;
 }
 .quota-track i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--accent);
-  transition: width .28s var(--ease-out);
+  background: var(--notion-app-blue);
+  transition: width 260ms var(--notion-ease-in-out-cubic);
 }
-.quota-track i.warn { background: var(--amber); }
-.quota-track i.danger { background: var(--red); }
-.quota-reset {
-  margin-top: 4px;
-  font-size: 10.5px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.quota-reset .warn { color: var(--amber); font-weight: 500; }
+.quota-track i.ctx { background: var(--notion-teal-ink); }
+.quota-track i.warn { background: var(--notion-orange-ink); }
+.quota-track i.danger { background: var(--notion-red-ink); }
 
 .subscription-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 6px 8px;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line-2);
-  font-size: 11px;
-  color: var(--muted);
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--notion-border);
+  font-size: 12px;
+  color: var(--notion-ink-muted);
   font-variant-numeric: tabular-nums;
 }
 .subscription-foot .acts {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 2px;
   margin-left: auto;
 }
-.subscription-foot .acts .text {
-  height: 22px;
-  padding: 0 8px;
-  font-size: 11.5px;
+.subscription-foot .acts .text,
+.acct-slot .acts .text {
+  height: 24px;
+  padding: 0 7px;
+  font-size: 12px;
 }
 
+.ctx-foot-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--notion-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Folded Multi-Instance Slots inside Account Card */
 .acct-slots-fold {
-  margin-top: 9px;
-  padding-top: 7px;
-  border-top: 1px solid var(--line-2);
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--notion-border);
 }
 .acct-slots-fold > summary {
   list-style: none;
@@ -863,27 +1500,29 @@ html.embed-magpie #btn-theme { display: none; }
   justify-content: space-between;
   gap: 8px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  color: var(--muted);
-  padding: 2px 0;
-  user-select: none;
-  -webkit-user-select: none;
+  color: var(--notion-ink-muted);
+  padding: 3px 4px;
+  margin: 0 -4px;
+  border-radius: var(--notion-radius-sm);
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear), color var(--notion-dur-100);
 }
 .acct-slots-fold > summary::-webkit-details-marker { display: none; }
-.acct-slots-fold > summary:hover { color: var(--fg); }
+.acct-slots-fold > summary:hover {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
 .acct-slots-fold .fold-chev {
   display: inline-flex;
-  transition: transform .16s var(--ease);
+  transition: transform var(--notion-dur-150) var(--notion-ease-in-out-cubic);
 }
-.acct-slots-fold[open] .fold-chev {
-  transform: rotate(180deg);
-}
+.acct-slots-fold[open] .fold-chev { transform: rotate(180deg); }
 .acct-slots {
-  margin-top: 6px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 .acct-slot {
   display: flex;
@@ -891,25 +1530,23 @@ html.embed-magpie #btn-theme { display: none; }
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px 8px;
+  padding: 4px 4px;
+  margin: 0 -4px;
+  border-radius: var(--notion-radius-sm);
   min-width: 0;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 .acct-slot-main {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   min-width: 0;
   flex: 1 1 120px;
   overflow: hidden;
 }
 .acct-slot-main b {
   font-weight: 500;
-  color: var(--fg);
-  white-space: nowrap;
-}
-.acct-slot-main .mono {
-  font-size: 10.5px;
-  color: var(--muted);
+  color: var(--notion-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -917,212 +1554,258 @@ html.embed-magpie #btn-theme { display: none; }
 .acct-slot .acts {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-left: auto;
 }
-.acct-slot .acts .text,
-.colab-head-tools .text {
-  height: 22px;
-  padding: 0 8px;
-  font-size: 11.5px;
-}
 
-/* ---- 状态徽标与圆点 ---- */
+/* ==========================================================================
+ * Tatami Tags & Status Dots (.badge / .ci-dot)
+ * ========================================================================== */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 19px;
-  padding: 0 6px;
-  border-radius: 5px;
-  font-size: 10.5px;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--notion-radius-xs);
+  font-size: 11.5px;
   font-weight: 500;
-  background: var(--pill);
-  color: var(--muted);
+  background: var(--notion-bg-active);
+  color: var(--notion-ink-secondary);
   white-space: nowrap;
   flex: none;
 }
-.badge.ok { background: var(--green-soft); color: var(--green); }
-.badge.warn { background: var(--amber-soft); color: var(--amber); }
-.badge.err { background: var(--red-soft); color: var(--red); }
-.badge.accent { background: var(--accent-soft); color: var(--accent); }
+.badge.pill { border-radius: var(--notion-radius-pill); padding: 0 8px; }
+.badge.ok { background: var(--notion-green-bg); color: var(--notion-green-ink); }
+.badge.warn { background: var(--notion-orange-bg); color: var(--notion-orange-ink); }
+.badge.err { background: var(--notion-red-bg); color: var(--notion-red-ink); }
+.badge.accent { background: var(--notion-blue-bg); color: var(--notion-blue-ink); }
+.badge .b-dot {
+  width: 5.5px;
+  height: 5.5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
 
 .ci-dot {
   flex: none;
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--faint);
+  background: var(--notion-ink-faint);
 }
-.ci-dot.ok { background: var(--green); }
-.ci-dot.warn { background: var(--amber); }
-.ci-dot.err { background: var(--red); }
+.ci-dot.ok { background: var(--notion-green-500); }
+.ci-dot.warn { background: var(--notion-orange-ink); }
+.ci-dot.err { background: var(--notion-red-ink); }
 
-/* ---- Colab 云算力卡片 ---- */
+/* ==========================================================================
+ * Colab Compute Pool Cards
+ * ========================================================================== */
 .colab-cols {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 6px;
+  gap: 16px;
+  margin-top: 4px;
 }
 .colab-col {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
-.colab-col .k { font-size: 10.5px; color: var(--muted); }
-.colab-col .v { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.colab-col .s { font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.colab-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.colab-sess { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-2); display: flex; flex-direction: column; gap: 5px; }
-.colab-sess-item { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; font-size: 11.5px; }
-.colab-head-tools { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-
-/* ---- 细线分组列表 (.list + .row) ---- */
-.list {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+.colab-col .k { font-size: 11.5px; color: var(--notion-ink-muted); }
+.colab-col .v {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--notion-ink-strong);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+.colab-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.colab-sess {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--notion-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.colab-sess-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+.colab-head-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+ * Hairline Editorial Lists (.list + .row)
+ * ========================================================================== */
+.list {
+  border-top: 1px solid var(--notion-border);
+  border-bottom: 1px solid var(--notion-border);
+  background: transparent;
   flex: none;
 }
 .row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-height: 44px;
-  padding: 8px 13px 8px 14px;
+  padding: 10px 8px;
   min-width: 0;
+  border-radius: 0;
 }
-.row + .row { border-top: 1px solid var(--line-2); }
-.row.clickable { cursor: pointer; transition: background .12s; }
-.row.clickable:hover,
-.row.stat[data-tip]:hover { background: color-mix(in srgb, var(--pill) 52%, transparent); }
-
-/* 可折叠体检项 (.doc-item) */
-.doc-item + .doc-item { border-top: 1px solid var(--line-2); }
-.doc-item > summary {
-  list-style: none;
+.row + .row { border-top: 1px solid var(--notion-border); }
+.row.clickable,
+.row.stat[data-tip] {
   cursor: pointer;
-  transition: background .12s;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
 }
-.doc-item > summary::-webkit-details-marker { display: none; }
-.doc-item > summary:hover { background: color-mix(in srgb, var(--pill) 52%, transparent); }
-.doc-item .doc-detail {
-  padding: 6px 14px 10px 31px;
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: var(--muted);
-  border-top: 1px dashed var(--line-2);
-  background: color-mix(in srgb, var(--card-2) 60%, transparent);
-  word-break: break-word;
-  user-select: text;
-  -webkit-user-select: text;
+.row.clickable:hover,
+.row.stat[data-tip]:hover {
+  background: var(--notion-bg-hover);
 }
+
 .row .who { min-width: 0; flex: 1 1 auto; }
 .row .name {
   font-weight: 500;
-  font-size: 13px;
+  font-size: 13.5px;
+  color: var(--notion-ink-strong);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .row .sub {
-  font-size: 11.5px;
-  color: var(--muted);
+  font-size: 12px;
+  color: var(--notion-ink-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
-/* ---- 友好空状态引导卡片 (.empty-state) ---- */
+/* Collapsible Doctor Check Items */
+.doc-item + .doc-item { border-top: 1px solid var(--notion-border); }
+.doc-item > summary {
+  list-style: none;
+  cursor: pointer;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
+}
+.doc-item > summary::-webkit-details-marker { display: none; }
+.doc-item > summary:hover { background: var(--notion-bg-hover); }
+.doc-item > summary .badge { margin-left: auto; }
+.doc-item .doc-detail {
+  padding: 8px 12px 12px 27px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--notion-ink-secondary);
+  background: var(--notion-bg-recessed);
+  word-break: break-word;
+}
+
+/* Live Sessions Disclosure */
+.more-fold {
+  border-top: 1px solid var(--notion-border);
+}
+.more-fold > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--notion-ink-muted);
+  cursor: pointer;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear), color var(--notion-dur-100);
+}
+.more-fold > summary::-webkit-details-marker { display: none; }
+.more-fold > summary:hover {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+.more-fold > .row:first-of-type { border-top: 1px solid var(--notion-border); }
+
+/* Quiet Empty State */
 .empty-state {
-  padding: 26px 18px;
+  padding: 32px 16px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  color: var(--muted);
-}
-.empty-state .empty-ico {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--pill);
-  color: var(--muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 3px;
+  gap: 10px;
+  color: var(--notion-ink-muted);
 }
 .empty-state .empty-title {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--fg-2);
+  font-size: 13px;
+  font-weight: 450;
+  color: var(--notion-ink-muted);
 }
-.empty-state .empty-hint {
-  font-size: 11.5px;
-  color: var(--muted);
-  max-width: 340px;
-  line-height: 1.45;
-}
-.empty-state .empty-act {
-  margin-top: 6px;
-}
+.empty-state .empty-act { margin-top: 2px; }
 
-/* ---- 模型与账号份额列表行 (.row.stat) ---- */
+/* ==========================================================================
+ * Model & Account Breakdown Rows (.row.stat)
+ * ========================================================================== */
 .row.stat .who { flex: 1 1 0; min-width: 0; }
 .row.stat .share {
-  flex: 0 1 80px;
+  flex: 0 1 72px;
   height: 4px;
-  border-radius: 999px;
-  background: var(--pill);
+  border-radius: var(--notion-radius-pill);
+  background: var(--notion-bg-active);
   overflow: hidden;
-  margin: 0 4px;
-}
-@media (max-width: 920px) {
-  .two-col .row.stat .share { display: none; }
+  margin: 0 6px;
 }
 .row.stat .share i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--accent);
-  opacity: .78;
+  background: var(--notion-app-blue);
+  opacity: 0.72;
 }
 .row.stat .num {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   flex: none;
-  min-width: 54px;
+  min-width: 52px;
   font-variant-numeric: tabular-nums;
 }
-.row.stat .num b { font-weight: 600; font-size: 12.5px; }
-.row.stat .num small { font-size: 10.5px; color: var(--muted); }
+.row.stat .num b { font-weight: 500; font-size: 12.5px; color: var(--notion-ink-secondary); }
 .row.stat .cost {
   flex: none;
-  min-width: 52px;
+  min-width: 58px;
   text-align: right;
-  color: var(--green);
+  color: var(--notion-ink-strong);
   font-variant-numeric: tabular-nums;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
 }
 
-/* ---- 趋势柱状图卡片与悬停浮动气泡 (.chart + .chart-pop) ---- */
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+/* ==========================================================================
+ * Charts & Heatmap (.chart + .chart-pop)
+ * ========================================================================== */
 .chart {
-  padding: 12px 14px 9px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  padding: 18px 20px 14px;
+  background: var(--notion-bg-card);
+  border: 1px solid var(--notion-border);
+  border-radius: var(--notion-radius-popover);
   flex: none;
 }
 .chart-top {
@@ -1130,193 +1813,253 @@ html.embed-magpie #btn-theme { display: none; }
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 6px 10px;
-  margin-bottom: 6px;
-  font-size: 11.5px;
-  color: var(--muted);
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--notion-ink-muted);
   font-variant-numeric: tabular-nums;
 }
-.chart .legend { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-.chart .legend span { display: inline-flex; align-items: center; gap: 5px; color: var(--fg-2); font-weight: 500; }
-.chart .legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.chart .legend { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 14px; }
+.chart .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--notion-ink-secondary); font-weight: 500; }
+.chart .legend i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .chart-stage { position: relative; }
 .chart-host { width: 100%; overflow-x: auto; }
 .chart-host .tbar { cursor: pointer; }
-.chart-host .tbar:hover rect:first-child { fill: color-mix(in srgb, var(--fg) 5.5%, transparent); }
+.chart-host .tbar:hover rect:first-child { fill: var(--notion-bg-hover); }
 
 .chart-pop {
   position: absolute;
   z-index: 12;
   top: 4px;
   left: 0;
-  min-width: 172px;
+  min-width: 176px;
   max-width: min(260px, calc(100% - 12px));
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--pop-bg);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: var(--shadow);
+  padding: 10px 12px;
+  border-radius: var(--notion-radius-popover);
+  background: var(--notion-bg-card);
+  box-shadow: var(--notion-shadow-popover);
   pointer-events: none;
-  font-size: 11.5px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
-  animation: fade-in .12s ease-out;
+  animation: notion-popover-enter var(--notion-dur-100) var(--notion-ease-expo-out) both;
 }
 .chart-pop-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding-bottom: 5px;
-  margin-bottom: 5px;
-  border-bottom: 1px solid var(--line-2);
+  gap: 10px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--notion-border);
   font-weight: 600;
-  color: var(--fg);
+  color: var(--notion-ink-strong);
 }
-.chart-pop-head em { font-style: normal; color: var(--green); }
+.chart-pop-head em { font-style: normal; color: var(--notion-green-ink); }
 .chart-pop-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  color: var(--fg-2);
-  line-height: 1.5;
+  gap: 10px;
+  color: var(--notion-ink);
+  line-height: 1.6;
 }
-.chart-pop-row span { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.chart-pop-row span { display: inline-flex; align-items: center; gap: 6px; color: var(--notion-ink-muted); }
 .chart-pop-row i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 
-.two-col {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-/* ---- 数据表格 (.qt-wrap + table.qt) ---- */
+/* ==========================================================================
+ * Notion Database Tables (.qt-wrap + table.qt)
+ * ========================================================================== */
 .qt-wrap {
   overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
+  border-top: 1px solid var(--notion-border);
+  border-bottom: 1px solid var(--notion-border);
+  background: transparent;
 }
 .qt {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 12px;
+  border-collapse: collapse;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 .qt th, .qt td {
-  padding: 8px 11px;
+  padding: 10px 10px;
   text-align: left;
-  border-bottom: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--notion-border);
   white-space: nowrap;
 }
+.qt th:first-child, .qt td:first-child { padding-left: 6px; }
+.qt th:last-child, .qt td:last-child { padding-right: 6px; }
 .qt tbody tr:last-child td { border-bottom: 0; }
 .qt th {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  background: var(--card-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--notion-ink-muted);
+  background: transparent;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
+.qt td { color: var(--notion-ink); }
+.qt td.num, .qt th.num { text-align: right; }
 .qt td.clip {
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.qt tbody tr:hover td { background: color-mix(in srgb, var(--pill) 45%, transparent); }
+.qt tbody tr {
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
+}
+.qt tbody tr:hover td { background: var(--notion-bg-hover); }
 .qt tbody tr.clickable { cursor: pointer; }
 
-/* ---- 会话检索栏 (.search-bar) ---- */
+/* ==========================================================================
+ * Search Bar (.search-bar)
+ * ========================================================================== */
 .search-bar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 10px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  gap: 8px;
+}
+.search-input-wrap {
+  flex: 1 1 200px;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-input-wrap svg {
+  position: absolute;
+  left: 10px;
+  color: var(--notion-ink-faint);
+  pointer-events: none;
 }
 .search-bar input {
-  flex: 1 1 160px;
-  min-width: 0;
-  height: 26px;
-  padding: 0 9px;
-  font-size: 12.5px;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 32px;
+  font-size: 13px;
+  background: var(--notion-bg-recessed);
+  border-color: transparent;
 }
-.search-bar .field {
-  max-width: 168px;
-  height: 26px;
+.search-bar input:focus {
+  background: var(--notion-bg-card);
+  border-color: var(--notion-app-blue);
 }
-.search-bar .text {
-  height: 26px;
+.search-bar .field { height: 32px; max-width: 180px; }
+.search-bar .text { height: 32px; padding: 0 14px; }
+
+/* ==========================================================================
+ * Split-Tab Notion Settings (#view-settings)
+ * ========================================================================== */
+.settings-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid var(--notion-border);
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+.settings-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: var(--notion-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--notion-ink-muted);
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear),
+    color var(--notion-dur-100);
+}
+.settings-tab:hover {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+.settings-tab.on {
+  background: var(--notion-bg-active);
+  color: var(--notion-ink-strong);
 }
 
-/* ---- 系统设置与弹窗表单项 (.row.pref) ---- */
 .settings-stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 24px;
 }
+.settings-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: notion-row-enter var(--notion-dur-150) var(--notion-ease-out) both;
+}
+
 .row.pref {
-  min-height: 42px;
-  gap: 12px;
+  min-height: 52px;
+  padding: 12px 4px;
+  gap: 16px;
 }
 .row.pref .who { flex: 1 1 auto; min-width: 0; }
 .row.pref .name {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 5px;
-  max-width: 100%;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--notion-ink-strong);
   white-space: normal;
 }
 .row.pref .sub {
+  font-size: 12px;
+  color: var(--notion-ink-muted);
   white-space: normal;
-  line-height: 1.38;
+  line-height: 1.5;
+  margin-top: 2px;
 }
-.row.pref .field {
-  flex: none;
-  max-width: 52%;
-}
+.row.pref .field { flex: none; max-width: 50%; height: 32px; }
+
 .set-field {
   flex: none;
-  width: 184px;
-  height: 26px;
-  padding: 0 9px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--card);
-  font-size: 12.5px;
+  width: 210px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  background: var(--notion-bg-recessed);
+  border-color: var(--notion-border-strong);
 }
+.set-field:focus { background: var(--notion-bg-card); }
 .set-field[type=number] {
-  width: 80px;
+  width: 88px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.set-field.wide { width: 228px; }
+.set-field.wide { width: 260px; }
+
 .keep-input {
-  width: 60px;
-  height: 24px;
-  padding: 0 7px;
+  width: 58px;
+  height: 28px;
+  padding: 0 8px;
   text-align: right;
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
+  background: var(--notion-bg-card);
 }
+
 .settings-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding-top: 4px;
+  padding-top: 8px;
 }
 .settings-actions .text {
-  height: 28px;
-  padding: 0 14px;
-  border-radius: 8px;
+  height: 32px;
+  padding: 0 16px;
+  font-size: 13px;
 }
 
-/* ---- 现代高质感中文模态框体系 (.modal + .dialog) ---- */
+/* ==========================================================================
+ * Notion Modals (--notion-shadow-300, 150ms Expo Out, Zero Bounce)
+ * ========================================================================== */
 .modal {
   position: fixed;
   inset: 0;
@@ -1324,42 +2067,32 @@ html.embed-magpie #btn-theme { display: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px;
-  background: var(--modal-backdrop);
-  -webkit-backdrop-filter: blur(10px) saturate(1.15);
-  backdrop-filter: blur(10px) saturate(1.15);
-  animation: fade-in .16s var(--ease);
+  padding: 20px;
+  background: var(--notion-backdrop);
+  animation: fade-in var(--notion-dur-150) var(--notion-ease-out) both;
 }
-.modal.closing {
-  animation: fade-out .14s var(--ease) forwards;
+.modal.top-aligned {
+  align-items: flex-start;
+  padding-top: min(14vh, 96px);
 }
-@keyframes fade-in { from { opacity: 0; } }
+.modal.closing { animation: fade-out 120ms var(--notion-ease-out) forwards; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fade-out { to { opacity: 0; } }
 
 .modal .dialog {
-  width: min(492px, 100%);
-  max-height: min(88vh, 680px);
-  border-radius: 16px;
-  background: var(--card);
-  box-shadow: var(--dialog-shadow);
+  width: min(500px, 100%);
+  max-height: min(86vh, 660px);
+  border-radius: var(--notion-radius-xl);
+  background: var(--notion-bg-card);
+  box-shadow: var(--notion-shadow-300);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: dialog-in .22s var(--ease-out);
+  animation: notion-popover-enter var(--notion-dur-150) var(--notion-ease-expo-out) both;
 }
-.modal .dialog.compact {
-  width: min(428px, 100%);
-}
-.modal.closing .dialog {
-  animation: dialog-out .14s var(--ease) forwards;
-}
-@keyframes dialog-in {
-  from { opacity: 0; transform: translateY(8px) scale(.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes dialog-out {
-  to { opacity: 0; transform: translateY(4px) scale(.97); }
-}
+.modal .dialog.compact { width: min(420px, 100%); }
+.modal .dialog.qf-dialog { width: min(520px, 100%); }
+.modal.closing .dialog { opacity: 0; transform: scale(0.98); transition: opacity 120ms, transform 120ms; }
 
 .editor.framed {
   display: flex;
@@ -1369,58 +2102,53 @@ html.embed-magpie #btn-theme { display: none; }
 }
 .editor.framed .ehead {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 15px 18px 13px;
-  border-bottom: 1px solid var(--line-2);
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--notion-border);
   flex: none;
 }
 .ehead-main {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   min-width: 0;
 }
 .modal-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--notion-radius-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  background: var(--pill);
-  color: var(--fg-2);
+  background: var(--notion-bg-recessed);
+  color: var(--notion-ink-secondary);
 }
-.modal-icon.accent { background: var(--accent-soft); color: var(--accent); }
-.modal-icon.danger { background: var(--red-soft); color: var(--red); }
-.modal-icon.warn { background: var(--amber-soft); color: var(--amber); }
-.modal-icon.ok { background: var(--green-soft); color: var(--green); }
+.modal-icon.accent { background: var(--notion-blue-bg); color: var(--notion-blue-ink); }
+.modal-icon.danger { background: var(--notion-red-bg); color: var(--notion-red-ink); }
+.modal-icon.warn { background: var(--notion-orange-bg); color: var(--notion-orange-ink); }
+.modal-icon.ok { background: var(--notion-green-bg); color: var(--notion-green-ink); }
 
 .ehead-titles {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 .ehead-titles b {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 600;
   line-height: 1.3;
-  color: var(--fg);
+  color: var(--notion-ink-strong);
 }
 .ehead-titles .esub {
-  font-size: 11.5px;
-  color: var(--muted);
+  font-size: 12px;
+  color: var(--notion-ink-muted);
   line-height: 1.35;
 }
-.modal-close {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  margin-top: 2px;
-}
+.modal-close { width: 26px; height: 26px; }
 
 .editor.framed .ebody {
   overflow-y: auto;
@@ -1429,67 +2157,53 @@ html.embed-magpie #btn-theme { display: none; }
   flex-direction: column;
   min-height: 0;
 }
-.modal-fields .row.pref {
-  padding: 10px 18px;
-}
+.modal-fields { padding: 6px 20px; }
+.modal-fields .row.pref { padding: 11px 0; min-height: 48px; }
 
-/* 确认弹窗内容排版 */
-.confirm-body {
-  padding: 16px 18px;
-  gap: 12px;
-}
+/* Confirm Body */
+.confirm-body { padding: 18px 20px; gap: 14px; }
 .cfm-desc {
-  font-size: 13px;
-  line-height: 1.58;
-  color: var(--fg-2);
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--notion-ink-secondary);
 }
 .cfm-summary {
-  background: var(--card-2);
-  border: 1px solid var(--line-2);
-  border-radius: 10px;
-  padding: 10px 12px;
+  background: var(--notion-bg-recessed);
+  border-radius: var(--notion-radius-lg);
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 .cfm-kv {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-  font-size: 12px;
+  gap: 12px;
+  font-size: 12.5px;
 }
-.cfm-kv span {
-  color: var(--muted);
-  flex: none;
-}
+.cfm-kv span { color: var(--notion-ink-muted); flex: none; }
 .cfm-kv b {
-  color: var(--fg);
-  font-weight: 600;
+  color: var(--notion-ink-strong);
+  font-weight: 500;
   text-align: right;
   word-break: break-all;
   font-variant-numeric: tabular-nums;
 }
-.cfm-kv b.warn { color: var(--amber); }
-.cfm-kv b.danger { color: var(--red); }
+.cfm-kv b.warn { color: var(--notion-orange-ink); }
+.cfm-kv b.danger { color: var(--notion-red-ink); }
 
-/* 详情弹窗内容排版 */
-.detail-body {
-  padding: 15px 18px;
-  gap: 12px;
-}
+/* Detail Body */
+.detail-body { padding: 18px 20px; gap: 16px; }
 .dtl-section-title {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .04em;
-  color: var(--muted);
-  margin-bottom: -4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--notion-ink-muted);
+  margin-bottom: -8px;
 }
 .dtl-grid {
-  background: var(--card-2);
-  border: 1px solid var(--line-2);
-  border-radius: 10px;
-  padding: 8px 12px;
+  border-top: 1px solid var(--notion-border);
+  border-bottom: 1px solid var(--notion-border);
   display: flex;
   flex-direction: column;
 }
@@ -1497,27 +2211,26 @@ html.embed-magpie #btn-theme { display: none; }
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 6px 0;
-  font-size: 12px;
+  gap: 16px;
+  padding: 8px 2px;
+  font-size: 12.5px;
 }
-.dtl-row + .dtl-row { border-top: 1px solid var(--line-2); }
-.dtl-row .dtl-k { color: var(--muted); flex: none; min-width: 72px; }
+.dtl-row + .dtl-row { border-top: 1px solid var(--notion-border); }
+.dtl-row .dtl-k { color: var(--notion-ink-muted); flex: none; min-width: 72px; }
 .dtl-row .dtl-val {
-  color: var(--fg);
+  color: var(--notion-ink-strong);
   font-weight: 500;
   text-align: right;
   word-break: break-word;
   min-width: 0;
 }
 .dtl-codebox {
-  background: var(--card-2);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  background: var(--notion-bg-recessed);
+  border-radius: var(--notion-radius-lg);
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 .dtl-codebox-head {
   display: flex;
@@ -1525,41 +2238,37 @@ html.embed-magpie #btn-theme { display: none; }
   justify-content: space-between;
   gap: 8px;
   font-size: 11.5px;
-  color: var(--muted);
+  color: var(--notion-ink-muted);
 }
 .dtl-codebox code {
-  font-family: var(--code);
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: var(--fg-2);
+  font-family: var(--notion-font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--notion-ink);
   word-break: break-all;
   white-space: pre-wrap;
   max-height: 140px;
   overflow-y: auto;
 }
 .dtl-bars {
-  background: var(--card-2);
-  border: 1px solid var(--line-2);
-  border-radius: 10px;
-  padding: 10px 12px;
+  background: var(--notion-bg-recessed);
+  border-radius: var(--notion-radius-lg);
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .editor.framed .err-line {
-  margin: 0 18px 14px;
+  margin: 0 20px 14px;
   padding: 9px 12px;
-  border-radius: 9px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--red);
-  border: 1px solid color-mix(in srgb, var(--red) 28%, transparent);
-  background: var(--red-soft);
+  border-radius: var(--notion-radius-md);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--notion-red-ink);
+  background: var(--notion-red-bg);
 }
-.confirm-body .err-line {
-  margin: 0;
-}
+.confirm-body .err-line { margin: 0; }
 
 .editor.framed .bar {
   display: flex;
@@ -1567,307 +2276,150 @@ html.embed-magpie #btn-theme { display: none; }
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
-  min-height: 52px;
-  padding: 9px 18px;
-  background: var(--card-2);
-  border-top: 1px solid var(--line-2);
+  padding: 12px 20px;
+  border-top: 1px solid var(--notion-border);
+  background: var(--notion-bg-sidebar);
   flex: none;
 }
 .editor.framed .bar .text {
-  height: 30px;
-  padding: 0 15px;
-  border-radius: 8px;
-  font-size: 12.5px;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
 }
 
-/* ---- 底部居中轻提示胶囊 (.status.lift) ---- */
+/* ==========================================================================
+ * ⌘K Quick Find Modal (Authentic Notion Workspace Pattern)
+ * ========================================================================== */
+.qf-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--notion-border);
+}
+.qf-head svg { color: var(--notion-ink-muted); flex: none; }
+.qf-head input {
+  flex: 1;
+  min-width: 0;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 14px;
+  color: var(--notion-ink-strong);
+  outline: none;
+}
+.qf-body {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.qf-group-title {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--notion-ink-muted);
+}
+.qf-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--notion-radius-md);
+  font-size: 13px;
+  color: var(--notion-ink);
+  text-align: left;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
+}
+.qf-item:hover, .qf-item.focus {
+  background: var(--notion-bg-hover);
+  color: var(--notion-ink-strong);
+}
+.qf-item-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.qf-item-main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qf-item-meta {
+  font-size: 11.5px;
+  color: var(--notion-ink-faint);
+  white-space: nowrap;
+}
+.qf-empty {
+  padding: 28px 12px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--notion-ink-muted);
+}
+
+/* ==========================================================================
+ * Toast Status Pill (.status.lift)
+ * ========================================================================== */
 .status.lift {
   position: fixed;
   z-index: 70;
   left: 50%;
-  bottom: 18px;
+  bottom: 22px;
   transform: translateX(-50%);
-  max-width: min(520px, calc(100vw - 24px));
+  max-width: min(480px, calc(100vw - 24px));
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   font-size: 12.5px;
   line-height: 1.4;
   font-weight: 500;
-  padding: 7px 14px;
-  border-radius: 999px;
-  color: var(--fg);
-  background: var(--pop-bg);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 0 0 1px var(--line), 0 8px 26px rgba(0, 0, 0, .22);
+  padding: 8px 14px;
+  border-radius: var(--notion-radius-lg);
+  color: var(--notion-ink-strong);
+  background: var(--notion-bg-card);
+  box-shadow: var(--notion-shadow-popover);
   pointer-events: none;
-  animation: toast-in .2s var(--ease-out);
+  animation: notion-popover-enter var(--notion-dur-150) var(--notion-ease-expo-out) both;
 }
-@keyframes toast-in {
-  from { opacity: 0; transform: translate(-50%, 8px) scale(.96); }
-  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
-}
-.status.lift .st-ico {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-}
-.status.lift.ok {
-  color: var(--green);
-  background: color-mix(in srgb, var(--green) 14%, var(--card));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--green) 32%, transparent), 0 8px 26px rgba(0, 0, 0, .2);
-}
-.status.lift.err {
-  color: var(--red);
-  background: color-mix(in srgb, var(--red) 14%, var(--card));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--red) 32%, transparent), 0 8px 26px rgba(0, 0, 0, .22);
-  pointer-events: auto;
-  border-radius: 16px;
-}
-.status.lift.warn {
-  color: var(--amber);
-  background: color-mix(in srgb, var(--amber) 14%, var(--card));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amber) 32%, transparent), 0 8px 26px rgba(0, 0, 0, .2);
-}
+.status.lift .st-ico { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.status.lift.ok { color: var(--notion-green-ink); }
+.status.lift.err { color: var(--notion-red-ink); pointer-events: auto; }
+.status.lift.warn { color: var(--notion-orange-ink); }
 
-@media (prefers-reduced-motion: reduce) {
-  .segs .thumb,
-  .modal,
-  .modal .dialog,
-  .pop,
-  .tip-pop,
-  .status.lift {
-    transition: none !important;
-    animation: none !important;
-  }
-}
+/* ==========================================================================
+ * Sparkline, 100-Dot Context Grid, Turn Curve & Heatmap
+ * ========================================================================== */
+.quota-spark { width: 32px; height: 13px; flex: none; display: block; opacity: 0.85; }
 
-/* ---- Sidecar 侧边栏宿主（360px–440px）与窄屏自适应规则 ---- */
-@media (max-width: 680px) {
-  .page-top {
-    flex-wrap: wrap;
-    padding: 8px 12px 5px;
-    gap: 6px;
-  }
-  #main-nav {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-  #main-nav .opt {
-    padding: 0 2px;
-    font-size: 12px;
-  }
-  .page-tools {
-    width: 100%;
-    margin-left: 0;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  .view-scroll {
-    padding: 2px 12px 28px;
-  }
-  .stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .kpi {
-    padding: 10px 12px;
-  }
-  .kpi b {
-    font-size: 17.5px;
-  }
-  .subscription-usage,
-  .two-col {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .colab-cols {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
-  }
-  .colab-cols .colab-col:nth-child(3) {
-    grid-column: 1 / -1;
-  }
-  .usage-head .right-tools {
-    margin-left: 0;
-    width: 100%;
-  }
-  #telemetry-presets {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-  #telemetry-presets .opt {
-    padding: 0 2px;
-    font-size: 11px;
-  }
-  .row.stat .share {
-    display: none;
-  }
-}
-
-@media (max-width: 540px) {
-  .row.pref.stack-narrow {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 7px;
-  }
-  .row.pref.stack-narrow .set-field,
-  .row.pref.stack-narrow .set-field.wide {
-    width: 100%;
-    height: 28px;
-  }
-  .modal {
-    padding: 12px;
-  }
-  .editor.framed .ehead {
-    padding: 13px 14px 11px;
-  }
-  .modal-fields .row.pref {
-    padding: 9px 14px;
-  }
-  .confirm-body,
-  .detail-body {
-    padding: 13px 14px;
-  }
-  .editor.framed .err-line {
-    margin: 0 14px 12px;
-  }
-  .editor.framed .bar {
-    padding: 8px 14px;
-  }
-  .search-bar .field {
-    max-width: none;
-    flex: 1 1 auto;
-  }
-}
-
-@media (max-width: 400px) {
-  .quota-windows {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-}
-
-/* 强制 Sidecar 模式即使在稍宽面板中也保持紧凑单栏侧栏布局 */
-html.sidecar-mode .page-top {
-  flex-wrap: wrap;
-  padding: 6px 10px 4px;
-  gap: 6px;
-}
-html.sidecar-mode #main-nav {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-html.sidecar-mode #main-nav .opt {
-  padding: 0 2px;
-  font-size: 12px;
-}
-html.sidecar-mode .page-tools {
-  width: 100%;
-  margin-left: 0;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-html.sidecar-mode .view-scroll {
-  padding: 2px 10px 24px;
-}
-html.sidecar-mode .stats {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-html.sidecar-mode .kpi {
-  padding: 10px 11px;
-}
-html.sidecar-mode .kpi b {
-  font-size: 17px;
-}
-html.sidecar-mode .subscription-usage,
-html.sidecar-mode .two-col {
-  grid-template-columns: minmax(0, 1fr);
-}
-html.sidecar-mode .colab-cols {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-html.sidecar-mode .colab-cols .colab-col:nth-child(3) {
-  grid-column: 1 / -1;
-}
-html.sidecar-mode .usage-head .right-tools {
-  margin-left: 0;
-  width: 100%;
-}
-html.sidecar-mode #telemetry-presets {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-html.sidecar-mode #telemetry-presets .opt {
-  padding: 0 2px;
-  font-size: 11px;
-}
-html.sidecar-mode .row.pref.stack-narrow {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 7px;
-}
-html.sidecar-mode .row.pref.stack-narrow .set-field,
-html.sidecar-mode .row.pref.stack-narrow .set-field.wide {
-  width: 100%;
-  height: 28px;
-}
-html.sidecar-mode .row.stat .share {
-  display: none;
-}
-html.sidecar-mode .modal {
-  padding: 10px;
-}
-
-/* ---- 配额迷你趋势折线 + /context 100点阵 + 每轮手风琴 + 活跃热力图 ---- */
-.quota-spark {
-  width: 34px;
-  height: 14px;
-  flex: none;
-  display: block;
-}
 .dot-grid-100 {
   display: grid;
   grid-template-columns: repeat(20, 1fr);
   gap: 4px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--card-2);
-  border: 1px solid var(--line-2);
+  padding: 10px 12px;
+  border-radius: var(--notion-radius-lg);
+  background: var(--notion-bg-recessed);
 }
 .dot-grid-100 .dg-dot {
   aspect-ratio: 1;
   border-radius: 50%;
-  background: var(--pill);
+  background: var(--notion-bg-active);
 }
 .curve-box {
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--card-2);
-  border: 1px solid var(--line-2);
+  padding: 10px 12px;
+  border-radius: var(--notion-radius-lg);
+  background: var(--notion-bg-recessed);
 }
-.curve-box svg {
-  width: 100%;
-  height: 92px;
-  display: block;
-  overflow: visible;
-}
-.turn-acc-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.curve-box svg { width: 100%; height: 92px; display: block; overflow: visible; }
+
+.turn-acc-list { display: flex; flex-direction: column; gap: 4px; }
 .turn-acc {
-  border-radius: 8px;
-  background: var(--card-2);
-  border: 1px solid var(--line-2);
+  border-radius: var(--notion-radius-md);
+  background: var(--notion-bg-recessed);
   overflow: hidden;
 }
 .turn-acc summary {
@@ -1876,39 +2428,156 @@ html.sidecar-mode .modal {
   grid-template-columns: 36px 1fr auto auto auto;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
-  font-size: 11.5px;
+  padding: 7px 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear);
 }
 .turn-acc summary::-webkit-details-marker { display: none; }
-.turn-acc summary:hover { background: color-mix(in srgb, var(--pill) 65%, transparent); }
+.turn-acc summary:hover { background: var(--notion-bg-hover); }
 .turn-acc .t-body {
-  border-top: 1px solid var(--line-2);
-  padding: 8px 10px;
-  font-size: 11.5px;
+  border-top: 1px solid var(--notion-border);
+  padding: 9px 10px;
+  font-size: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
+
 .hm-grid-26 {
-  display: grid;
-  grid-template-columns: repeat(26, 1fr);
-  gap: 3px;
-  padding-top: 4px;
+  display: inline-grid;
+  grid-template-columns: repeat(26, 13px);
+  gap: 4px;
+  padding-top: 2px;
+  max-width: 100%;
+  overflow-x: auto;
 }
-.hm-col-7 {
-  display: grid;
-  grid-template-rows: repeat(7, 1fr);
-  gap: 3px;
-}
+.hm-col-7 { display: grid; grid-template-rows: repeat(7, 13px); gap: 4px; }
 .hm-dot {
-  aspect-ratio: 1;
-  border-radius: 2.5px;
-  background: var(--pill);
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  background: var(--hm-0);
   cursor: pointer;
 }
-.hm-dot[data-l="1"] { background: color-mix(in srgb, var(--accent) 26%, var(--pill)); }
-.hm-dot[data-l="2"] { background: color-mix(in srgb, var(--accent) 50%, var(--pill)); }
-.hm-dot[data-l="3"] { background: color-mix(in srgb, var(--accent) 76%, var(--pill)); }
-.hm-dot[data-l="4"] { background: var(--accent); }
+.hm-dot[data-l="1"] { background: var(--hm-1); }
+.hm-dot[data-l="2"] { background: var(--hm-2); }
+.hm-dot[data-l="3"] { background: var(--hm-3); }
+.hm-dot[data-l="4"] { background: var(--hm-4); }
+
+/* ==========================================================================
+ * Reduced Motion
+ * ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .segs .thumb,
+  .switch,
+  .switch i,
+  .modal,
+  .modal .dialog,
+  .pop,
+  .tip-pop,
+  .status.lift,
+  .settings-pane,
+  .notion-whisper,
+  .notion-btn-motion {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+ * Responsive & Sidecar Narrow Mode (360px - 780px)
+ * ========================================================================== */
+@media (max-width: 960px) {
+  .view-scroll { padding: 24px 28px 56px; }
+  .two-col { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .two-col .row.stat .share { display: none; }
+}
+
+@media (max-width: 780px) {
+  .sidebar { display: none; }
+  #btn-sidebar-toggle { display: none; }
+  .mobile-nav-bar { display: flex; align-items: center; gap: 4px; }
+  .page-top { padding: 0 14px; height: 44px; }
+  .crumb-root { color: var(--notion-ink-strong); font-weight: 600; }
+  .crumb-sep, .crumb-current { display: none; }
+  .view-scroll { padding: 20px 16px 48px; }
+  .view-panel { gap: 22px; }
+  .page-title { font-size: 22px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi { padding: 14px 16px; }
+  .kpi b { font-size: 20px; }
+  .kpi:nth-child(3) { border-left: 0; border-top: 1px solid var(--notion-border); }
+  .kpi:nth-child(4) { border-top: 1px solid var(--notion-border); }
+  .subscription-usage { grid-template-columns: minmax(0, 1fr); }
+  .colab-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .colab-cols .colab-col:nth-child(3) { grid-column: 1 / -1; }
+  .usage-head .right-tools { margin-left: 0; width: 100%; }
+  .row.stat .share { display: none; }
+}
+
+@media (max-width: 540px) {
+  .row.pref.stack-narrow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .row.pref.stack-narrow .set-field,
+  .row.pref.stack-narrow .set-field.wide {
+    width: 100%;
+  }
+  .modal { padding: 12px; }
+  .quota-windows { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+}
+
+/* Mobile Compact Nav Buttons */
+.mnav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--notion-radius-md);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--notion-ink-secondary);
+  white-space: nowrap;
+  flex: none;
+  transition: background-color var(--notion-dur-whisper) var(--notion-ease-linear), color var(--notion-dur-100);
+}
+.mnav-btn:hover { background: var(--notion-bg-hover); color: var(--notion-ink-strong); }
+.mnav-btn.on { background: var(--notion-bg-active); color: var(--notion-ink-strong); }
+
+/* Explicit Sidecar Mode (360-440px host side panel) */
+html.sidecar-mode .sidebar { display: none; }
+html.sidecar-mode #btn-sidebar-toggle { display: none; }
+html.sidecar-mode .mobile-nav-bar { display: flex; align-items: center; gap: 3px; padding: 6px 10px; }
+html.sidecar-mode .page-top { padding: 0 12px; height: 42px; }
+html.sidecar-mode .crumb-root { color: var(--notion-ink-strong); font-weight: 600; }
+html.sidecar-mode .crumb-sep,
+html.sidecar-mode .crumb-current { display: none; }
+html.sidecar-mode .view-scroll { padding: 16px 12px 36px; }
+html.sidecar-mode .view-panel { gap: 18px; }
+html.sidecar-mode .page-title { font-size: 20px; }
+html.sidecar-mode .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html.sidecar-mode .kpi { padding: 12px 14px; }
+html.sidecar-mode .kpi b { font-size: 19px; }
+html.sidecar-mode .kpi:nth-child(3) { border-left: 0; border-top: 1px solid var(--notion-border); }
+html.sidecar-mode .kpi:nth-child(4) { border-top: 1px solid var(--notion-border); }
+html.sidecar-mode .subscription-usage,
+html.sidecar-mode .two-col { grid-template-columns: minmax(0, 1fr); }
+html.sidecar-mode .subscription-card { padding: 14px 16px; }
+html.sidecar-mode .colab-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html.sidecar-mode .colab-cols .colab-col:nth-child(3) { grid-column: 1 / -1; }
+html.sidecar-mode .usage-head .right-tools { margin-left: 0; width: 100%; }
+html.sidecar-mode .row.pref.stack-narrow {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+html.sidecar-mode .row.pref.stack-narrow .set-field,
+html.sidecar-mode .row.pref.stack-narrow .set-field.wide { width: 100%; }
+html.sidecar-mode .row.stat .share { display: none; }
+html.sidecar-mode .modal { padding: 10px; }

@@ -70,68 +70,68 @@
       get: () => state.cfgLang || 'auto',
       set: (v) => { state.cfgLang = v; },
       options: [
-        { value: 'auto', label: '跟随系统（推荐）', desc: 'Follow system / browser locale automatically' },
-        { value: 'zh', label: '简体中文', desc: 'Simplified Chinese UI across Dashboard, MCP App & HUD' },
-        { value: 'en', label: 'English', desc: 'English UI across Dashboard, MCP App & HUD' },
+        { value: 'auto', label: '跟随系统' },
+        { value: 'zh', label: '简体中文' },
+        { value: 'en', label: 'English' },
       ],
     },
     'cfg-cdp-pos': {
       get: () => state.cdpPos,
       set: (v) => { state.cdpPos = v; },
       options: [
-        { value: 'top-right', label: '右上角（推荐）', desc: '停靠窗口右上角，向下展开详情不遮挡输入栏' },
-        { value: 'bottom-right', label: '右下角', desc: '停靠窗口右下角，向上展开详情面板' },
-        { value: 'top-left', label: '左上角', desc: '停靠窗口左上角，向下展开详情面板' },
-        { value: 'bottom-left', label: '左下角', desc: '停靠窗口左下角，向上展开详情面板' },
+        { value: 'top-right', label: '右上角' },
+        { value: 'bottom-right', label: '右下角' },
+        { value: 'top-left', label: '左上角' },
+        { value: 'bottom-left', label: '左下角' },
       ],
     },
     'cfg-wh-format': {
       get: () => state.cfgWhFormat || 'auto',
       set: (v) => { state.cfgWhFormat = v; },
       options: [
-        { value: 'auto', label: '自动识别（推荐）', desc: '按目标域名自动适配 Slack/Discord/飞书/钉钉/企业微信/Bark' },
-        { value: 'generic', label: '标准 JSON', desc: '发送 {event, title, text, html, timestamp}' },
-        { value: 'slack', label: 'Slack', desc: '发送 Slack Incoming Webhook 格式' },
-        { value: 'discord', label: 'Discord', desc: '发送 Discord Webhook 格式' },
-        { value: 'feishu', label: '飞书 / Lark', desc: '发送飞书自定义机器人文本格式' },
-        { value: 'dingtalk', label: '钉钉', desc: '发送钉钉自定义机器人文本格式' },
-        { value: 'wecom', label: '企业微信', desc: '发送企业微信群机器人文本格式' },
-        { value: 'bark', label: 'Bark (iOS)', desc: '发送 Bark 推送格式' },
+        { value: 'auto', label: '自动识别' },
+        { value: 'generic', label: '标准 JSON' },
+        { value: 'slack', label: 'Slack' },
+        { value: 'discord', label: 'Discord' },
+        { value: 'feishu', label: '飞书 / Lark' },
+        { value: 'dingtalk', label: '钉钉' },
+        { value: 'wecom', label: '企业微信' },
+        { value: 'bark', label: 'Bark (iOS)' },
       ],
     },
     'cfg-price-mode': {
       get: () => state.cfgPriceMode,
       set: (v) => { state.cfgPriceMode = v; },
       options: [
-        { value: 'std', label: '标准 + 缓存', desc: '官方标准单价，计入缓存读取折扣' },
-        { value: 'promo', label: '优惠 + 缓存', desc: '活动优惠单价，计入缓存读取折扣' },
-        { value: 'nc_std', label: '标准无缓存', desc: '忽略缓存折扣，估算原始调用价值' },
-        { value: 'nc_promo', label: '优惠无缓存', desc: '优惠费率下忽略缓存折扣' },
+        { value: 'std', label: '标准 + 缓存' },
+        { value: 'promo', label: '优惠 + 缓存' },
+        { value: 'nc_std', label: '标准无缓存' },
+        { value: 'nc_promo', label: '优惠无缓存' },
       ],
     },
     'cfg-price-cur': {
       get: () => state.cfgPriceCur,
       set: (v) => { state.cfgPriceCur = v; },
       options: [
-        { value: 'USD', label: '美元 ($)', desc: '以美元展示等效账单金额' },
-        { value: 'CNY', label: '人民币 (¥)', desc: '按设定汇率折算为人民币展示' },
+        { value: 'USD', label: '美元 ($)' },
+        { value: 'CNY', label: '人民币 (¥)' },
       ],
     },
     'cp-links': {
       get: () => state.cpLinks,
       set: (v) => { state.cpLinks = v; },
       options: [
-        { value: 'minimal', label: '精简隔离（推荐）', desc: '独立认证与会话，隔离 .ssh 等敏感目录' },
-        { value: 'full', label: '完整继承', desc: '软链复用宿主机大部分开发环境目录' },
-        { value: 'none', label: '空白沙盒', desc: '完全纯净的独立目录，不共享宿主文件' },
+        { value: 'minimal', label: '精简隔离', desc: '独立认证与会话，隔离敏感目录' },
+        { value: 'full', label: '完整继承', desc: '复用宿主机开发环境目录' },
+        { value: 'none', label: '空白沙盒', desc: '完全独立，不共享宿主文件' },
       ],
     },
     'cp-inherit': {
       get: () => state.cpInherit,
       set: (v) => { state.cpInherit = v; },
       options: [
-        { value: 'host', label: '宿主机脱敏继承', desc: '复制常用偏好设置并剥离原有账号登录态' },
-        { value: '', label: '空白初始化', desc: '使用默认出厂设置启动全新客户端' },
+        { value: 'host', label: '宿主机脱敏继承', desc: '保留偏好设置并清除登录态' },
+        { value: '', label: '空白初始化', desc: '使用默认配置' },
       ],
     },
   };
@@ -205,7 +205,11 @@
   function fmtMoney(usd) {
     const val = Number(usd || 0);
     if (state.currency === 'CNY') {
-      return '¥' + (val * (state.usdToCny || 7.2)).toFixed(2);
+      const cny = val * (state.usdToCny || 7.2);
+      return '¥' + (cny >= 1000 ? cny.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : cny.toFixed(2));
+    }
+    if (val >= 1000) {
+      return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
     return val >= 100 ? '$' + val.toFixed(1) : '$' + val.toFixed(2);
   }
@@ -327,21 +331,34 @@
     return g.replace(/\s+models$/i, '');
   }
 
+  function shortPlanName(plan) {
+    const raw = String(plan || '').trim();
+    if (!raw) return '';
+    const low = raw.toLowerCase();
+    if (low.includes('ultra')) return 'Ultra';
+    if (low.includes('pro')) return 'Pro';
+    if (low.includes('team')) return 'Team';
+    if (low.includes('enterprise')) return 'Enterprise';
+    if (low.includes('starter')) return 'Starter';
+    if (low.includes('free')) return 'Free';
+    return raw.replace(/^google\s+ai\s+/i, '').replace(/\s+quota$/i, '').trim();
+  }
+
   function localizeQuotaWindow(bucket) {
     const win = String(bucket.window || '').trim().toLowerCase();
     const disp = String(bucket.displayName || '').trim();
     const dlow = disp.toLowerCase();
     if (win === '5h' || dlow.includes('five hour') || dlow.includes('5-hour') || dlow.includes('5 hour') || dlow === '5h') {
-      return '5小时';
+      return '5h';
     }
     if (win === 'weekly' || win === '7d' || dlow.includes('weekly') || dlow.includes('7-day')) {
-      return '周配额';
+      return '周';
     }
     if (win === 'daily' || win === '24h' || dlow.includes('daily')) {
-      return '日配额';
+      return '日';
     }
     if (win === 'monthly' || dlow.includes('monthly')) {
-      return '月配额';
+      return '月';
     }
     if (!disp) return '配额';
     return disp
@@ -357,7 +374,7 @@
     if (grp && !winLabel.toLowerCase().includes(grp.toLowerCase())) {
       return `${grp} · ${winLabel}`;
     }
-    return winLabel || grp || '模型配额';
+    return winLabel || grp || '配额';
   }
 
   function sortQuotaBuckets(buckets) {
@@ -407,13 +424,7 @@
   function renderEmptyState(title, hint = '', actionHtml = '') {
     return `
       <div class="empty-state">
-        <span class="empty-ico" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2.2" y="3" width="11.6" height="10" rx="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M5 6.8h6M5 9.5h3.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        </span>
-        <div class="empty-title">
-          <span>${esc(title)}</span>
-          ${hint ? `<button type="button" class="help-dot" aria-label="说明" data-tip="${esc(hint)}">?</button>` : ''}
-        </div>
+        <div class="empty-title"${hint ? ` data-tip="${esc(hint)}"` : ''}>${esc(title)}</div>
         ${actionHtml ? `<div class="empty-act">${actionHtml}</div>` : ''}
       </div>`;
   }
@@ -589,9 +600,10 @@
     const target = dark ? 'dark' : 'light';
     if (withTransition) {
       root.classList.add('theming');
-      setTimeout(() => root.classList.remove('theming'), 280);
+      setTimeout(() => root.classList.remove('theming'), 220);
     }
     root.dataset.theme = target;
+    root.classList.toggle('dark', dark);
     const meta = document.querySelector('meta[name="color-scheme"]');
     if (meta) meta.content = target;
   }
@@ -621,6 +633,7 @@
         if ((target === 'dark') === mq.matches) {
           safeStorageRemove(localStorage, 'agymate-color-scheme');
           delete root.dataset.theme;
+          root.classList.remove('dark');
           if (meta) meta.content = 'light dark';
         } else {
           safeStorageSet(localStorage, 'agymate-color-scheme', target);
@@ -1126,17 +1139,29 @@
     });
   }
 
+  const VIEW_TITLES = {
+    overview: '总览',
+    telemetry: '账单',
+    sessions: '会话',
+    doctor: '体检',
+    storage: '缓存',
+    settings: '设置',
+  };
+
   // ---- 视图切换 ----
   function switchView(view) {
     state.view = view;
     hideTip(true);
     closePop();
-    document.querySelectorAll('#main-nav .opt').forEach((btn) => {
+    document.querySelectorAll('#main-nav .opt, #mobile-nav .mnav-btn').forEach((btn) => {
       const on = btn.dataset.view === view;
       btn.classList.toggle('on', on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      if (btn.getAttribute('role') === 'tab') {
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      }
     });
-    syncSegThumb($('main-nav'), false);
+    const crumb = $('crumb-current');
+    if (crumb) crumb.textContent = VIEW_TITLES[view] || view;
     document.querySelectorAll('.view-panel').forEach((sec) => {
       sec.hidden = sec.id !== `view-${view}`;
     });
@@ -1154,11 +1179,11 @@
     const chip = $('top-running-chip')?.textContent || '0/0';
     const syncPart = state.syncMeta ? ` · ${state.syncMeta}` : '';
     if (pill.classList.contains('ok')) {
-      pill.dataset.tip = `实时数据流已连接 · 在线 ${chip}${syncPart}`;
+      pill.dataset.tip = `在线 ${chip}${syncPart}`;
     } else if (pill.classList.contains('err')) {
-      pill.dataset.tip = '后台实时连接中断，正在自动重连…';
+      pill.dataset.tip = '连接中断，重连中…';
     } else {
-      pill.dataset.tip = '正在连接后台实时数据流…';
+      pill.dataset.tip = '连接中…';
     }
   }
 
@@ -1178,7 +1203,7 @@
     syncCurrencyButtons();
 
     const ts = ov.updatedAt ? new Date(ov.updatedAt * 1000).toLocaleTimeString('zh-CN', { hour12: false }) : '--';
-    state.syncMeta = `同步于 ${ts} (${Math.round(ov.pollMs || 0)}ms)`;
+    state.syncMeta = ts;
 
     const accounts = ov.accounts || [];
     const instances = ov.instances || [];
@@ -1218,27 +1243,32 @@
     const acctCount = accounts.length || instances.length;
     const roiKpiHtml = subUsd > 0
       ? `<div class="kpi" data-tip="订阅基准 ${fmtMoney(subUsd)} · ${acctCount} 个账号">
-          <b>${fmtMoney(roi.allMonthUsd)} <i class="u">${(roi.roiMultiple || 0).toFixed(1)}倍</i></b>
-          <span>本月等值 / 回本率</span>
+          <span class="kpi-label">本月回本</span>
+          <div class="kpi-val"><b>${fmtMoney(roi.allMonthUsd)}</b><span class="kpi-pill">${(roi.roiMultiple || 0).toFixed(1)}×</span></div>
+          <span class="kpi-sub">基准 ${fmtMoney(subUsd)}</span>
         </div>`
       : `<div class="kpi" data-tip="${acctCount} 个账号 · 在线 ${onlineInstances}/${instances.length}">
-          <b>${fmtMoney(roi.allMonthUsd)}</b>
-          <span>本月累计等值</span>
+          <span class="kpi-label">本月累计</span>
+          <div class="kpi-val"><b>${fmtMoney(roi.allMonthUsd)}</b></div>
+          <span class="kpi-sub">${acctCount} 个账号</span>
         </div>`;
 
     $('overview-kpis').innerHTML = `
-      <div class="kpi" data-tip="近15分钟速率：${fmtMoney(burn.usdPerHour)}/小时 · ${fmtTokens(burn.tokensPerMin)}/分">
-        <b>${fmtMoney(sum.totalUsd)}</b>
-        <span>今日等效账单</span>
+      <div class="kpi" data-tip="15m 速率 ${fmtMoney(burn.usdPerHour)}/h · ${fmtTokens(burn.tokensPerMin)}/m">
+        <span class="kpi-label">今日消费</span>
+        <div class="kpi-val"><b>${fmtMoney(sum.totalUsd)}</b></div>
+        <span class="kpi-sub">${(sum.calls || 0).toLocaleString()} 次调用</span>
       </div>
       ${roiKpiHtml}
-      <div class="kpi" data-tip="今日共 ${sum.calls || 0} 次模型调用">
-        <b>${runCount} / ${waitCount > 0 ? `<span class="warn">${waitCount}</span>` : '0'}</b>
-        <span>运行中 / 待确认</span>
+      <div class="kpi" data-tip="运行中 ${runCount} · 待确认 ${waitCount}">
+        <span class="kpi-label">活跃会话</span>
+        <div class="kpi-val"><b>${runCount + waitCount}</b>${waitCount > 0 ? `<span class="kpi-pill warn">${waitCount} 待确认</span>` : ''}</div>
+        <span class="kpi-sub">在线 ${onlineAccounts}/${acctCount}</span>
       </div>
-      <div class="kpi" data-tip="缓存已节省 ${fmtMoney(sum.savedByCacheUsd)}">
-        <b>${(sum.cacheHitRate || 0).toFixed(1)}%</b>
-        <span>缓存命中率</span>
+      <div class="kpi" data-tip="已省 ${fmtMoney(sum.savedByCacheUsd)}">
+        <span class="kpi-label">缓存命中</span>
+        <div class="kpi-val"><b>${(sum.cacheHitRate || 0).toFixed(1)}%</b></div>
+        <span class="kpi-sub">省 ${fmtMoney(sum.savedByCacheUsd)}</span>
       </div>
     `;
 
@@ -1249,16 +1279,16 @@
       const isRO = !!inst.readOnlyLifecycle;
       if (isRO) {
         return inst.running
-          ? `<button type="button" class="text" data-act="focus" data-id="${esc(inst.id)}" data-tip="将该客户端窗口置于前台">聚焦</button>`
+          ? `<button type="button" class="text ghost" data-act="focus" data-id="${esc(inst.id)}">聚焦</button>`
           : '';
       }
       return inst.running
-        ? `<button type="button" class="text" data-act="focus" data-id="${esc(inst.id)}" data-tip="将该客户端窗口置于前台">聚焦</button>
-           <button type="button" class="text" data-act="heal" data-id="${esc(inst.id)}" data-tip="检查并修复实例软链与钩子">自愈</button>
-           <button type="button" class="text danger" data-act="stop" data-id="${esc(inst.id)}" data-tip="安全关闭该客户端实例">停止</button>`
-        : `<button type="button" class="text primary" data-act="launch" data-id="${esc(inst.id)}" data-tip="拉起该隔离客户端实例">启动</button>
-           <button type="button" class="text" data-act="heal" data-id="${esc(inst.id)}" data-tip="检查并修复实例软链与钩子">自愈</button>
-           <button type="button" class="text danger" data-act="delete" data-id="${esc(inst.id)}" data-tip="移除该隔离实例">删除</button>`;
+        ? `<button type="button" class="text ghost" data-act="focus" data-id="${esc(inst.id)}">聚焦</button>
+           <button type="button" class="text ghost" data-act="heal" data-id="${esc(inst.id)}">自愈</button>
+           <button type="button" class="text danger" data-act="stop" data-id="${esc(inst.id)}">停止</button>`
+        : `<button type="button" class="text soft-blue" data-act="launch" data-id="${esc(inst.id)}">启动</button>
+           <button type="button" class="text ghost" data-act="heal" data-id="${esc(inst.id)}">自愈</button>
+           <button type="button" class="text danger" data-act="delete" data-id="${esc(inst.id)}">删除</button>`;
     };
 
     const gridEl = $('instance-grid');
@@ -1271,27 +1301,26 @@
       const slots = acct.instances || [];
       const isOnline = (acct.onlineCount || 0) > 0;
       const isWait = acct.liveState === 'waiting_approval';
-      const dotCls = !isOnline ? '' : isWait ? 'warn' : 'ok';
       const stateLabel = !isOnline
-        ? '<span class="badge">离线</span>'
+        ? '<span class="badge pill">离线</span>'
         : isWait
-          ? '<span class="badge warn">待确认</span>'
+          ? '<span class="badge pill warn"><i class="b-dot"></i>待确认</span>'
           : acct.liveState === 'running'
-            ? `<span class="badge ok">运行中 ${acct.activeSessions || 1}</span>`
-            : '<span class="badge ok">在线空闲</span>';
-      const cachedBadge = acct.cachedQuota ? '<span class="badge">离线快照</span>' : '';
-      const plan = acct.planName ? `<span class="plan">${esc(acct.planName)}</span>` : '';
+            ? `<span class="badge pill ok"><i class="b-dot"></i>运行 ${acct.activeSessions || 1}</span>`
+            : '<span class="badge pill ok"><i class="b-dot"></i>空闲</span>';
+      const shortPlan = shortPlanName(acct.planName);
+      const plan = shortPlan ? `<span class="plan" data-tip="${esc(acct.planName)}">${esc(shortPlan)}</span>` : '';
 
       let subText = '';
       if (slots.length === 1) {
         const s0 = slots[0];
         const metaVer = [s0.hub?.lsVersion ? `内核 ${s0.hub.lsVersion}` : '', s0.cdpPort ? `端口 ${s0.cdpPort}` : ''].filter(Boolean).join(' · ');
-        subText = [s0.label || s0.id, metaVer, s0.readOnlyLifecycle ? '宿主实例' : '隔离实例'].filter(Boolean).join(' · ');
+        subText = [s0.label || s0.id, metaVer, s0.readOnlyLifecycle ? '宿主' : '隔离'].filter(Boolean).join(' · ');
       } else {
-        subText = `共 ${slots.length} 个客户端实例 · ${acct.onlineCount || 0} 个在线`;
+        subText = `${slots.length} 个实例 · ${acct.onlineCount || 0} 在线`;
       }
-      const todayDetail = `今日 ${fmtMoney(acct.todayUsd)} · ${fmtTokens(acct.todayTokens)} · 缓存命中 ${(acct.todayCacheHitRate || 0).toFixed(0)}%`;
-      const headTip = [subText, todayDetail].filter(Boolean).join(' | ');
+      const todayDetail = `今日 ${fmtMoney(acct.todayUsd)} · ${fmtTokens(acct.todayTokens)} · 命中 ${(acct.todayCacheHitRate || 0).toFixed(0)}%`;
+      const headTip = [acct.planName || '', subText, todayDetail, acct.cachedQuota ? '离线快照' : ''].filter(Boolean).join(' · ');
 
       const buckets = sortQuotaBuckets(acct.buckets || []);
       const ctx = acct.context;
@@ -1304,14 +1333,14 @@
             <div class="quota muted" data-tip-title="${esc(qName)}" data-tip="${esc(qTip)}">
               <div class="quota-labels">
                 <span class="quota-name">${esc(qName)}</span>
-                <span class="quota-n">不适用</span>
+                <span class="quota-n">—</span>
               </div>
               <div class="quota-track"><i style="width:0%"></i></div>
             </div>`;
         }
         const pct = Math.max(0, Math.min(100, b.remainingPct || 0));
         const cls = pct <= 15 ? 'danger' : pct <= 35 ? 'warn' : '';
-        const sparkCol = cls === 'danger' ? 'var(--red)' : cls === 'warn' ? 'var(--amber)' : 'var(--green)';
+        const sparkCol = cls === 'danger' ? 'var(--red)' : cls === 'warn' ? 'var(--amber)' : 'var(--accent)';
         const slotId = slots[0]?.id || '';
         const seriesKey = slotId && b.bucketId ? `${slotId}:${b.bucketId}` : '';
         const sparkPts = (seriesKey && state.quotaSeries?.[seriesKey]) || null;
@@ -1319,7 +1348,7 @@
         const reset = fmtResetLeft(b.resetUnix);
         const resetText = reset ? (reset === '即将重置' ? reset : `${reset}后重置`) : (acct.cachedQuota ? '周期已重置' : '');
         const exhaustText = (b.exhaustsBeforeReset && b.hoursUntilEmpty > 0)
-          ? `预计 ${b.hoursUntilEmpty.toFixed(1)} 小时耗尽`
+          ? `约 ${b.hoursUntilEmpty.toFixed(1)}h 耗尽`
           : '';
         const qName = localizeQuotaName(b);
         const qTip = [resetText, exhaustText].filter(Boolean).join(' · ') || '配额正常';
@@ -1328,7 +1357,7 @@
             <div class="quota-labels">
               <span class="quota-name">${esc(qName)}</span>
               ${sparkSVG}
-              <span class="quota-n">${pct.toFixed(0)}%${exhaustText ? '<span class="q-warn-dot" aria-label="即将耗尽">!</span>' : ''}</span>
+              <span class="quota-n">${pct.toFixed(0)}%${exhaustText ? '<span class="q-warn-dot" aria-label="即将耗尽"></span>' : ''}</span>
             </div>
             <div class="quota-track"><i class="${cls}" style="width:${pct}%"></i></div>
           </div>`;
@@ -1337,7 +1366,7 @@
       let ctxBlock = '';
       if (ctx) {
         const cpct = Math.max(0, Math.min(100, ctx.usagePct || 0));
-        const cCls = cpct >= 80 ? 'danger' : cpct >= 60 ? 'warn' : '';
+        const cCls = cpct >= 80 ? 'danger' : cpct >= 60 ? 'warn' : 'ctx';
         const ctxTitle = ctx.title || ctx.cascadeId || '当前会话';
         ctxBlock = `
           <div class="quota" data-tip-title="${esc(ctxTitle)}" data-tip="上下文 ${fmtTokens(ctx.estimatedTokensUsed)} / ${fmtTokens(ctx.maxContextTokens)}">
@@ -1349,11 +1378,16 @@
           </div>`;
       }
 
+      const hasUsage = Number(acct.todayUsd || 0) > 0 || Number(acct.todayTokens || 0) > 0;
+      const usageSpan = hasUsage
+        ? `<span data-tip="吞吐 ${fmtTokens(acct.todayTokens)} · 命中 ${(acct.todayCacheHitRate || 0).toFixed(0)}%">今日 ${fmtMoney(acct.todayUsd)}</span>`
+        : '';
+
       const slotsHTML = slots.length > 1
         ? `<details class="acct-slots-fold" data-acct-fold="${esc(acct.key)}"${openFolds.has(acct.key) ? ' open' : ''}>
             <summary>
-              <span>${slots.length} 个客户端实例（${acct.onlineCount || 0} 在线）</span>
-              <span class="fold-chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span>${usageSpan ? `${usageSpan} · ` : ''}${slots.length} 个实例 (${acct.onlineCount || 0} 在线)</span>
+              <span class="fold-chev"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.75 5 6.25 7.5 3.75" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </summary>
             <div class="acct-slots">${slots.map((s) => {
               const sDot = !s.running ? '' : s.liveState === 'waiting_approval' ? 'warn' : 'ok';
@@ -1371,22 +1405,22 @@
         : '';
 
       const singleActs = slots.length === 1 ? renderSlotButtons(slots[0]) : '';
-      const hasUsage = Number(acct.todayUsd || 0) > 0 || Number(acct.todayTokens || 0) > 0;
-      const footHTML = singleActs
+      const footHTML = slots.length <= 1 && (singleActs || hasUsage)
         ? `<div class="subscription-foot">
-            ${hasUsage ? `<span data-tip="吞吐 ${fmtTokens(acct.todayTokens)} · 缓存命中 ${(acct.todayCacheHitRate || 0).toFixed(0)}%">今日 ${fmtMoney(acct.todayUsd)}</span>` : '<span></span>'}
-            <div class="acts">${singleActs}</div>
+            ${usageSpan || '<span></span>'}
+            ${singleActs ? `<div class="acts">${singleActs}</div>` : ''}
           </div>`
         : '';
 
+      const cardCls = `subscription-card ${isOnline ? 'is-online' : 'is-offline'}${isWait ? ' waiting' : ''}`;
       return `
-        <article class="subscription-card ${isWait ? 'waiting' : ''}">
+        <article class="${cardCls}">
           <div class="subscription-head" data-tip-title="${esc(acct.displayName)}" data-tip="${esc(headTip)}">
-            <span class="ci-dot ${dotCls}"></span>
             <b>${esc(acct.displayName)}</b>
-            ${stateLabel}
-            ${cachedBadge}
-            ${plan}
+            <div class="subscription-head-right">
+              ${plan}
+              ${stateLabel}
+            </div>
           </div>
           <div class="quota-windows ${winCount <= 1 ? 'single' : ''}">
             ${bars}${ctxBlock}
@@ -1396,9 +1430,9 @@
           ${footHTML}
         </article>`;
     }).join('') : `<div class="list" style="grid-column:1/-1">${renderEmptyState(
-      '暂未发现客户端账号',
-      '请先启动 Antigravity 客户端，或点击下方按钮创建多开隔离实例',
-      '<button type="button" class="text primary" data-open-create="1">+ 新建隔离实例</button>',
+      '暂无账号',
+      '启动 Antigravity 或新建隔离实例',
+      '<button type="button" class="text primary" data-open-create="1">+ 新建实例</button>',
     )}</div>`;
     syncActiveTipAfterRender();
   }
@@ -1423,7 +1457,7 @@
     const poolOrphan = Number(colab.orphanCount || 0) > 0;
 
     const poolMetaHtml = cards.length
-      ? `<span class="badge mono" data-tip="${poolBurning ? `实时消耗 ${poolRate.toFixed(2)} 点/小时` : '当前无活跃虚拟机'}">${cards.length} 账号 · ${poolBal.toFixed(1)} 点</span>`
+      ? `<span class="badge mono" data-tip="${poolBurning ? `${poolRate.toFixed(2)} CCU/h` : '当前空闲'}">${poolBal.toFixed(1)} CCU</span>`
       : '';
 
     const renderColabCard = (ca) => {
@@ -1437,23 +1471,18 @@
       const email = ca.account || '';
 
       const checkedTime = ca.checkedAt ? new Date(ca.checkedAt * 1000).toLocaleTimeString('zh-CN', { hour12: false }) : '--';
-      const subMsg = ca.ok ? `巡检于 ${checkedTime} · 运行中 ${activeCount} 台` : (ca.lastError || '授权已过期，请重新登录');
+      const subMsg = ca.ok ? `${checkedTime} · 运行 ${activeCount} 台` : (ca.lastError || '需重新授权');
 
-      let statusBadge = `<span class="badge ok" data-tip="${esc(subMsg)}">空闲</span>`;
+      let statusBadge = `<span class="badge pill ok" data-tip="${esc(subMsg)}"><i class="b-dot"></i>空闲</span>`;
       if (!ca.ok) {
-        const label = ca.status === 'unauthenticated' ? '需重新授权' : ca.status === 'missing_cli' ? '待配置' : '巡检异常';
-        statusBadge = `<span class="badge ${ca.status === 'unauthenticated' ? 'warn' : 'err'}" data-tip="${esc(subMsg)}">${label}</span>`;
+        const label = ca.status === 'unauthenticated' ? '需重连' : ca.status === 'missing_cli' ? '待配置' : '异常';
+        statusBadge = `<span class="badge pill ${ca.status === 'unauthenticated' ? 'warn' : 'err'}" data-tip="${esc(subMsg)}">${label}</span>`;
       } else if (hasOrphan) {
-        statusBadge = `<span class="badge err" data-tip="${esc(subMsg)}">孤儿实例 ${orphanCount} 台</span>`;
+        statusBadge = `<span class="badge pill err" data-tip="${esc(subMsg)}"><i class="b-dot"></i>孤儿 ${orphanCount}</span>`;
       } else if (burning) {
-        statusBadge = `<span class="badge warn" data-tip="${esc(subMsg)}">运行中 ${activeCount || 1} 台 · ${ca.activeMinutes || 0}分</span>`;
+        statusBadge = `<span class="badge pill warn" data-tip="${esc(subMsg)}"><i class="b-dot"></i>运行 ${activeCount || 1} · ${ca.activeMinutes || 0}m</span>`;
       }
 
-      const srcBadge = ca.source === 'oauth'
-        ? '<span class="badge accent">网页授权</span>'
-        : ca.source === 'colab-safe'
-          ? '<span class="badge">系统钥匙串</span>'
-          : '';
       const pct = allowance > 0 ? Math.max(0, Math.min(100, (bal / allowance) * 100)) : 0;
       const fillCls = ca.ok ? (pct <= 10 ? 'danger' : pct <= 25 ? 'warn' : '') : '';
 
@@ -1464,44 +1493,44 @@
       const sessHTML = sessions.length
         ? `<div class="colab-sess">${sessions.map((s) => `
             <div class="colab-sess-item">
-              <span><b>${s.orphan ? '孤儿实例' : esc(s.name || '计算节点')}</b> <span class="badge ${s.orphan ? 'err' : 'warn'}">${esc(s.accelerator || '加速卡')}</span> ${esc(s.shape || '')}</span>
+              <span><b>${s.orphan ? '孤儿实例' : esc(s.name || '节点')}</b> <span class="badge ${s.orphan ? 'err' : 'warn'}">${esc(s.accelerator || 'GPU')}</span></span>
               <span class="mono" style="color:var(--muted)">${esc(s.endpoint)}</span>
             </div>`).join('')}</div>`
         : '';
 
       const reloginBtn = (ca.source === 'oauth' || ca.status === 'unauthenticated')
-        ? `<button type="button" class="text" data-colab-act="relogin" data-email="${esc(email)}">重新授权</button>`
+        ? `<button type="button" class="text ghost" data-colab-act="relogin" data-email="${esc(email)}">重连</button>`
         : '';
       const nukeBtn = ca.ok
-        ? `<button type="button" class="text ${burning || hasOrphan ? 'danger' : ''}" data-colab-act="nuke" data-email="${esc(email)}" data-active="${activeCount}" data-orphan="${orphanCount}">一键清场</button>`
+        ? `<button type="button" class="text ${burning || hasOrphan ? 'danger' : 'ghost'}" data-colab-act="nuke" data-email="${esc(email)}" data-active="${activeCount}" data-orphan="${orphanCount}">清场</button>`
         : '';
       const removeBtn = (ca.removable && email)
-        ? `<button type="button" class="text" data-colab-act="remove" data-email="${esc(email)}" data-source="${esc(ca.source || '')}">${ca.source === 'colab-safe' ? '隐藏卡片' : '解绑账号'}</button>`
+        ? `<button type="button" class="text ghost" data-colab-act="remove" data-email="${esc(email)}" data-source="${esc(ca.source || '')}">${ca.source === 'colab-safe' ? '隐藏' : '解绑'}</button>`
         : '';
       const hasActs = Boolean(reloginBtn || nukeBtn || removeBtn);
-      const balTip = ca.ok ? `估值 ${fmtMoney(ca.estimatedValueUsd)} / 月度基准 ${Math.round(allowance)}` : '';
-      const rateTip = !ca.ok ? '' : burning ? `${fmtMoney(ca.burnUsdPerHour)}/小时 · ${ca.hoursUntilEmpty > 0 ? `约 ${ca.hoursUntilEmpty.toFixed(1)} 小时耗尽` : '消耗中'}` : '当前无活跃虚拟机';
+      const balTip = ca.ok ? `估值 ${fmtMoney(ca.estimatedValueUsd)} / 基准 ${Math.round(allowance)}` : '';
+      const rateTip = !ca.ok ? '' : burning ? `${fmtMoney(ca.burnUsdPerHour)}/h${ca.hoursUntilEmpty > 0 ? ` · 约 ${ca.hoursUntilEmpty.toFixed(1)}h` : ''}` : '空闲';
 
       return `
-        <article class="subscription-card${hasOrphan ? ' orphan' : burning ? ' burning' : ''}">
+        <article class="subscription-card is-online${hasOrphan ? ' orphan' : burning ? ' burning' : ''}">
           <div class="subscription-head">
-            <span class="ci-dot ${!ca.ok ? 'err' : hasOrphan ? 'err' : burning ? 'warn' : 'ok'}"></span>
-            <b data-tip="${esc(email || '云算力账号')}">${esc(email || '云算力账号')}</b>
-            ${statusBadge}
-            ${srcBadge}
+            <b data-tip="${esc(email || 'Colab')}">${esc(email || 'Colab')}</b>
+            <div class="subscription-head-right">
+              ${statusBadge}
+            </div>
           </div>
           <div class="colab-cols">
             <div class="colab-col"${balTip ? ` data-tip="${esc(balTip)}"` : ''}>
-              <span class="k">剩余算力点</span>
+              <span class="k">余额</span>
               <span class="v">${ca.ok ? `${bal.toFixed(1)}` : '--'}</span>
               <div class="quota-track"><i class="${fillCls}" style="width:${pct}%"></i></div>
             </div>
             <div class="colab-col"${rateTip ? ` data-tip="${esc(rateTip)}"` : ''}>
-              <span class="k">实时消耗速率</span>
-              <span class="v" style="${burning ? 'color:var(--amber)' : ''}">${ca.ok ? `${rate.toFixed(2)}/小时` : '--'}</span>
+              <span class="k">速率</span>
+              <span class="v" style="${burning ? 'color:var(--amber)' : ''}">${ca.ok ? `${rate.toFixed(2)}/h` : '--'}</span>
             </div>
             <div class="colab-col">
-              <span class="k">可用加速型号</span>
+              <span class="k">算力</span>
               <div class="colab-chips">${gpuPills || tpuPills || '<span class="mono" style="color:var(--muted)">--</span>'}</div>
             </div>
           </div>
@@ -1513,23 +1542,27 @@
     const bodyHTML = cards.length > 0
       ? cards.map(renderColabCard).join('')
       : `<div class="list">${renderEmptyState(
-          '暂未绑定云算力账号',
-          '绑定 Google 账号后可实时巡检算力点余额、燃烧速率与残留孤儿虚拟机，防止忘记关机白扣配额',
-          '<button type="button" class="text primary" data-colab-act="bind-menu">+ 绑定云算力账号</button>',
+          '未绑定 Colab 账号',
+          '',
+          '<button type="button" class="text primary" data-colab-act="bind-menu">+ 绑定</button>',
         )}</div>`;
 
     host.innerHTML = `
-      <div class="row-head">
-        <span class="label">云端算力（Colab）</span>
-        <div class="acts colab-head-tools">
-          ${poolMetaHtml}
-          <button type="button" class="text" data-colab-act="refresh">立即巡检</button>
-          <button type="button" class="text primary" data-colab-act="bind-menu" id="btn-colab-bind">+ 绑定账号</button>
-          ${(poolBurning || poolOrphan) ? `<button type="button" class="text danger" data-colab-act="nuke" data-email="" data-active="${colab.assignmentsCount || 0}" data-orphan="${colab.orphanCount || 0}">全池清场</button>` : ''}
+      <div class="section-block">
+        <div class="row-head">
+          <div class="head-with-tip">
+            <span class="label">Colab 算力</span>
+            ${poolMetaHtml}
+          </div>
+          <div class="acts colab-head-tools">
+            <button type="button" class="text ghost" data-colab-act="refresh">巡检</button>
+            <button type="button" class="text" data-colab-act="bind-menu" id="btn-colab-bind">+ 绑定</button>
+            ${(poolBurning || poolOrphan) ? `<button type="button" class="text danger-outline" data-colab-act="nuke" data-email="" data-active="${colab.assignmentsCount || 0}" data-orphan="${colab.orphanCount || 0}">清场</button>` : ''}
+          </div>
         </div>
-      </div>
-      <div class="subscription-usage${cards.length <= 1 ? ' single' : ''}">
-        ${bodyHTML}
+        <div class="subscription-usage${cards.length <= 1 ? ' single' : ''}">
+          ${bodyHTML}
+        </div>
       </div>
     `;
   }
@@ -1573,20 +1606,24 @@
 
     $('tel-kpis').innerHTML = `
       <div class="kpi" data-tip="共 ${sum.calls || 0} 次调用${sum.imageCalls ? ` · ${sum.imageCalls} 次生图` : ''}">
-        <b>${fmtMoney(sum.totalUsd)}</b>
-        <span>${esc(pLabel)}等效账单</span>
+        <span class="kpi-label">${esc(pLabel)}消费</span>
+        <div class="kpi-val"><b>${fmtMoney(sum.totalUsd)}</b></div>
+        <span class="kpi-sub">${(sum.calls || 0).toLocaleString()} 次调用</span>
       </div>
       <div class="kpi" data-tip="输入 ${fmtTokens(sum.inputTokens)} · 输出 ${fmtTokens(sum.outputTokens)}">
-        <b>${fmtTokens(sum.totalTokens)}</b>
-        <span>总吞吐量</span>
+        <span class="kpi-label">总 Tokens</span>
+        <div class="kpi-val"><b>${fmtTokens(sum.totalTokens)}</b></div>
+        <span class="kpi-sub">入 ${fmtTokens(sum.inputTokens)} · 出 ${fmtTokens(sum.outputTokens)}</span>
       </div>
-      <div class="kpi" data-tip="命中率 ${(sum.cacheHitRate || 0).toFixed(1)}% · 已省 ${fmtMoney(sum.savedByCacheUsd)}">
-        <b>${fmtTokens(sum.cacheTokens)}</b>
-        <span>缓存命中读取</span>
+      <div class="kpi" data-tip="读取 ${fmtTokens(sum.cacheTokens)} · 已省 ${fmtMoney(sum.savedByCacheUsd)}">
+        <span class="kpi-label">缓存命中</span>
+        <div class="kpi-val"><b>${(sum.cacheHitRate || 0).toFixed(1)}%</b></div>
+        <span class="kpi-sub">省 ${fmtMoney(sum.savedByCacheUsd)}</span>
       </div>
-      <div class="kpi" data-tip="${fmtTokens(rep.burnRate15m?.tokensPerMin)}/分 · ${rep.burnRate15m?.calls15m || 0} 次调用">
-        <b>${fmtMoney(rep.burnRate15m?.usdPerHour)}/小时</b>
-        <span>近15分钟速率</span>
+      <div class="kpi" data-tip="${fmtTokens(rep.burnRate15m?.tokensPerMin)}/m · ${rep.burnRate15m?.calls15m || 0} 次调用">
+        <span class="kpi-label">15m 速率</span>
+        <div class="kpi-val"><b>${fmtMoney(rep.burnRate15m?.usdPerHour)}/h</b></div>
+        <span class="kpi-sub">${fmtTokens(rep.burnRate15m?.tokensPerMin)}/m</span>
       </div>
     `;
 
@@ -1597,7 +1634,7 @@
     const maxModelUsd = Math.max(0.0001, ...models.map((m) => m.totalUsd || 0));
     $('tel-models-list').innerHTML = models.length ? models.map((m) => {
       const sharePct = Math.max(2, Math.round(((m.totalUsd || 0) / maxModelUsd) * 100));
-      const mTip = `${m.calls || 0} 次调用 · 缓存命中 ${fmtTokens(m.cacheTokens)} · 输入 ${fmtTokens(m.inputTokens)} / 输出 ${fmtTokens(m.outputTokens)}`;
+      const mTip = `${m.calls || 0} 次 · 缓存 ${fmtTokens(m.cacheTokens)} · 入 ${fmtTokens(m.inputTokens)} / 出 ${fmtTokens(m.outputTokens)}`;
       return `
         <div class="row stat" data-tip-title="${esc(m.modelName)}" data-tip="${esc(mTip)}">
           <div class="who">
@@ -1607,15 +1644,15 @@
           <div class="num"><b>${fmtTokens(m.totalTokens)}</b></div>
           <div class="cost">${fmtMoney(m.totalUsd)}</div>
         </div>`;
-    }).join('') : renderEmptyState('暂无模型统计', '所选时间区间内没有模型调用记录');
+    }).join('') : renderEmptyState('暂无模型统计');
 
     const accts = (rep.byAccount && rep.byAccount.length) ? rep.byAccount : (rep.byInstance || []);
     const maxAcctUsd = Math.max(0.0001, ...accts.map((a) => a.totalUsd || 0));
     $('tel-inst-list').innerHTML = accts.length ? accts.map((a) => {
       const sharePct = Math.max(2, Math.round(((a.totalUsd || 0) / maxAcctUsd) * 100));
       const label = a.account || a.instanceId || '--';
-      const slots = (a.instanceIds && a.instanceIds.length > 1) ? ` · 实例 ${a.instanceIds.join(' + ')}` : '';
-      const aTip = `${a.calls || 0} 次调用 · 缓存命中 ${(a.cacheRate || 0).toFixed(1)}%${slots}`;
+      const slots = (a.instanceIds && a.instanceIds.length > 1) ? ` · ${a.instanceIds.join(' + ')}` : '';
+      const aTip = `${a.calls || 0} 次 · 命中 ${(a.cacheRate || 0).toFixed(1)}%${slots}`;
       return `
         <div class="row stat" data-tip-title="${esc(label)}" data-tip="${esc(aTip)}">
           <div class="who">
@@ -1625,22 +1662,22 @@
           <div class="num"><b>${fmtTokens(a.totalTokens)}</b></div>
           <div class="cost">${fmtMoney(a.totalUsd)}</div>
         </div>`;
-    }).join('') : renderEmptyState('暂无账号统计', '所选时间区间内没有账号消耗记录');
+    }).join('') : renderEmptyState('暂无账号统计');
 
     const calls = rep.recentCalls || [];
     $('tel-calls-body').innerHTML = calls.length ? calls.map((rc, idx) => `
-      <tr class="clickable" data-call-idx="${idx}" data-tip="点击查看此次调用详情">
+      <tr class="clickable" data-call-idx="${idx}">
         <td class="mono">${esc(rc.timeStr)}</td>
         <td class="clip" data-tip="${esc(rc.account || rc.instanceId)}">${esc(rc.account || rc.instanceId)}</td>
-        <td class="clip" data-tip="${esc(rc.title || rc.cascadeId || '未命名会话')}">${esc(rc.title || rc.cascadeId || '未命名会话')}</td>
+        <td class="clip" data-tip="${esc(rc.title || rc.cascadeId || '未命名')}">${esc(rc.title || rc.cascadeId || '未命名')}</td>
         <td class="clip">${esc(rc.modelName)}</td>
-        <td>${fmtTokens(rc.inputTokens)}</td>
-        <td>${fmtTokens(rc.cacheTokens)}</td>
-        <td>${fmtTokens(rc.outputTokens)}</td>
-        <td class="mono">${rc.tps > 0 ? `${rc.tps.toFixed(1)} t/s` : '--'}${rc.ttftMs > 0 ? ` · ${fmtMsShort(rc.ttftMs)}` : ''}</td>
-        <td style="color:var(--green);font-weight:600">${fmtMoney(rc.usd)}</td>
+        <td class="num">${fmtTokens(rc.inputTokens)}</td>
+        <td class="num">${fmtTokens(rc.cacheTokens)}</td>
+        <td class="num">${fmtTokens(rc.outputTokens)}</td>
+        <td class="num mono">${rc.tps > 0 ? `${rc.tps.toFixed(1)}` : '--'}${rc.ttftMs > 0 ? ` · ${fmtMsShort(rc.ttftMs)}` : ''}</td>
+        <td class="num" style="color:var(--green);font-weight:500">${fmtMoney(rc.usd)}</td>
       </tr>
-    `).join('') : '<tr><td colspan="9" style="padding:22px 12px;color:var(--muted);text-align:center">暂无调用明细</td></tr>';
+    `).join('') : '<tr><td colspan="9" style="padding:26px 12px;color:var(--muted);text-align:center">暂无调用记录</td></tr>';
     syncActiveTipAfterRender();
   }
 
@@ -1764,63 +1801,72 @@
     const data = state.sessions;
     if (!data) return;
 
-    const live = data.live || [];
-    $('live-sessions-list').innerHTML = live.length ? live.map((s) => {
+    const live = (data.live || []).slice().sort((a, b) => {
+      const rank = (st) => (st === 'waiting_approval' ? 0 : st === 'running' ? 1 : st === 'error' ? 2 : 3);
+      return rank(a.state) - rank(b.state);
+    });
+    const renderLiveRow = (s) => {
       const wait = s.state === 'waiting_approval';
       const cls = wait ? 'warn' : s.state === 'running' ? 'ok' : s.state === 'error' ? 'err' : '';
-      const label = wait ? '待确认' : s.state === 'running' ? '运行中' : s.state === 'error' ? '运行异常' : '空闲';
+      const label = wait ? '待确认' : s.state === 'running' ? '运行' : s.state === 'error' ? '异常' : '空闲';
       const modelLabel = (!s.model || s.model.toLowerCase() === 'unknown') ? '默认模型' : s.model;
-      const liveTip = `${s.workspace || '未绑定工作区'} · ${modelLabel} · 已运行 ${fmtDurationZh(s.durationSec)}${s.lastTool ? ` · 最近工具 ${s.lastTool}` : ''}`;
+      const liveTip = [s.workspace || '', modelLabel, fmtDurationZh(s.durationSec), s.lastTool || ''].filter(Boolean).join(' · ');
       return `
         <div class="row" data-tip="${esc(liveTip)}">
           <span class="ci-dot ${cls}"></span>
           <div class="who">
-            <div class="name"><span class="mono">${esc(s.instanceId)}</span> · ${esc(s.title || s.conversationId || '活跃会话')}</div>
+            <div class="name">${esc(s.title || s.conversationId || '活跃会话')}</div>
           </div>
-          <span class="badge ${cls}">${label}</span>
-          <button type="button" class="text" data-act="focus" data-id="${esc(s.instanceId)}">聚焦窗口</button>
+          <span class="badge pill ${cls}">${label}</span>
+          <button type="button" class="text ghost" data-act="focus" data-id="${esc(s.instanceId)}">聚焦</button>
         </div>`;
-    }).join('') : renderEmptyState('当前没有活跃会话', '当客户端正在执行对话任务或等待人工确认时，会在此处实时显示进度');
+    };
+    const liveLimit = 6;
+    $('live-sessions-list').innerHTML = live.length
+      ? live.slice(0, liveLimit).map(renderLiveRow).join('')
+        + (live.length > liveLimit
+          ? `<details class="more-fold"><summary>展开其余 ${live.length - liveLimit} 条</summary>${live.slice(liveLimit).map(renderLiveRow).join('')}</details>`
+          : '')
+      : renderEmptyState('暂无进行中会话');
 
     const ctxs = data.contexts || [];
     $('context-cards').innerHTML = ctxs.length ? ctxs.map((entry, idx) => {
       const c = entry.context || {};
       const pct = Math.max(0, Math.min(100, c.usagePct || 0));
-      const cls = pct >= 80 ? 'danger' : pct >= 60 ? 'warn' : '';
+      const cls = pct >= 80 ? 'danger' : pct >= 60 ? 'warn' : 'ctx';
       const owner = entry.account || entry.instanceId;
       const topGroups = (c.tokenBreakdown || []).slice(0, 4).map((g) => `${localizeContextGroup(g.name)} ${fmtTokens(g.numTokens)}`).join(' · ');
-      const ctxTip = [c.model || '默认模型', topGroups, '点击查看 /context 构成与增长曲线'].filter(Boolean).join(' | ');
+      const ctxTip = [c.model || '默认模型', topGroups].filter(Boolean).join(' · ');
       return `
-        <div class="subscription-card clickable" data-ctx-idx="${idx}" data-tip="${esc(ctxTip)}">
+        <div class="subscription-card is-online clickable" data-ctx-idx="${idx}" data-tip="${esc(ctxTip)}">
           <div class="subscription-head">
             <b>${esc(owner)}</b>
             <span class="inst-name">${esc(c.title || c.cascadeId || '当前会话')}</span>
-            <span class="badge ${pct >= 80 ? 'err' : pct >= 60 ? 'warn' : 'accent'}" style="margin-left:auto">${pct.toFixed(1)}%</span>
+            <div class="subscription-head-right">
+              <span class="badge pill ${pct >= 80 ? 'err' : pct >= 60 ? 'warn' : 'accent'}">${pct.toFixed(1)}%</span>
+            </div>
           </div>
-          <div class="quota-track" style="margin:6px 0"><i class="${cls}" style="width:${pct}%"></i></div>
+          <div class="quota-track"><i class="${cls}" style="width:${pct}%"></i></div>
           <div class="ctx-foot-meta">
             <span class="mono">${fmtTokens(c.estimatedTokensUsed)} / ${fmtTokens(c.maxContextTokens)}</span>
             ${pct >= 80 ? '<span class="badge warn">建议压缩</span>' : `<span>${esc(c.model || '默认模型')}</span>`}
           </div>
         </div>`;
-    }).join('') : `<div class="list" style="grid-column:1/-1">${renderEmptyState('暂无活跃上下文窗口', '客户端启动并加载会话后，将自动展示实时上下文水位与构成占比')}</div>`;
+    }).join('') : `<div class="list" style="grid-column:1/-1">${renderEmptyState('暂无活跃上下文')}</div>`;
 
     const hits = data.hits || [];
     const hasQuery = $('session-search-input').value.trim().length > 0;
     $('session-hits').innerHTML = hits.length ? hits.map((h, idx) => {
-      const hitTip = `${h.workspace || '无工作区路径'} · ${h.stepCount || 0} 步对话${h.modifiedAt ? ` · ${h.modifiedAt}` : ''}`;
+      const hitTip = `${h.workspace || '无工作区'} · ${h.stepCount || 0} 步${h.modifiedAt ? ` · ${h.modifiedAt}` : ''}`;
       return `
         <div class="row clickable" data-hit-idx="${idx}" data-tip="${esc(hitTip)}">
-          <span class="badge">${esc(h.account || h.instanceId)}</span>
           <div class="who">
-            <div class="name">${esc(h.title || h.cascadeId || '未命名会话')}</div>
-            ${hasQuery && h.snippet ? `<div class="sub hit-snippet" style="color:var(--fg-2)">${esc(h.snippet)}</div>` : ''}
+            <div class="name">${esc(h.title || h.cascadeId || '未命名')}</div>
+            ${hasQuery && h.snippet ? `<div class="sub hit-snippet">${esc(h.snippet)}</div>` : ''}
           </div>
+          <span class="badge">${esc(h.account || h.instanceId)}</span>
         </div>`;
-    }).join('') : renderEmptyState(
-      hasQuery ? '未找到匹配的会话记录' : '暂无历史会话记录',
-      hasQuery ? '请尝试更换搜索关键词，或将右侧筛选切换为「全部账号」' : '本地会话数据库产生记录后可在此全文检索',
-    );
+    }).join('') : renderEmptyState(hasQuery ? '未找到匹配会话' : '暂无历史会话');
     syncActiveTipAfterRender();
   }
 
@@ -1837,13 +1883,13 @@
   function renderDoctor() {
     const rep = state.doctor;
     if (!rep) return;
-    const verParts = [`客户端版本 ${rep.mainVersion || '未检测'}`];
+    const verParts = [`版本 ${rep.mainVersion || '--'}`];
     if (rep.ideVersion) verParts.push(`内核 ${rep.ideVersion}`);
     const warnErr = (rep.warnCount || 0) + (rep.errorCount || 0);
-    verParts.push(`${rep.okCount || 0} 项正常 · ${warnErr} 项需关注`);
+    const total = (rep.okCount || 0) + warnErr;
     const docVerEl = $('doctor-versions-sub');
     if (docVerEl) {
-      docVerEl.textContent = `${rep.mainVersion || '--'} · ${rep.okCount || 0}/${(rep.okCount || 0) + warnErr} 正常`;
+      docVerEl.textContent = `${rep.mainVersion || '--'} · ${rep.okCount || 0}/${total}`;
       docVerEl.dataset.tip = verParts.join(' · ');
     }
 
@@ -1860,31 +1906,31 @@
       const docKey = String(c.id || c.title || '');
       return `
         <details class="doc-item" data-doc-key="${esc(docKey)}"${openDocs.has(docKey) ? ' open' : ''}>
-          <summary class="row"${detailText ? ` data-tip="${esc(detailText)}"` : ''}>
+          <summary class="row">
             <span class="ci-dot ${cls}"></span>
             <div class="who"><div class="name">${esc(c.title)}</div></div>
-            <span class="badge ${cls}">${label}</span>
+            <span class="badge pill ${cls}">${label}</span>
           </summary>
           ${detailText ? `<div class="doc-detail">${esc(detailText)}</div>` : ''}
         </details>`;
-    }).join('') : renderEmptyState('暂无体检项目', '正在等待后台返回环境诊断结果');
+    }).join('') : renderEmptyState('暂无体检项');
 
     const targets = state.overview?.cdpTargets || [];
     const zhEnabled = !!state.overview?.cdpZhEnabled;
     $('cdp-table-body').innerHTML = targets.length ? targets.map((t, idx) => `
-      <tr class="clickable" data-cdp-idx="${idx}" data-tip="点击查看窗口注入诊断详情">
+      <tr class="clickable" data-cdp-idx="${idx}">
         <td class="mono">${esc(t.instanceId)}</td>
         <td class="mono">${t.port}</td>
         <td class="clip" data-tip="${esc(t.title)}">${esc(t.title || '客户端窗口')}</td>
-        <td>${t.zhInjected ? '<span class="badge ok">已加载</span>' : zhEnabled ? '<span class="badge warn">待注入</span>' : '<span class="badge">未开启</span>'}</td>
-        <td>${t.hudActive ? '<span class="badge ok">已就绪</span>' : '<span class="badge">未挂载</span>'}</td>
-        <td>
-          <button type="button" class="text ${t.lastError ? 'danger' : ''}" data-cdp-idx="${idx}" style="height:22px;padding:0 8px;font-size:11.5px">
-            ${t.lastError ? '查看异常' : '查看详情'}
+        <td>${t.zhInjected ? '<span class="badge pill ok">已加载</span>' : zhEnabled ? '<span class="badge pill warn">待注入</span>' : '<span class="badge pill">未开启</span>'}</td>
+        <td>${t.hudActive ? '<span class="badge pill ok">已就绪</span>' : '<span class="badge pill">未挂载</span>'}</td>
+        <td class="num">
+          <button type="button" class="text ${t.lastError ? 'danger' : 'ghost'}" data-cdp-idx="${idx}" style="height:24px;padding:0 8px;font-size:12px">
+            ${t.lastError ? '异常' : '详情'}
           </button>
         </td>
       </tr>
-    `).join('') : '<tr><td colspan="6" style="padding:22px 12px;color:var(--muted);text-align:center">暂无运行中的 CDP 注入目标窗口（Antigravity 2.33+ 已关闭默认 CDP 端口，可直接使用插件 MCP App 或 Web 控制台）</td></tr>';
+    `).join('') : '<tr><td colspan="6" style="padding:26px 12px;color:var(--muted);text-align:center">暂无 CDP 注入窗口</td></tr>';
     syncActiveTipAfterRender();
   }
 
@@ -1914,10 +1960,10 @@
     const sum = state.cache;
     if (!sum) return;
     $('cache-kpis').innerHTML = `
-      <div class="kpi"><b>${fmtBytes(sum.totalBytes)}</b><span>本地缓存总占用</span></div>
-      <div class="kpi"><b style="color:var(--accent)">${fmtBytes(sum.reclaimableBytes)}</b><span>可安全释放</span></div>
-      <div class="kpi"><b>${sum.keepCount} 条</b><span>单实例保留数</span></div>
-      <div class="kpi"><b>${(sum.items || []).length} 条</b><span>已扫描会话</span></div>
+      <div class="kpi"><span class="kpi-label">总占用</span><div class="kpi-val"><b>${fmtBytes(sum.totalBytes)}</b></div></div>
+      <div class="kpi"><span class="kpi-label">可释放</span><div class="kpi-val"><b style="color:var(--accent)">${fmtBytes(sum.reclaimableBytes)}</b></div></div>
+      <div class="kpi"><span class="kpi-label">保留条数</span><div class="kpi-val"><b>${sum.keepCount}</b></div></div>
+      <div class="kpi"><span class="kpi-label">已扫描</span><div class="kpi-val"><b>${(sum.items || []).length}</b></div></div>
     `;
 
     const items = getFilteredCacheItems(sum.items).slice(0, 120);
@@ -1925,12 +1971,12 @@
       <tr>
         <td class="clip" data-tip="${esc(it.instanceId)}">${esc(it.account || it.instanceId)}</td>
         <td class="clip" data-tip="${esc(it.uuid)}">${esc(it.title || it.uuid)}</td>
-        <td>${fmtBytes(it.brainBytes)}</td>
-        <td>${fmtBytes(it.convBytes)}</td>
-        <td><b>${fmtBytes(it.totalBytes)}</b></td>
-        <td>${it.protected ? '<span class="badge ok">受保护保留</span>' : '<span class="badge warn">可安全清理</span>'}</td>
+        <td class="num">${fmtBytes(it.brainBytes)}</td>
+        <td class="num">${fmtBytes(it.convBytes)}</td>
+        <td class="num"><b>${fmtBytes(it.totalBytes)}</b></td>
+        <td>${it.protected ? '<span class="badge pill ok">保留</span>' : '<span class="badge pill warn">可清理</span>'}</td>
       </tr>
-    `).join('') : '<tr><td colspan="6" style="padding:22px 12px;color:var(--muted);text-align:center">暂无本地缓存条目</td></tr>';
+    `).join('') : '<tr><td colspan="6" style="padding:26px 12px;color:var(--muted);text-align:center">暂无缓存记录</td></tr>';
     syncActiveTipAfterRender();
   }
 
@@ -2014,11 +2060,11 @@
   function render100DotGridHTML(groups, maxTok) {
     if (!Array.isArray(groups) || !groups.length || !maxTok) return '';
     const colors = {
-      system: '#64748b',
-      custom: '#8b5cf6',
-      user: '#0ea5e9',
-      agent: '#3b82f6',
-      tool: '#f59e0b',
+      system: 'var(--c7)',
+      custom: 'var(--c6)',
+      user: 'var(--c2)',
+      agent: 'var(--c1)',
+      tool: 'var(--c4)',
     };
     const buckets = { system: 0, custom: 0, user: 0, agent: 0, tool: 0 };
     for (const g of groups) {
@@ -2313,6 +2359,95 @@
     }
   }
 
+  // ---- ⌘K 快速跳转 ----
+  let qfItems = [];
+  let qfFocusIdx = 0;
+
+  function buildQuickFindItems(rawQuery) {
+    const q = String(rawQuery || '').trim().toLowerCase();
+    const groups = [];
+    const views = [
+      { id: 'overview', label: '总览', meta: '视图', run: () => switchView('overview') },
+      { id: 'telemetry', label: '账单', meta: '视图', run: () => switchView('telemetry') },
+      { id: 'sessions', label: '会话', meta: '视图', run: () => switchView('sessions') },
+      { id: 'doctor', label: '体检', meta: '视图', run: () => switchView('doctor') },
+      { id: 'storage', label: '缓存', meta: '视图', run: () => switchView('storage') },
+      { id: 'settings', label: '设置', meta: '视图', run: () => switchView('settings') },
+    ].filter((it) => !q || it.label.toLowerCase().includes(q) || it.id.includes(q));
+    if (views.length) groups.push({ title: '页面', items: views });
+
+    const accts = (state.overview?.accounts || [])
+      .map((a) => ({
+        label: a.displayName || a.email || a.key,
+        meta: (a.onlineCount || 0) > 0 ? '在线 · 账单' : '离线 · 账单',
+        run: () => {
+          state.telInst = a.key;
+          syncFieldLabel('tel-inst-filter');
+          switchView('telemetry');
+        },
+      }))
+      .filter((it) => !q || it.label.toLowerCase().includes(q));
+    if (accts.length) groups.push({ title: '账号', items: accts });
+
+    const actions = [
+      { label: '新建实例', meta: '操作', run: () => openCreateModal() },
+      { label: '同步窗口浮窗', meta: '操作', run: () => $('btn-cdp-now')?.click() },
+      { label: '刷新数据', meta: '操作', run: () => loadOverview(true) },
+      { label: '切换深浅外观', meta: '外观', run: () => $('btn-theme')?.click() },
+      { label: '切换中 / EN 语言', meta: '语言', run: () => $('btn-lang')?.click() },
+    ].filter((it) => !q || it.label.toLowerCase().includes(q));
+    if (actions.length) groups.push({ title: '操作', items: actions });
+
+    return groups;
+  }
+
+  function renderQuickFindList() {
+    const host = $('qf-list');
+    if (!host) return;
+    const groups = buildQuickFindItems($('qf-input')?.value || '');
+    qfItems = [];
+    if (!groups.length) {
+      host.innerHTML = '<div class="qf-empty">无匹配项</div>';
+      qfFocusIdx = -1;
+      return;
+    }
+    let idx = 0;
+    host.innerHTML = groups.map((g) => {
+      const rows = g.items.map((item) => {
+        const curIdx = idx++;
+        qfItems.push(item);
+        return `
+          <button type="button" class="qf-item${curIdx === qfFocusIdx ? ' focus' : ''}" data-qf-idx="${curIdx}">
+            <span class="qf-item-main"><span>${esc(item.label)}</span></span>
+            <span class="qf-item-meta">${esc(item.meta)}</span>
+          </button>`;
+      }).join('');
+      return `<div><div class="qf-group-title">${esc(g.title)}</div>${rows}</div>`;
+    }).join('');
+    if (qfFocusIdx < 0 || qfFocusIdx >= qfItems.length) qfFocusIdx = 0;
+    updateQuickFindFocus();
+  }
+
+  function updateQuickFindFocus() {
+    const host = $('qf-list');
+    if (!host) return;
+    host.querySelectorAll('.qf-item').forEach((el, i) => {
+      const on = i === qfFocusIdx;
+      el.classList.toggle('focus', on);
+      if (on) el.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  function openQuickFind() {
+    const modal = $('quick-find-modal');
+    if (!modal) return;
+    const input = $('qf-input');
+    if (input) input.value = '';
+    qfFocusIdx = 0;
+    renderQuickFindList();
+    openModal(modal, input);
+  }
+
   // ---- 新建隔离实例弹窗打开 / 关闭 ----
   function openCreateModal() {
     $('cp-error').hidden = true;
@@ -2326,8 +2461,55 @@
 
   // ---- 全局交互事件绑定 ----
   function wireEvents() {
-    document.querySelectorAll('#main-nav .opt').forEach((btn) => {
+    document.querySelectorAll('#main-nav .opt, #mobile-nav .mnav-btn').forEach((btn) => {
       btn.addEventListener('click', () => switchView(btn.dataset.view));
+    });
+
+    // 侧栏折叠（持久化）
+    const shell = $('app-shell');
+    if (shell && safeStorageGet(localStorage, 'agymate-sidebar-collapsed') === '1') {
+      shell.classList.add('sidebar-collapsed');
+    }
+    $('btn-sidebar-toggle')?.addEventListener('click', () => {
+      if (!shell) return;
+      const collapsed = shell.classList.toggle('sidebar-collapsed');
+      safeStorageSet(localStorage, 'agymate-sidebar-collapsed', collapsed ? '1' : '0');
+    });
+
+    // 设置页分组切换
+    document.querySelectorAll('#settings-nav .settings-tab[data-stab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.stab;
+        document.querySelectorAll('#settings-nav .settings-tab').forEach((t) => {
+          const on = t.dataset.stab === target;
+          t.classList.toggle('on', on);
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('#settings-form .settings-pane[data-spane]').forEach((p) => {
+          p.hidden = p.dataset.spane !== target;
+        });
+      });
+    });
+
+    // ⌘K 快速跳转事件
+    $('btn-quick-find')?.addEventListener('click', openQuickFind);
+    $('qf-close-btn')?.addEventListener('click', () => closeModal($('quick-find-modal')));
+    $('qf-input')?.addEventListener('input', () => {
+      qfFocusIdx = 0;
+      renderQuickFindList();
+    });
+    $('qf-list')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.qf-item[data-qf-idx]');
+      if (!btn) return;
+      const picked = qfItems[Number(btn.dataset.qfIdx)];
+      closeModal($('quick-find-modal'), true);
+      if (picked && typeof picked.run === 'function') picked.run();
+    });
+    $('qf-list')?.addEventListener('mouseover', (e) => {
+      const btn = e.target.closest('.qf-item[data-qf-idx]');
+      if (!btn) return;
+      qfFocusIdx = Number(btn.dataset.qfIdx);
+      updateQuickFindFocus();
     });
 
     document.querySelectorAll('#cur-seg .opt[data-currency]').forEach((btn) => {
@@ -2346,7 +2528,7 @@
       btn.disabled = true;
       try {
         const res = await syncCDPNow();
-        showStatus(`窗口浮窗已同步（共 ${(res.targets || []).length} 个窗口）`, 'ok');
+        showStatus(`浮窗已同步（${(res.targets || []).length} 个窗口）`, 'ok');
         loadOverview(false);
       } catch (e) {
         showStatus('同步浮窗失败：' + humanizeError(e), 'err');
@@ -2370,7 +2552,7 @@
     $('dtl-close-btn').addEventListener('click', () => closeModal($('detail-modal')));
 
     // 点击遮罩关闭模态框
-    ['create-modal', 'confirm-modal', 'detail-modal'].forEach((mid) => {
+    ['create-modal', 'confirm-modal', 'detail-modal', 'quick-find-modal'].forEach((mid) => {
       const mEl = $(mid);
       if (!mEl) return;
       mEl.addEventListener('click', (e) => {
@@ -2538,19 +2720,17 @@
           const orphanCnt = Number(colabBtn.dataset.orphan || 0);
           const isAll = !email;
           openConfirmModal({
-            title: isAll ? '确认执行全池清场' : '确认终止云端算力实例',
-            sub: isAll ? '将作用于所有已绑定的云算力账号' : `目标账号：${email}`,
-            desc: isAll
-              ? '此操作将强制释放全部已绑定账号下正在运行或孤儿残留的云端虚拟机实例，虚拟机内存中未持久化保存的数据将会丢失。'
-              : '此操作将立即终止并释放该账号下所有运行中与孤儿残留的云端虚拟机实例，防止继续消耗算力点。',
+            title: isAll ? '全池清场' : '终止云端实例',
+            sub: isAll ? '全部已绑定账号' : email,
+            desc: '将终止所有运行中与孤儿虚拟机，未保存的内存数据将丢失。',
             tone: 'danger',
             danger: true,
-            okLabel: isAll ? '全部清场' : '确认清场',
-            busyLabel: '正在清场…',
+            okLabel: '确认清场',
+            busyLabel: '清场中…',
             meta: [
-              { k: '作用范围', v: isAll ? '全部已绑定账号' : email },
-              { k: '运行中实例', v: `${activeCnt} 台`, cls: activeCnt > 0 ? 'warn' : '' },
-              { k: '孤儿残留实例', v: `${orphanCnt} 台`, cls: orphanCnt > 0 ? 'danger' : '' },
+              { k: '范围', v: isAll ? '全部账号' : email },
+              { k: '运行中', v: `${activeCnt} 台`, cls: activeCnt > 0 ? 'warn' : '' },
+              { k: '孤儿', v: `${orphanCnt} 台`, cls: orphanCnt > 0 ? 'danger' : '' },
             ],
             onConfirm: async () => {
               const res = await api('/api/colab/nuke', { method: 'POST', body: JSON.stringify({ account: email }) });
@@ -2561,7 +2741,7 @@
               } else {
                 await loadOverview(false);
               }
-              showStatus(`清场完成 · 已终止 ${res.nuke?.terminatedCount || 0} 台云端虚拟机`, 'ok');
+              showStatus(`已终止 ${res.nuke?.terminatedCount || 0} 台虚拟机`, 'ok');
             },
           });
           return;
@@ -2569,18 +2749,16 @@
         if (cact === 'remove') {
           const isKeychain = colabBtn.dataset.source === 'colab-safe';
           openConfirmModal({
-            title: isKeychain ? '隐藏云算力账号卡片' : '解绑云算力账号',
+            title: isKeychain ? '隐藏账号' : '解绑账号',
             sub: email,
-            desc: isKeychain
-              ? '该账号来自本地系统钥匙串，确认后将从总览面板隐藏其云算力状态卡片。'
-              : '解绑后将从本地安全移除该账号的网页授权凭据，后续如需监控可随时重新绑定。',
+            desc: isKeychain ? '隐藏该钥匙串账号的 Colab 卡片。' : '移除本地授权凭据，后续可重新绑定。',
             tone: isKeychain ? 'warn' : 'danger',
             danger: !isKeychain,
-            okLabel: isKeychain ? '确认隐藏' : '确认解绑',
+            okLabel: isKeychain ? '隐藏' : '解绑',
             busyLabel: '处理中…',
             meta: [
-              { k: '账号邮箱', v: email },
-              { k: '凭据来源', v: isKeychain ? '系统钥匙串' : '网页授权' },
+              { k: '账号', v: email },
+              { k: '来源', v: isKeychain ? '钥匙串' : '网页授权' },
             ],
             onConfirm: async () => {
               const res = await api('/api/colab/accounts/remove', { method: 'POST', body: JSON.stringify({ email }) });
@@ -2591,7 +2769,7 @@
               } else {
                 await loadOverview(false);
               }
-              showStatus(`${res.removed ? '已解绑账号' : '已隐藏卡片'} ${email}`, 'ok');
+              showStatus(`${res.removed ? '已解绑' : '已隐藏'} ${email}`, 'ok');
             },
           });
           return;
@@ -2610,22 +2788,20 @@
       if (act === 'stop') {
         const hasBusy = instObj && (instObj.liveState === 'running' || instObj.liveState === 'waiting_approval');
         openConfirmModal({
-          title: '确认停止客户端实例',
+          title: '停止实例',
           sub: instLabel,
-          desc: hasBusy
-            ? '检测到该客户端实例当前仍有正在执行或等待确认的对话任务！停止实例将直接关闭其客户端窗口，请确认是否继续。'
-            : '确认关闭该隔离客户端实例窗口吗？关闭后可随时在总览页重新启动。',
+          desc: hasBusy ? '当前仍有活跃任务，停止将直接关闭窗口。' : '关闭该隔离窗口，可随时重启。',
           tone: hasBusy ? 'danger' : 'warn',
           danger: true,
-          okLabel: '停止实例',
-          busyLabel: '正在停止…',
+          okLabel: '停止',
+          busyLabel: '停止中…',
           meta: [
-            { k: '目标实例', v: instLabel },
-            { k: '当前状态', v: hasBusy ? '有活跃任务运行中' : '在线空闲', cls: hasBusy ? 'danger' : '' },
+            { k: '实例', v: instLabel },
+            { k: '状态', v: hasBusy ? '任务运行中' : '空闲', cls: hasBusy ? 'danger' : '' },
           ],
           onConfirm: async () => {
             await api(`/api/instances/${encodeURIComponent(id)}/stop`, { method: 'POST', body: '{}' });
-            showStatus(`已停止实例 ${id}`, 'ok');
+            showStatus(`已停止 ${id}`, 'ok');
             flashEl(card);
             setTimeout(() => loadOverview(true), 600);
           },
@@ -2635,20 +2811,20 @@
 
       if (act === 'delete') {
         openConfirmModal({
-          title: '确认删除多开隔离实例',
+          title: '删除实例',
           sub: instLabel,
-          desc: '删除后将移除该隔离实例的配置注册与目录档案，此操作不可撤销。若仅需临时关闭窗口，请使用「停止」功能。',
+          desc: '将移除该隔离实例的配置与目录，此操作不可撤销。',
           tone: 'danger',
           danger: true,
-          okLabel: '确认删除',
-          busyLabel: '正在删除…',
+          okLabel: '删除',
+          busyLabel: '删除中…',
           meta: [
-            { k: '实例标识', v: id },
-            ...(instObj?.account ? [{ k: '关联账号', v: instObj.account }] : []),
+            { k: '标识', v: id },
+            ...(instObj?.account ? [{ k: '账号', v: instObj.account }] : []),
           ],
           onConfirm: async () => {
             await api(`/api/instances/${encodeURIComponent(id)}/delete`, { method: 'POST', body: '{}' });
-            showStatus(`已删除隔离实例 ${id}`, 'ok');
+            showStatus(`已删除 ${id}`, 'ok');
             setTimeout(() => loadOverview(true), 300);
           },
         });
@@ -2682,8 +2858,42 @@
       }
     });
 
-    // 全局键盘导航：下拉菜单方向键、Escape 关闭、模态框焦点陷阱（Focus Trap）
+    // 全局键盘导航：⌘K 快速跳转、下拉菜单方向键、Escape 关闭、模态框焦点陷阱
     document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const qfModal = $('quick-find-modal');
+        if (qfModal && !qfModal.hidden) {
+          closeModal(qfModal);
+        } else if (modalStack.length === 0) {
+          openQuickFind();
+        }
+        return;
+      }
+
+      const qfModal = $('quick-find-modal');
+      if (qfModal && !qfModal.hidden) {
+        if (e.key === 'ArrowDown' && qfItems.length > 0) {
+          e.preventDefault();
+          qfFocusIdx = (qfFocusIdx + 1) % qfItems.length;
+          updateQuickFindFocus();
+          return;
+        }
+        if (e.key === 'ArrowUp' && qfItems.length > 0) {
+          e.preventDefault();
+          qfFocusIdx = (qfFocusIdx - 1 + qfItems.length) % qfItems.length;
+          updateQuickFindFocus();
+          return;
+        }
+        if (e.key === 'Enter' && qfFocusIdx >= 0 && qfFocusIdx < qfItems.length) {
+          e.preventDefault();
+          const picked = qfItems[qfFocusIdx];
+          closeModal(qfModal, true);
+          if (picked && typeof picked.run === 'function') picked.run();
+          return;
+        }
+      }
+
       if (e.key === 'Escape' && $('tip-host') && !$('tip-host').hidden) {
         hideTip(true);
       }
@@ -2836,7 +3046,7 @@
       const filtered = getFilteredCacheItems(sum?.items || []);
       const reclaimable = filtered.filter((it) => !it.protected);
       if (reclaimable.length === 0) {
-        showStatus('当前没有可清理的历史缓存，所有会话均在受保护保留范围内', 'ok', 3600);
+        showStatus('暂无可清理的缓存', 'ok', 3000);
         return;
       }
       const estBytes = reclaimable.reduce((acc, it) => acc + Number(it.totalBytes || 0), 0);
@@ -2844,18 +3054,18 @@
       const scopeLabel = (scopeOpt?.label || '全部账号').trim();
 
       openConfirmModal({
-        title: '确认清理历史会话缓存',
-        sub: `清理范围：${scopeLabel}`,
-        desc: '系统将自动保留每个客户端实例最近活跃的受保护会话与正在运行的会话，仅移除早期闲置历史缓存文件。清理后对应的旧会话记录将不可恢复。',
+        title: '清理历史缓存',
+        sub: scopeLabel,
+        desc: '保留活跃及最近会话，仅移除早期闲置缓存，清理后不可恢复。',
         tone: 'danger',
         danger: true,
-        okLabel: '立即清理',
-        busyLabel: '正在清理…',
+        okLabel: '清理',
+        busyLabel: '清理中…',
         meta: [
-          { k: '目标范围', v: scopeLabel },
-          { k: '单实例保留策略', v: `最近 ${keepCount} 条会话` },
-          { k: '预计清理条目', v: `${reclaimable.length} 条`, cls: 'warn' },
-          { k: '预计释放空间', v: fmtBytes(estBytes), cls: 'danger' },
+          { k: '范围', v: scopeLabel },
+          { k: '保留', v: `最近 ${keepCount} 条` },
+          { k: '将清理', v: `${reclaimable.length} 条`, cls: 'warn' },
+          { k: '释放空间', v: fmtBytes(estBytes), cls: 'danger' },
         ],
         onConfirm: async () => {
           const res = await api('/api/cache/clean', {

@@ -2,6 +2,17 @@
 
 All notable changes to AgyMate are documented in this file.
 
+## [0.5.0] - 2026-11-23
+
+### Changed
+- **Notion Tatami Workspace UI Redesign**: Rebuilt the Web Dashboard (`frontend/`), built-in MCP App (`mcpapp-ui/`), and Magpie boot page (`magpie-plugin/page/`) around crisp paper surfaces (`#ffffff` / `#191919`), warm-stone collapsible workspace sidebar (`#f7f6f3` / `#202020`), `1px` hairlines, 10-hue Tatami status tags, CJK + Latin typography guardrails (`tabular-nums`), and zero-bounce `75ms` / `150ms` motion.
+- **Active vs. Recessed Account Hierarchy**: Online account cards sit on elevated `#ffffff` (`#262625` dark) cards with `1px` borders while offline accounts recede onto borderless `#f6f5f4` (`#222221` dark) stone surfaces; unified multi-instance footers into a single hairline disclosure row.
+- **Settings Sub-Tabs & Copy Decluttering**: Split the 28-row Settings wall into 4 focused tabs (`常规与计价` / `浮窗与汉化` / `通知` / `Colab 算力`), removed 30+ redundant `?` tooltip icons, shortened verbose labels and confirmation dialogs across all views, collapsed overflow live sessions (`> 6`), tightened 26-week heatmap cell sizing, and updated the bilingual i18n dictionary.
+- **Responsive & Sidecar Parity**: Narrow viewports (`<= 780px`) and `sidecar-mode` collapse cleanly into a single-row top navigation bar with zero horizontal overflow or duplicate header titles.
+
+### Added
+- **`⌘K` / `Ctrl+K` Quick Find Modal**: Keyboard-first quick jump across views, per-account billing filters, and common workspace actions with full arrow/Enter/Escape navigation.
+
 ## [0.4.0] - 2026-11-23
 
 ### Added
