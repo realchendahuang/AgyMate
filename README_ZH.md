@@ -18,8 +18,8 @@
   只读扫描本地对话 WAL 数据库（支持今日、昨日、近 5 小时、近 7 天、本月、全部等区间），自动折算 USD / CNY 等效 API 账单、缓存命中节省金额及订阅回本倍数（自动识别 `Pro` `$20` / `Ultra` `$200` 或自定义月费基准）；支持通过 `~/.config/agymate/pricing.json` 热加载自定义模型名称与单价，无需重新编译。
 - **多形态轻量入口（无 Electron/WebView 重壳）**
   - **Antigravity 原生插件 & MCP App（v2.34+）**：安装至 `~/.gemini/config/plugins/agymate`，支持左侧栏 **Plugins > AgyMate** 全页视图、右侧 **`+` > AgyMate** 辅助面板与对话内联卡片（`agymate_hub`），CLI/IDE 自动降级纯文本；
-  - **独立 Web 控制台**：直接访问 `http://127.0.0.1:3778`；
-  - **窗口右上角毛玻璃 HUD 浮窗**：客户端开启 CDP 端口时自动挂载 Shadow DOM 状态胶囊；
+  - **独立 Web 控制台**：直接访问 `http://127.0.0.1:3778`（支持一键中英双语切换）；
+  - **内置 Antigravity 客户端动态中文汉化 & 右上角毛玻璃悬浮窗（HUD）**：内置完整的 Antigravity 2.x 界面中文汉化引擎（支持自定义本地 `inject.js` 覆盖）与可拖拽 Shadow-DOM 状态微胶囊。隔离多开实例会自动附加临时 CDP 端口；针对 Antigravity `2.33+` 关闭默认调试口的官方客户端，可通过 `agymate launch`（或 macOS 运行 `agymate launch --install-app` 生成 `Antigravity (AgyMate).app` 快捷启动器）在不修改官方安装包、不破坏签名的前提下立即恢复悬浮窗与客户端汉化；
   - **Antigravity Sidecar & Magpie 页面插件**：支持窄栏自适应 Sidecar 以及可选 [Magpie](https://github.com/yetone/magpie) 主题融合内嵌页。
 - **安全隔离的多开沙盒生命周期管理**
   基于官方客户端实现多账号隔离运行（`agymate profile create|launch|stop|heal|delete`），自动清理过期锁与修复断链，并对官方 `main` 与 `ide` 实施严格只读保护。
@@ -143,10 +143,12 @@ agymate colab login [--hint user@gmail.com]
 agymate colab remove <email>
 agymate colab nuke [--account <email>]
 
-# 环境健康体检、脱敏排障、窗口浮窗与缓存回收
+# 客户端增强启动（悬浮窗 + 内置汉化）、健康体检与缓存回收
+agymate launch [workspace] [--ide] [--install-app]   # 以 CDP 增强模式启动官方客户端或生成 macOS 快捷启动器
+agymate zh on [--builtin | --script <path>] | off    # 开关 Antigravity 客户端中文汉化
+agymate zh status | inject
 agymate doctor [--fix] [--json] [--redact]
 agymate cache scan | clean [--keep 20]
-agymate zh status | inject
 ```
 
 ---

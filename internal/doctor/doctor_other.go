@@ -100,14 +100,13 @@ func RunChecks(cfg config.Config, instList []instances.Instance, cdpTargets []cd
 		checks = append(checks, cAuth)
 	}
 
-	// 3. Hooks + Plugin MCP App + Sidecar (+ optional CDP inject script)
+	// 3. Hooks + Plugin MCP App + Sidecar (+ built-in Antigravity Chinese localization engine)
 	installed, total, _ := hooks.CheckInstalled(cfg)
 	pluginOK, pluginDetail := CheckPlugin()
 	sidecarOK, detail := CheckSidecar("")
-	zhScriptPath := config.ExpandPath(cfg.CDP.ZhScriptPath)
-	_, zhStatErr := os.Stat(zhScriptPath)
+	zhSource, _ := cdp.ResolveZhSource(cfg.CDP.ZhScriptPath)
 	zhNeeded := cfg.CDP.Enabled && cfg.CDP.ZhInject
-	zhOK := !zhNeeded || zhStatErr == nil
+	zhOK := !zhNeeded || cdp.HasBuiltinZhScript() || zhSource != "未配置"
 	pluginLabel := "未安装"
 	if pluginOK {
 		pluginLabel = "已就绪"
@@ -116,13 +115,22 @@ func RunChecks(cfg config.Config, instList []instances.Instance, cdpTargets []cd
 	if sidecarOK {
 		scLabel = "已注册"
 	}
+	cdpNote := ""
+	if len(cdpTargets) == 0 && foundApp != "" {
+		cdpNote = " | Antigravity 2.33+ 需通过 `agymate launch` 启动以开启浮窗与中文汉化"
+	}
+	extraDetail := fmt.Sprintf("插件: %s | Sidecar: %s", pluginDetail, detail)
+	if zhNeeded {
+		extraDetail += fmt.Sprintf(" | 汉化引擎: %s", zhSource)
+	}
+	extraDetail += cdpNote
 
 	cHooks := CheckResult{
 		ID:        "companion_hooks_sidecar",
 		Title:     "Hooks · 插件 MCP App · Sidecar",
 		Status:    "ok",
 		Summary:   fmt.Sprintf("Hooks %d/%d · 插件 MCP App %s · Sidecar %s · CDP 窗口 %d 个", installed, total, pluginLabel, scLabel, len(cdpTargets)),
-		Detail:    fmt.Sprintf("插件: %s | Sidecar: %s", pluginDetail, detail),
+		Detail:    extraDetail,
 		Fixable:   installed != total || !pluginOK || !sidecarOK || !zhOK,
 		FixAction: "install_integrations",
 	}

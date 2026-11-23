@@ -15,8 +15,8 @@ English | [简体中文](README_ZH.md)
 - **Read-Only SQLite Token Billing & Subscription ROI** — Scans local conversation WAL databases in read-only mode (`today`, `yesterday`, `last_5h`, `last_7d`, `this_month`, `all`) to estimate equivalent API cost (USD / CNY), prompt-cache savings, and Pro (`$20`) / Ultra (`$200`) subscription ROI. Supports custom model rates via `~/.config/agymate/pricing.json`.
 - **Multi-Surface Native Experience**
   - **Antigravity Native Plugin & MCP App (v2.34+)** — Sidebar (`Plugins > AgyMate`), auxiliary pane (`+ > AgyMate`), and inline conversation cards (`agymate_hub`), with graceful text fallback in CLI/IDE.
-  - **Standalone Web Dashboard** — `http://127.0.0.1:3778` (no heavy Electron/WebView wrapper).
-  - **Window Shadow-DOM HUD (CDP)** — Optional floating status capsule in Antigravity windows when a CDP port is active.
+  - **Standalone Web Dashboard** — `http://127.0.0.1:3778` (no heavy Electron/WebView wrapper), supporting instant Chinese / English switching.
+  - **Built-In Antigravity Chinese UI Localization & Floating Window HUD** — Embeds a dynamic Antigravity 2.x Chinese localization engine (`zh_inject.js`, with optional external script override) plus a draggable top-right Shadow-DOM status capsule. Isolated profiles enable CDP automatically; for Antigravity `2.33+` official clients, launch with `agymate launch` (or macOS `agymate launch --install-app` → `Antigravity (AgyMate).app`) without modifying the official app bundle.
   - **Antigravity Sidecar & Magpie Page Plugin** — Narrow-pane adaptive Sidecar (`AUX_PANE`) and optional [Magpie](https://github.com/yetone/magpie) theme-synced integration.
 - **Safe Isolated Multi-Account Profiles** — Provision, heal, launch, stop, and delete isolated Antigravity sandboxes (`agymate profile ...`) with strict read-only protection on official `main` and `ide` slots.
 - **Multi-Account Google Colab Compute Pool** — Built-in PKCE OAuth2 binding (`agymate colab login`), CCU balance & hourly burn tracking, eligible GPU/TPU discovery, and one-click orphan VM teardown (`agymate colab nuke`).
@@ -137,10 +137,12 @@ agymate colab login [--hint user@gmail.com]
 agymate colab remove <email>
 agymate colab nuke [--account <email>]
 
-# Health audit, cache & HUD
+# Health audit, cache, HUD & Antigravity Chinese UI localization
+agymate launch [workspace] [--ide] [--install-app]   # Launch official Antigravity with HUD + Chinese UI
+agymate zh on [--builtin | --script <path>] | off    # Toggle built-in Antigravity Chinese UI engine
+agymate zh status | inject
 agymate doctor [--fix] [--json] [--redact]
 agymate cache scan | clean [--keep 20]
-agymate zh status | inject
 ```
 
 ---

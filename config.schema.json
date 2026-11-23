@@ -41,8 +41,16 @@
       "type": "object",
       "properties": {
         "enabled": { "type": "boolean", "default": true },
-        "zhInject": { "type": "boolean", "default": false },
-        "zhScriptPath": { "type": "string", "default": "~/.antigravity-zh/inject.js" },
+        "zhInject": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable built-in dynamic Chinese localization for Antigravity 2.x client UI."
+        },
+        "zhScriptPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional external inject.js path overriding the built-in Antigravity Chinese localization engine."
+        },
         "windowHud": { "type": "boolean", "default": true },
         "hudPosition": {
           "type": "string",

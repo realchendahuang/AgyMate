@@ -29,7 +29,7 @@ const state = {
   canOpenLinks: false,
 };
 
-const app = new App({ name: "AgyMate", version: "0.3.0" }, {});
+const app = new App({ name: "AgyMate", version: "0.4.0" }, {});
 
 function resolveActiveLang() {
   const pref = String(state.lang || "auto").toLowerCase();

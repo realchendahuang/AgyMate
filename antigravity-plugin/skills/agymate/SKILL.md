@@ -106,7 +106,11 @@ description: >-
 ~/.local/bin/agymate setup --dry-run            # 预览初始化/部署路径
 ~/.local/bin/agymate uninstall --dry-run        # 预览卸载影响范围（高危操作：执行前务必确认）
 
-# 检查或立即刷新运行中 Antigravity 窗口右上角中文 HUD 浮窗
+# 检查或开关 Antigravity 客户端中文汉化与右上角 HUD 浮窗
+~/.local/bin/agymate launch --install-app       # macOS 创建 ~/Applications/Antigravity (AgyMate).app 快捷启动器
+~/.local/bin/agymate launch                     # 以 CDP 增强模式启动官方客户端（开启悬浮窗 + 中文汉化）
+~/.local/bin/agymate zh on                      # 启用内置 Antigravity 客户端中文汉化（--builtin 切回内置 / --script 覆盖）
+~/.local/bin/agymate zh off                     # 关闭客户端中文汉化
 ~/.local/bin/agymate zh status
 ~/.local/bin/agymate zh inject
 curl -fsS -X POST -H "X-AgyMate-Token: $(cat ~/.config/agymate/hub.token)" http://127.0.0.1:3778/api/cdp/sync

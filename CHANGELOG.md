@@ -2,6 +2,18 @@
 
 All notable changes to AgyMate are documented in this file.
 
+## [0.4.0] - 2026-11-23
+
+### Added
+- **Built-in Antigravity Chinese UI Localization Engine**: Embedded the dynamic Antigravity 2.x Chinese localization engine (`internal/cdp/zh_inject.js`) directly inside the AgyMate binary (`cdp.zhInject: true` by default). Works out of the box with zero external files while preserving optional external `inject.js` override (`cdp.zhScriptPath`).
+- **CDP Enhanced Launch for Antigravity 2.33+ (`agymate launch`)**: Added `agymate launch [workspace]` (`--ide`, `--no-cdp`, `--install-app`) to start official Antigravity with an ephemeral localhost CDP port (`--remote-debugging-port=0`) — restoring both the top-right floating HUD and dynamic Chinese UI localization without modifying `/Applications/Antigravity.app` or touching code signatures.
+- **macOS Quick Launcher App (`Antigravity (AgyMate).app`)**: `agymate launch --install-app` generates `~/Applications/Antigravity (AgyMate).app` (with official icon) for one-click Spotlight/Dock launching.
+- **`agymate zh on | off`**: Toggle Antigravity client Chinese localization from CLI (with `--builtin` and `--script <path>` flags) and immediately sync running CDP targets via local Hub; enhanced `agymate zh status` with engine source metadata.
+
+### Changed
+- **Automatic CDP Port for Isolated Profiles**: `agymate profile launch` automatically appends `--remote-debugging-port=0` whenever `cdp.enabled && (cdp.windowHud || cdp.zhInject)` is enabled so multi-account sandboxes always get the floating HUD and Chinese localization on Antigravity 2.33+.
+- **Updated Dashboard Settings & Doctor Checks**: Clarified localization controls in Web Settings (with full Chinese/English i18n) and updated `agymate doctor` to recognize the built-in localization engine and surface `agymate launch` guidance when Antigravity 2.33+ runs without CDP.
+
 ## [0.3.0] - 2026-11-22
 
 ### Added

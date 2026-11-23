@@ -10,7 +10,7 @@ import (
 // Version, Commit, and BuildTime are overridden at link time via -ldflags
 // "-X github.com/realchendahuang/AgyMate/internal/version.<Var>=...".
 var (
-	Version   = "0.3.0"
+	Version   = "0.4.0"
 	Commit    = ""
 	BuildTime = ""
 )

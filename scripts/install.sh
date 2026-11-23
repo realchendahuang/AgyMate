@@ -6,7 +6,7 @@ set -euo pipefail
 # and delegates all setup/migration/plugin registration to `agymate setup`.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${VERSION:-0.3.0}"
+VERSION="${VERSION:-0.4.0}"
 GIT_COMMIT="$(git -C "${ROOT_DIR}" describe --tags --always --dirty 2>/dev/null || git -C "${ROOT_DIR}" rev-parse --short HEAD 2>/dev/null || echo dev)"
 BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 LDFLAGS="-s -w -X github.com/realchendahuang/AgyMate/internal/version.Version=${VERSION} -X github.com/realchendahuang/AgyMate/internal/version.Commit=${GIT_COMMIT} -X github.com/realchendahuang/AgyMate/internal/version.BuildTime=${BUILD_TIME}"

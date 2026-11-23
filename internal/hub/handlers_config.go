@@ -86,9 +86,7 @@ func (s *Server) handlePutConfig(w http.ResponseWriter, r *http.Request) {
 	if next.QuotaWarnPct <= 0 || next.QuotaWarnPct > 100 {
 		next.QuotaWarnPct = 20
 	}
-	if next.CDP.ZhScriptPath == "" {
-		next.CDP.ZhScriptPath = cur.CDP.ZhScriptPath
-	}
+	next.CDP.ZhScriptPath = strings.TrimSpace(next.CDP.ZhScriptPath)
 	next.CDP.HUDPosition = config.NormalizeHUDPosition(next.CDP.HUDPosition)
 	next.Pricing.Mode = config.NormalizePricingMode(next.Pricing.Mode)
 	next.Pricing.Currency = config.NormalizeCurrency(next.Pricing.Currency)

@@ -152,3 +152,53 @@ func TestCreateAndDeleteProfile(t *testing.T) {
 		t.Fatalf("expected %s removed after DeleteProfile", profileDir)
 	}
 }
+
+func TestBuildProfileLaunchArgs(t *testing.T) {
+	ws := t.TempDir()
+	dataDir := filepath.Join(t.TempDir(), "data")
+
+	cfg := config.DefaultConfig()
+	cfg.CDP.Enabled = true
+	cfg.CDP.WindowHUD = true
+	cfg.CDP.ZhInject = true
+
+	args, err := buildProfileLaunchArgs(cfg, dataDir, ws)
+	if err != nil {
+		t.Fatalf("buildProfileLaunchArgs failed: %v", err)
+	}
+	want := []string{"--user-data-dir=" + dataDir, "--remote-debugging-port=0", ws}
+	if len(args) != len(want) {
+		t.Fatalf("expected %d args %v, got %v", len(want), want, args)
+	}
+	for i := range want {
+		if args[i] != want[i] {
+			t.Fatalf("arg[%d]: want %q, got %q", i, want[i], args[i])
+		}
+	}
+
+	// Only ZhInject enabled should still append CDP ephemeral port
+	cfg.CDP.WindowHUD = false
+	cfg.CDP.ZhInject = true
+	args, err = buildProfileLaunchArgs(cfg, dataDir, "")
+	if err != nil {
+		t.Fatalf("buildProfileLaunchArgs(zh-only) failed: %v", err)
+	}
+	if len(args) != 2 || args[1] != "--remote-debugging-port=0" {
+		t.Fatalf("expected --remote-debugging-port=0 when ZhInject=true, got %v", args)
+	}
+
+	// CDP disabled should omit --remote-debugging-port=0
+	cfg.CDP.Enabled = false
+	args, err = buildProfileLaunchArgs(cfg, dataDir, "")
+	if err != nil {
+		t.Fatalf("buildProfileLaunchArgs(cdp-off) failed: %v", err)
+	}
+	if len(args) != 1 || args[0] != "--user-data-dir="+dataDir {
+		t.Fatalf("expected only --user-data-dir when CDP disabled, got %v", args)
+	}
+
+	// Non-existent workspace must return error
+	if _, err := buildProfileLaunchArgs(cfg, dataDir, filepath.Join(ws, "does-not-exist")); err == nil {
+		t.Fatalf("expected error for missing workspace directory")
+	}
+}

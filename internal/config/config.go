@@ -149,8 +149,8 @@ func DefaultConfig() Config {
 		QuotaWarnPct:    20,
 		CDP: CDPConfig{
 			Enabled:      true,
-			ZhInject:     false,
-			ZhScriptPath: "~/.antigravity-zh/inject.js",
+			ZhInject:     true,
+			ZhScriptPath: "",
 			WindowHUD:    true,
 			HUDPosition:  "top-right",
 			HUDInstances: []string{},
@@ -385,9 +385,9 @@ func Load() (Config, error) {
 }
 
 func applyEnvironmentDefaults(cfg *Config) {
-	if zh := ExpandPath(cfg.CDP.ZhScriptPath); zh != "" {
+	if zh := ExpandPath("~/.antigravity-zh/inject.js"); zh != "" {
 		if st, err := os.Stat(zh); err == nil && !st.IsDir() {
-			cfg.CDP.ZhInject = true
+			cfg.CDP.ZhScriptPath = "~/.antigravity-zh/inject.js"
 		}
 	}
 	if hasExecutable(ExpandPath(cfg.Colab.CLIPath)) {
@@ -480,9 +480,6 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.QuotaWarnPct <= 0 || cfg.QuotaWarnPct > 100 {
 		cfg.QuotaWarnPct = def.QuotaWarnPct
-	}
-	if cfg.CDP.ZhScriptPath == "" {
-		cfg.CDP.ZhScriptPath = def.CDP.ZhScriptPath
 	}
 	cfg.CDP.HUDPosition = NormalizeHUDPosition(cfg.CDP.HUDPosition)
 	cfg.Webhook.Format = NormalizeWebhookFormat(cfg.Webhook.Format)

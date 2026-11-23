@@ -25,6 +25,9 @@ import (
 //go:embed hud.js
 var hudScript string
 
+//go:embed zh_inject.js
+var builtinZhScript string
+
 var localPageURLRe = regexp.MustCompile(`^https?://(127\.0\.0\.1|localhost):\d+/`)
 
 // TargetStatus summarizes the CDP state of one Antigravity page target.
@@ -186,21 +189,43 @@ type Watcher struct {
 	zhPath     string
 	zhMtime    int64
 	zhSize     int64
-	zhSrc      string
-	zhFP       string
-	hudFP      string
-	lastSeen   map[string]time.Time
-	lastStatus []TargetStatus
+	zhSrc        string
+	zhFP         string
+	builtinZhFP  string
+	hudFP        string
+	lastSeen     map[string]time.Time
+	lastStatus   []TargetStatus
 }
 
 // NewWatcher creates a CDP manager.
 func NewWatcher() *Watcher {
-	sum := sha256.Sum256([]byte(hudScript))
+	hudSum := sha256.Sum256([]byte(hudScript))
+	zhSum := sha256.Sum256([]byte(builtinZhScript))
 	return &Watcher{
-		httpClient: &http.Client{Timeout: 1500 * time.Millisecond},
-		hudFP:      "agy-hud-" + hex.EncodeToString(sum[:])[:16],
-		lastSeen:   make(map[string]time.Time),
+		httpClient:  &http.Client{Timeout: 1500 * time.Millisecond},
+		hudFP:       "agy-hud-" + hex.EncodeToString(hudSum[:])[:16],
+		builtinZhFP: "agy-zh-builtin-" + hex.EncodeToString(zhSum[:])[:16],
+		lastSeen:    make(map[string]time.Time),
 	}
+}
+
+// HasBuiltinZhScript reports whether the binary embeds the built-in Antigravity Chinese localization script.
+func HasBuiltinZhScript() bool {
+	return len(strings.TrimSpace(builtinZhScript)) > 0
+}
+
+// ResolveZhSource describes whether localization currently loads from a user override file or the built-in engine.
+func ResolveZhSource(path string) (label string, external bool) {
+	resolved := config.ExpandPath(strings.TrimSpace(path))
+	if resolved != "" {
+		if info, err := os.Stat(resolved); err == nil && !info.IsDir() && info.Size() > 0 {
+			return resolved, true
+		}
+	}
+	if HasBuiltinZhScript() {
+		return "builtin", false
+	}
+	return resolved, false
 }
 
 type cdpTarget struct {
@@ -212,27 +237,36 @@ type cdpTarget struct {
 }
 
 func (w *Watcher) loadZhScript(path string) (src string, fp string, err error) {
-	resolved := config.ExpandPath(path)
-	info, err := os.Stat(resolved)
-	if err != nil {
-		return "", "", err
+	resolved := config.ExpandPath(strings.TrimSpace(path))
+	if resolved != "" {
+		if info, statErr := os.Stat(resolved); statErr == nil && !info.IsDir() && info.Size() > 0 {
+			w.mu.Lock()
+			if w.zhPath == resolved && w.zhMtime == info.ModTime().UnixNano() && w.zhSize == info.Size() && w.zhSrc != "" {
+				cachedSrc, cachedFP := w.zhSrc, w.zhFP
+				w.mu.Unlock()
+				return cachedSrc, cachedFP, nil
+			}
+			w.mu.Unlock()
+
+			raw, readErr := os.ReadFile(resolved)
+			if readErr == nil && len(strings.TrimSpace(string(raw))) > 0 {
+				sum := sha256.Sum256(raw)
+				nextFP := "agy-zh-" + hex.EncodeToString(sum[:])[:16]
+				w.mu.Lock()
+				w.zhPath = resolved
+				w.zhMtime = info.ModTime().UnixNano()
+				w.zhSize = info.Size()
+				w.zhSrc = string(raw)
+				w.zhFP = nextFP
+				w.mu.Unlock()
+				return string(raw), nextFP, nil
+			}
+		}
 	}
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.zhPath == resolved && w.zhMtime == info.ModTime().UnixNano() && w.zhSize == info.Size() && w.zhSrc != "" {
-		return w.zhSrc, w.zhFP, nil
+	if HasBuiltinZhScript() {
+		return builtinZhScript, w.builtinZhFP, nil
 	}
-	raw, err := os.ReadFile(resolved)
-	if err != nil {
-		return "", "", err
-	}
-	sum := sha256.Sum256(raw)
-	w.zhPath = resolved
-	w.zhMtime = info.ModTime().UnixNano()
-	w.zhSize = info.Size()
-	w.zhSrc = string(raw)
-	w.zhFP = "agy-zh-" + hex.EncodeToString(sum[:])[:16]
-	return w.zhSrc, w.zhFP, nil
+	return "", "", os.ErrNotExist
 }
 
 // ScanTargets discovers live Antigravity page targets on instances with DevToolsActivePort.

@@ -13,8 +13,11 @@ import (
 
 func TestDefaultConfigDeterministic(t *testing.T) {
 	cfg := DefaultConfig()
-	if cfg.CDP.ZhInject {
-		t.Fatalf("expected DefaultConfig CDP.ZhInject false, got true")
+	if !cfg.CDP.ZhInject {
+		t.Fatalf("expected DefaultConfig CDP.ZhInject true (built-in engine), got false")
+	}
+	if cfg.CDP.ZhScriptPath != "" {
+		t.Fatalf("expected DefaultConfig CDP.ZhScriptPath empty (use built-in), got %q", cfg.CDP.ZhScriptPath)
 	}
 	if cfg.Colab.Enabled {
 		t.Fatalf("expected DefaultConfig Colab.Enabled false, got true")
@@ -74,19 +77,19 @@ func TestLoadAutoDetectsFirstRunOptionalFeatures(t *testing.T) {
 	t.Setenv("AGYMATE_CONFIG", filepath.Join(home, ".config", "agymate", "config.json"))
 	t.Setenv("PATH", t.TempDir())
 
-	// Case 1: clean environment without optional integrations.
+	// Case 1: clean environment without optional integrations (built-in zh engine enabled by default).
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load clean failed: %v", err)
 	}
-	if cfg.CDP.ZhInject {
-		t.Fatalf("expected ZhInject false when inject.js absent")
+	if !cfg.CDP.ZhInject || cfg.CDP.ZhScriptPath != "" {
+		t.Fatalf("expected built-in ZhInject=true with empty override path, got zh=%v path=%q", cfg.CDP.ZhInject, cfg.CDP.ZhScriptPath)
 	}
 	if cfg.Colab.Enabled {
 		t.Fatalf("expected Colab.Enabled false when colab-safe absent")
 	}
 
-	// Case 2: optional inject.js and colab-safe installed, no config.json yet.
+	// Case 2: optional external inject.js and colab-safe installed, no config.json yet.
 	zhPath := filepath.Join(home, ".antigravity-zh", "inject.js")
 	if err := os.MkdirAll(filepath.Dir(zhPath), 0o755); err != nil {
 		t.Fatal(err)
@@ -106,8 +109,8 @@ func TestLoadAutoDetectsFirstRunOptionalFeatures(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load with optional integrations failed: %v", err)
 	}
-	if !cfg.CDP.ZhInject {
-		t.Fatalf("expected ZhInject auto-enabled when %s exists", zhPath)
+	if !cfg.CDP.ZhInject || cfg.CDP.ZhScriptPath != "~/.antigravity-zh/inject.js" {
+		t.Fatalf("expected ZhInject enabled with external override detected, got zh=%v path=%q", cfg.CDP.ZhInject, cfg.CDP.ZhScriptPath)
 	}
 	if !cfg.Colab.Enabled {
 		t.Fatalf("expected Colab.Enabled auto-enabled when %s exists", colabPath)

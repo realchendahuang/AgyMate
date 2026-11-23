@@ -48,6 +48,7 @@ func main() {
 		cmdConfig(),
 		cmdServe(),
 		cmdService(),
+		cmdLaunch(),
 		cmdStatus(),
 		cmdQuota(),
 		cmdColab(),
@@ -934,26 +935,87 @@ func printDoctorReport(rep doctor.Report) {
 func cmdZh() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "zh",
-		Short: "CDP 扩展注入与 Shadow-DOM 窗口微胶囊探针/立即注入",
+		Short: "Antigravity 客户端中文汉化与 Shadow-DOM 右上角悬浮窗管理",
 	}
 
 	root.AddCommand(&cobra.Command{
 		Use:   "status",
-		Short: "探测全部 Antigravity 窗口的 CDP 注入与 HUD 状态",
+		Short: "探测全部 Antigravity 窗口的 CDP 汉化与悬浮窗状态",
 		Run: func(_ *cobra.Command, _ []string) {
 			cfg := loadCfg()
 			instList := instances.DiscoverAll(cfg)
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			targets := cdp.NewWatcher().ProbeTargetStatus(ctx, instList)
-			printJSON(targets)
+			if targets == nil {
+				targets = []cdp.TargetStatus{}
+			}
+			zhSource, ext := cdp.ResolveZhSource(cfg.CDP.ZhScriptPath)
+			printJSON(map[string]any{
+				"cdpEnabled":       cfg.CDP.Enabled,
+				"zhEnabled":        cfg.CDP.ZhInject,
+				"windowHud":        cfg.CDP.WindowHUD,
+				"hudPosition":      cfg.CDP.HUDPosition,
+				"zhSource":         zhSource,
+				"externalOverride": ext,
+				"targets":          targets,
+			})
 		},
 	})
+
+	var onScript string
+	var useBuiltin bool
+	onCmd := &cobra.Command{
+		Use:   "on",
+		Short: "启用 Antigravity 客户端动态中文汉化（默认使用内置引擎）",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			var scriptPtr *string
+			if useBuiltin {
+				empty := ""
+				scriptPtr = &empty
+			} else if strings.TrimSpace(onScript) != "" {
+				s := strings.TrimSpace(onScript)
+				scriptPtr = &s
+			}
+			synced, src, err := updateZhViaHubOrConfig(true, scriptPtr)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("已启用 Antigravity 客户端中文汉化（来源: %s）\n", src)
+			if synced {
+				fmt.Println("已通知本地 Hub 立即向全部 CDP 窗口同步汉化。")
+			} else {
+				fmt.Printf("已写入配置 %s（未检测到运行中的 Hub，重启服务后自动生效）。\n", config.ConfigPath())
+			}
+			fmt.Println("提示：Antigravity 2.33+ 官方客户端请通过 `agymate launch`（或「Antigravity (AgyMate).app」）启动，隔离多开实例则会自动附加 CDP 端口。")
+			return nil
+		},
+	}
+	onCmd.Flags().StringVar(&onScript, "script", "", "指定外部自定义 inject.js 路径覆盖内置汉化引擎")
+	onCmd.Flags().BoolVar(&useBuiltin, "builtin", false, "清除外部脚本覆盖，切回 AgyMate 内置汉化引擎")
+
+	offCmd := &cobra.Command{
+		Use:   "off",
+		Short: "关闭 Antigravity 客户端中文汉化（已汉化窗口重启后恢复原版英文）",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			synced, _, err := updateZhViaHubOrConfig(false, nil)
+			if err != nil {
+				return err
+			}
+			fmt.Println("已关闭 Antigravity 客户端中文汉化。")
+			if synced {
+				fmt.Println("已同步至本地 Hub（当前已注入窗口重启或刷新后将恢复原版英文）。")
+			}
+			return nil
+		},
+	}
+
+	root.AddCommand(onCmd, offCmd)
 
 	root.AddCommand(&cobra.Command{
 		Use:     "inject",
 		Aliases: []string{"sync"},
-		Short:   "立即向所有运行中的 Antigravity CDP 窗口同步脚本与右上角中文浮窗",
+		Short:   "立即向所有运行中的 Antigravity CDP 窗口同步中文汉化与右上角悬浮窗",
 		Run: func(_ *cobra.Command, _ []string) {
 			cfg := loadCfg()
 			// If local Hub is running, ask Hub to execute SyncCDP so HUD carries fresh telemetry.

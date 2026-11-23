@@ -2270,7 +2270,7 @@
           <div class="dtl-row"><span class="dtl-k">所属实例</span><span class="dtl-val mono">${esc(t.instanceId)}</span></div>
           <div class="dtl-row"><span class="dtl-k">远程端口</span><span class="dtl-val mono">${t.port}</span></div>
           <div class="dtl-row"><span class="dtl-k">监控浮窗</span><span class="dtl-val">${t.hudActive ? '已挂载就绪' : '未挂载'}</span></div>
-          <div class="dtl-row"><span class="dtl-k">扩展脚本</span><span class="dtl-val">${t.zhInjected ? '已成功注入' : '未注入'}</span></div>
+          <div class="dtl-row"><span class="dtl-k">中文汉化</span><span class="dtl-val">${t.zhInjected ? '已成功注入' : '未注入'}</span></div>
         </div>
         ${hasErr ? `
           <div class="dtl-codebox" style="border-color:color-mix(in srgb, var(--red) 35%, var(--line))">

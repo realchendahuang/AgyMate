@@ -1,9 +1,9 @@
 BINARY     := agymate
-VERSION    ?= 0.3.0
+VERSION    ?= 0.4.0
 GIT_COMMIT := $(shell git describe --tags --always --dirty 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo dev)
 BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS    := -s -w -X github.com/realchendahuang/AgyMate/internal/version.Version=$(VERSION) -X github.com/realchendahuang/AgyMate/internal/version.Commit=$(GIT_COMMIT) -X github.com/realchendahuang/AgyMate/internal/version.BuildTime=$(BUILD_TIME)
-JS_FILES   := frontend/i18n.js frontend/app.js internal/cdp/hud.js magpie-plugin/page/boot.js magpie-plugin/index.mjs mcpapp-ui/src/main.js mcpapp-ui/build.mjs
+JS_FILES   := frontend/i18n.js frontend/app.js internal/cdp/hud.js internal/cdp/zh_inject.js magpie-plugin/page/boot.js magpie-plugin/index.mjs mcpapp-ui/src/main.js mcpapp-ui/build.mjs
 BUILD_ENV  := CGO_ENABLED=0
 
 .PHONY: all build build-mcp-app ensure-mcp-app cross-check run serve test test-race vet fmt tidy js-check check verify install install-dev clean

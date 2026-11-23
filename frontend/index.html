@@ -203,7 +203,7 @@
       <div class="row-head"><span class="label">窗口注入目标</span></div>
       <div class="qt-wrap">
         <table class="qt">
-          <thead><tr><th>实例</th><th>端口</th><th>窗口标题</th><th>扩展脚本</th><th>监控浮窗</th><th>诊断操作</th></tr></thead>
+          <thead><tr><th>实例</th><th>端口</th><th>窗口标题</th><th>中文汉化</th><th>监控浮窗</th><th>诊断操作</th></tr></thead>
           <tbody id="cdp-table-body"></tbody>
         </table>
       </div>
@@ -280,15 +280,15 @@
           </div>
           <div class="row pref">
             <div class="who">
-              <div class="name"><span>加载扩展注入脚本</span><button type="button" class="help-dot" aria-label="说明" data-tip="向客户端窗口额外注入下方指定的自定义增强脚本">?</button></div>
+              <div class="name"><span>Antigravity 客户端中文汉化</span><button type="button" class="help-dot" aria-label="说明" data-tip="内置 Antigravity 2.x 动态中文汉化引擎，通过 agymate launch 或隔离多开启动窗口后自动生效">?</button></div>
             </div>
             <button type="button" class="switch" role="switch" aria-checked="false" id="cfg-cdp-zh"><i></i></button>
           </div>
           <div class="row pref stack-narrow">
             <div class="who">
-              <div class="name"><span>扩展脚本路径</span><button type="button" class="help-dot" aria-label="说明" data-tip="本地脚本文件路径，开启扩展注入后生效">?</button></div>
+              <div class="name"><span>自定义汉化脚本覆盖（可选）</span><button type="button" class="help-dot" aria-label="说明" data-tip="留空默认使用内置汉化引擎；如需覆盖或调试自定义词库，可填本地 inject.js 路径">?</button></div>
             </div>
-            <input type="text" class="set-field wide mono" id="cfg-cdp-path" placeholder="~/.antigravity-zh/inject.js">
+            <input type="text" class="set-field wide mono" id="cfg-cdp-path" placeholder="留空使用内置汉化引擎（或填本地 inject.js 路径）">
           </div>
           <div class="row pref stack-narrow">
             <div class="who">

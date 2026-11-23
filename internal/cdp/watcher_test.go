@@ -708,3 +708,34 @@ func TestWatcherScanSyncAndProbe(t *testing.T) {
 		t.Fatalf("after WindowHUD=false, ProbeTargetStatus = %+v, want HUDActive=false", probedOff)
 	}
 }
+
+func TestBuiltinZhScriptFallbackAndExternalOverride(t *testing.T) {
+	if !HasBuiltinZhScript() {
+		t.Fatal("expected built-in zh_inject.js to be embedded")
+	}
+
+	w := NewWatcher()
+	// Empty or missing path falls back cleanly to built-in engine
+	src, fp, err := w.loadZhScript("")
+	if err != nil || src == "" || !strings.HasPrefix(fp, "agy-zh-builtin-") {
+		t.Fatalf("expected built-in zh script fallback, got err=%v len=%d fp=%q", err, len(src), fp)
+	}
+	label, external := ResolveZhSource("/nonexistent/path/inject.js")
+	if external || label != "builtin" {
+		t.Fatalf("ResolveZhSource(missing) = (%q, %v), want (\"builtin\", false)", label, external)
+	}
+
+	// Existing custom override takes precedence
+	customFile := filepath.Join(t.TempDir(), "custom-zh.js")
+	if err := os.WriteFile(customFile, []byte("window.__customZh = true;"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cSrc, cFP, err := w.loadZhScript(customFile)
+	if err != nil || cSrc != "window.__customZh = true;" || !strings.HasPrefix(cFP, "agy-zh-") || strings.HasPrefix(cFP, "agy-zh-builtin-") {
+		t.Fatalf("expected external override script, got err=%v src=%q fp=%q", err, cSrc, cFP)
+	}
+	cLabel, cExt := ResolveZhSource(customFile)
+	if !cExt || cLabel != customFile {
+		t.Fatalf("ResolveZhSource(custom) = (%q, %v), want (%q, true)", cLabel, cExt, customFile)
+	}
+}

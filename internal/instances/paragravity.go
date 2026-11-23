@@ -555,13 +555,9 @@ func LaunchProfile(cfg config.Config, name, workspace string, forceHeal bool) (i
 		resolvedHome = filepath.Clean(homeDir)
 	}
 
-	args := []string{"--user-data-dir=" + resolvedData}
-	if workspace != "" {
-		absWS, err := filepath.Abs(config.ExpandPath(workspace))
-		if err != nil || !dirExists(absWS) {
-			return 0, fmt.Errorf("工作区目录不存在: %s", workspace)
-		}
-		args = append(args, absWS)
+	args, err := buildProfileLaunchArgs(cfg, resolvedData, workspace)
+	if err != nil {
+		return 0, err
 	}
 
 	logDir := filepath.Join(profileDir, "logs")
@@ -936,4 +932,164 @@ func resolveAppBinary(cfg config.Config) string {
 		}
 	}
 	return mainPath
+}
+
+func buildProfileLaunchArgs(cfg config.Config, resolvedData, workspace string) ([]string, error) {
+	args := []string{"--user-data-dir=" + resolvedData}
+	if cfg.CDP.Enabled && (cfg.CDP.WindowHUD || cfg.CDP.ZhInject) {
+		// Antigravity 2.33+ disables default DevToolsActivePort; port=0 binds an ephemeral localhost CDP port.
+		args = append(args, "--remote-debugging-port=0")
+	}
+	if workspace != "" {
+		absWS, err := filepath.Abs(config.ExpandPath(workspace))
+		if err != nil || !dirExists(absWS) {
+			return nil, fmt.Errorf("工作区目录不存在: %s", workspace)
+		}
+		args = append(args, absWS)
+	}
+	return args, nil
+}
+
+func resolveIDEBinary(cfg config.Config) string {
+	idePath := config.ExpandPath(cfg.Paths.IDEAppPath)
+	if runtime.GOOS == "darwin" {
+		if idePath != "" {
+			for _, name := range []string{"Antigravity IDE", "Antigravity"} {
+				bin := filepath.Join(idePath, "Contents", "MacOS", name)
+				if fileExists(bin) {
+					return bin
+				}
+			}
+		}
+	}
+	return idePath
+}
+
+// LaunchMainApp launches the official Antigravity (or Antigravity IDE) client with an optional
+// ephemeral localhost CDP port (--remote-debugging-port=0) to enable the floating HUD and
+// built-in Chinese UI localization without modifying the official app bundle.
+func LaunchMainApp(cfg config.Config, useIDE bool, workspace string, enableCDP bool) (pid int, alreadyCDP bool, err error) {
+	targetKind := KindMain
+	targetLabel := "Antigravity"
+	appBin := resolveAppBinary(cfg)
+	if useIDE {
+		targetKind = KindIDE
+		targetLabel = "Antigravity IDE"
+		appBin = resolveIDEBinary(cfg)
+	}
+	if appBin == "" || !fileExists(appBin) {
+		return 0, false, fmt.Errorf("未找到 %s 可执行文件: %s", targetLabel, appBin)
+	}
+
+	var args []string
+	if enableCDP {
+		args = append(args, "--remote-debugging-port=0")
+	}
+	if strings.TrimSpace(workspace) != "" {
+		absWS, aerr := filepath.Abs(config.ExpandPath(workspace))
+		if aerr != nil || !dirExists(absWS) {
+			return 0, false, fmt.Errorf("工作区目录不存在: %s", workspace)
+		}
+		args = append(args, absWS)
+	}
+
+	// Respect read-only lifecycle guard: never kill an existing official main/ide window.
+	for _, inst := range DiscoverAll(cfg) {
+		if inst.ID != targetKind || !inst.Running {
+			continue
+		}
+		if enableCDP && inst.CDPPort == 0 {
+			return inst.MainPID, false, fmt.Errorf(
+				"%s 当前已在无 CDP 调试口模式下运行 (PID %d)。请先完全退出该客户端（macOS 按 ⌘Q），再运行 `agymate launch` 以开启右上角悬浮窗与中文汉化",
+				targetLabel, inst.MainPID,
+			)
+		}
+		if strings.TrimSpace(workspace) == "" {
+			_ = FocusWindow(inst)
+			return inst.MainPID, inst.CDPPort > 0, nil
+		}
+		// Existing CDP-enabled instance can open an additional workspace window directly.
+		cmd := exec.Command(appBin, args...)
+		configureDetachedProcess(cmd)
+		if serr := cmd.Start(); serr != nil {
+			return inst.MainPID, inst.CDPPort > 0, serr
+		}
+		_ = cmd.Process.Release()
+		return inst.MainPID, inst.CDPPort > 0, nil
+	}
+
+	cmd := exec.Command(appBin, args...)
+	configureDetachedProcess(cmd)
+	if serr := cmd.Start(); serr != nil {
+		return 0, false, serr
+	}
+	launchedPID := cmd.Process.Pid
+	_ = cmd.Process.Release()
+	return launchedPID, enableCDP, nil
+}
+
+// EnsureMainAppLauncherStub creates ~/Applications/Antigravity (AgyMate).app on macOS
+// so users can open the official Antigravity client with HUD + Chinese localization via Spotlight/Dock
+// without modifying /Applications/Antigravity.app.
+func EnsureMainAppLauncherStub(cfg config.Config) (string, error) {
+	if runtime.GOOS != "darwin" {
+		return "", fmt.Errorf("快捷启动器 .app 仅支持 macOS（其他平台请直接运行 `agymate launch`）")
+	}
+	realHome, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	appsDir := filepath.Join(realHome, "Applications")
+	if err := os.MkdirAll(appsDir, 0o755); err != nil {
+		return "", err
+	}
+	appPath := filepath.Join(appsDir, "Antigravity (AgyMate).app")
+	if err := os.RemoveAll(appPath); err != nil {
+		return "", err
+	}
+	contentsDir := filepath.Join(appPath, "Contents")
+	macosDir := filepath.Join(contentsDir, "MacOS")
+	resDir := filepath.Join(contentsDir, "Resources")
+	if err := os.MkdirAll(macosDir, 0o755); err != nil {
+		return "", err
+	}
+
+	iconBlock := ""
+	mainAppDir := config.ExpandPath(cfg.Paths.MainAppPath)
+	if mainAppDir == "" {
+		mainAppDir = "/Applications/Antigravity.app"
+	}
+	srcIcon := filepath.Join(mainAppDir, "Contents", "Resources", "icon.icns")
+	if rawIcon, rerr := os.ReadFile(srcIcon); rerr == nil && len(rawIcon) > 0 {
+		if os.MkdirAll(resDir, 0o755) == nil && os.WriteFile(filepath.Join(resDir, "icon.icns"), rawIcon, 0o644) == nil {
+			iconBlock = "\t<key>CFBundleIconFile</key>\n\t<string>icon</string>\n"
+		}
+	}
+
+	cliBin := resolveCLIBin(realHome)
+	plist := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>launcher</string>
+%s	<key>CFBundleIdentifier</key>
+	<string>io.agymate.launcher.main</string>
+	<key>CFBundleName</key>
+	<string>Antigravity (AgyMate)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>LSUIElement</key>
+	<true/>
+</dict>
+</plist>
+`, iconBlock)
+	if err := os.WriteFile(filepath.Join(contentsDir, "Info.plist"), []byte(plist), 0o644); err != nil {
+		return "", err
+	}
+	script := fmt.Sprintf("#!/bin/sh\nexec %s launch >/dev/null 2>&1 &\n", shellSingleQuote(cliBin))
+	if err := os.WriteFile(filepath.Join(macosDir, "launcher"), []byte(script), 0o755); err != nil {
+		return "", err
+	}
+	return appPath, nil
 }
